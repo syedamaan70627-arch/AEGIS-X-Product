@@ -16,4 +16,4 @@ def test_readiness_probe_local():
     assert data["status"] == "OK"
     assert data["database"] == "HEALTHY"
     assert data["storage"] == "HEALTHY"
-    assert data["auth"] in ("DISABLED", "REQUIRED")
+    assert data["auth"] in ("DISABLED", "REQUIRED", "HEALTHY")

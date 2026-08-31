@@ -38,10 +38,15 @@ async def get_readiness():
     if settings.STORAGE_BACKEND == "supabase":
         if not settings.SUPABASE_URL or not (settings.SUPABASE_SERVICE_ROLE_KEY or settings.SUPABASE_ANON_KEY):
             storage_status = "UNCONFIGURED: Missing SUPABASE_URL or keys."
+    if settings.AUTH_REQUIRED:
+        if settings.SUPABASE_URL and (settings.SUPABASE_ANON_KEY or settings.SUPABASE_SERVICE_ROLE_KEY):
+            auth_status = "HEALTHY"
+        else:
+            auth_status = "UNCONFIGURED: Missing Supabase credentials."
+    else:
+        auth_status = "DISABLED"
 
-    auth_status = "REQUIRED" if settings.AUTH_REQUIRED else "DISABLED"
-
-    overall = "OK" if "UNHEALTHY" not in db_status and "UNCONFIGURED" not in db_status else "DEGRADED"
+    overall = "OK" if "UNHEALTHY" not in db_status and "UNCONFIGURED" not in db_status and "UNCONFIGURED" not in auth_status else "DEGRADED"
 
     return ReadinessResponse(
         status=overall,
