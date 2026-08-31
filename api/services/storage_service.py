@@ -7,7 +7,7 @@ file size limit enforcement, and user-scoped storage abstraction via IStoragePro
 
 import json
 from pathlib import Path
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Optional, Tuple
 from fastapi import UploadFile
 
 from aegis.core.exceptions import AegisError

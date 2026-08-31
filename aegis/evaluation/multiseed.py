@@ -5,7 +5,7 @@ Executes Module 13 final multi-seed validation, bootstrap confidence intervals,
 and paired fusion hypothesis evaluation.
 """
 
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 from scipy.stats import spearmanr
