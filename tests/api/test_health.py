@@ -8,6 +8,19 @@ from api.main import app
 client = TestClient(app)
 
 
+def test_root_endpoint():
+    """Test public root GET / endpoint."""
+    response = client.get("/")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["service"] == "AEGIS-X API"
+    assert data["status"] == "online"
+    assert data["version"] == "0.1.0"
+    assert data["health"] == "/health"
+    assert data["readiness"] == "/ready"
+    assert data["docs"] == "/docs"
+
+
 def test_health_endpoint():
     """Test unversioned /health endpoint."""
     response = client.get("/health")

@@ -15,6 +15,15 @@ class HealthResponse(BaseModel):
     engine_available: bool = Field(..., json_schema_extra={"example": True})
 
 
+class RootResponse(BaseModel):
+    service: str = Field(..., json_schema_extra={"example": "AEGIS-X API"})
+    status: str = Field(..., json_schema_extra={"example": "online"})
+    version: str = Field(..., json_schema_extra={"example": "0.1.0"})
+    health: str = Field(..., json_schema_extra={"example": "/health"})
+    readiness: str = Field(..., json_schema_extra={"example": "/ready"})
+    docs: str = Field(..., json_schema_extra={"example": "/docs"})
+
+
 class StatusResponse(BaseModel):
     api_status: str = Field(..., json_schema_extra={"example": "operational"})
     api_version: str = Field(..., json_schema_extra={"example": "0.1.0"})

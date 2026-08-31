@@ -4,9 +4,22 @@ AEGIS-X API Health & System Status Endpoints.
 
 from fastapi import APIRouter
 from api.core.config import settings
-from api.schemas.common import HealthResponse, StatusResponse
+from api.schemas.common import HealthResponse, RootResponse, StatusResponse
 
 router = APIRouter(tags=["Health & Status"])
+
+
+@router.get("/", response_model=RootResponse, summary="API Public Root Endpoint")
+async def root():
+    """Production-safe API root endpoint providing public metadata and probe locations."""
+    return RootResponse(
+        service="AEGIS-X API",
+        status="online",
+        version=settings.API_VERSION,
+        health="/health",
+        readiness="/ready",
+        docs="/docs",
+    )
 
 
 @router.get("/health", response_model=HealthResponse, summary="Service Health Check")
