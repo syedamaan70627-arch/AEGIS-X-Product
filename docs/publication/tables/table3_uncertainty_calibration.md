@@ -1,0 +1,5 @@
+# Table 3: Uncertainty Calibration & Performance
+
+| Model                   |   Samples |   Log Loss (NLL) |   Brier Score |    ECE |
+|:------------------------|----------:|-----------------:|--------------:|-------:|
+| RandomForest Classifier |       250 |            0.308 |        0.0925 | 0.0806 |

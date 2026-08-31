@@ -1,0 +1,38 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# PyTest / Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual Environments
+venv/
+env/
+.venv/
+
+# Environment secrets
+.env
+.env.local
+.env.*
+!.env.example
+*.key
+
+# Storage outputs & local models/datasets (ignore dynamic data files)
+storage/models/*
+storage/datasets/*
+storage/results/*
+storage/artifacts/*
+storage/api/*
+storage/users/*
+!storage/models/.gitkeep
+!storage/datasets/.gitkeep
+!storage/results/.gitkeep
+
+# IDEs & Editors
+.vscode/
+.idea/
+*.swp
+*.swo

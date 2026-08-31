@@ -1,0 +1,4 @@
+Dataset Name,Data Source & Type,Sample Count,Feature Count,Class Ratio (Pos %),OOD Detection AUROC,Lifecycle Modules Supported
+Breast Cancer (Real UCI/OpenML),Real Public Medical Tabular,569,30,62.7%,0.9991,SUPPORTED (13/13 Modules)
+Wine Diagnostic (Real UCI/OpenML),Real Public Chemical Tabular,178,13,33.1%,0.9972,SUPPORTED (13/13 Modules)
+Tabular Benchmark (Synthetic),Controlled Tabular Synthetic,500,6,52.4%,0.9958,SUPPORTED (13/13 Modules)

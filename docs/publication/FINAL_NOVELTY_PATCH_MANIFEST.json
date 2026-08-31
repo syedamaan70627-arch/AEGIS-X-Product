@@ -1,0 +1,11 @@
+{
+  "icra_2024_overlap": "Unified OOD detection + failure anticipation in interactive robotics; does NOT invalidate tabular lifecycle claim",
+  "ppsm_ress_2026_overlap": "Attachable OOD + uncertainty quantification under sensor noise/faults; does NOT invalidate full lifecycle claim",
+  "do_either_invalidate_claim": "NO",
+  "updated_total_screened_literature": 163,
+  "exact_duplicate_found": false,
+  "final_safe_novelty_sentence": "To the best of our knowledge, AEGIS-X is the first model-interface-agnostic reliability lifecycle we identified that jointly integrates complementary OOD, uncertainty, and drift evidence with controlled stress/fault probing, associative failure memory, leakage-safe multi-horizon failure prediction, and explicit early warning within a unified experimentally validated framework.",
+  "final_contribution_boundary": "Disclaims standalone algorithm & attachable UQ novelty; locks contribution to full unified lifecycle architecture",
+  "remaining_novelty_uncertainty": "Novelty positioning is evidence-supported, but absolute novelty remains subject to broader systematic literature verification.",
+  "novelty_lock_status": "FINAL_NOVELTY_LOCKED"
+}

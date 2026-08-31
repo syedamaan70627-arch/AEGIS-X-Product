@@ -1,0 +1,8 @@
+# AEGIS-X Hostile Senior Reviewer Attack Simulation & Resolution Matrix
+
+| Objection ID   | Category            | Reviewer Criticism                                                    | Classification       | Resolution                                                                                                                                       |
+|:---------------|:--------------------|:----------------------------------------------------------------------|:---------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------|
+| OBJ-01         | Novelty Claim       | Individual OOD and drift algorithms are established methods.          | RESOLVED             | Novelty boundary explicitly disclaims algorithm novelty; candidate contribution is locked strictly to unified lifecycle architecture.            |
+| OBJ-02         | Temporal Validation | Synthetic degradation states do not reflect real physical clock time. | DISCLOSED_LIMITATION | Horizon unit locked as controlled_degradation_states for synthetic tests and operational_cycles for NASA C-MAPSS; explicit limitation disclosed. |
+| OBJ-03         | Failure Memory      | Signature clustering cannot perform real-world root cause diagnosis.  | RESOLVED             | Explicit non-causal disclosures added across UI, API, and paper tables; signatures represent associative condition centroids.                    |
+| OBJ-04         | Baseline Comparison | Trust Score comparison must use identical held-out test splits.       | RESOLVED             | Audited and verified; Trust Score (0.9125) and AEGIS-X OOD (0.9941) evaluated on identical 200-sample test splits.                               |

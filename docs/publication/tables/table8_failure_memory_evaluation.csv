@@ -1,0 +1,2 @@
+Scenario,Signatures,Silhouette Score,Stability ARI,Top-1 Accuracy,Top-3 Accuracy,Non-Causal Disclosure
+Adversarial Overlapping Condition Profiles,2,0.8543,1.0,0.95,1.0,EXPLICITLY DISCLOSED (Associative condition profile clustering)

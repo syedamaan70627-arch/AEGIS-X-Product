@@ -1,0 +1,11 @@
+{
+  "verdict": "A. FIRST_CLAIM_SUPPORTED",
+  "total_candidates_screened": 161,
+  "closest_frameworks_analyzed": 15,
+  "exact_duplicate_found": false,
+  "strongest_overlap": "FIPER (R\u00f6mer et al. 2025) & Risk Advisor (Lahoti et al. 2023)",
+  "safe_manuscript_sentence": "To the best of our knowledge, AEGIS-X is the first model-interface-agnostic reliability lifecycle to jointly integrate complementary OOD, uncertainty, and drift evidence with controlled stress/fault probing, associative failure memory, leakage-safe multi-horizon failure prediction, and explicit early warning within a unified experimentally validated framework.",
+  "rejected_overbroad_claims_count": 10,
+  "research_modifications_required": false,
+  "manuscript_novelty_readiness": "NOVELTY_PROOF_LOCKED_READY"
+}

@@ -1,0 +1,5 @@
+# Table 19: Strict Benchmark Protocol Computational Profiling
+
+| Benchmark Protocol                        | Median Latency   | P95 Latency   | Mean ± Std Latency   | RAM Consumption   | Hardware Spec       | Batch Processing Latency           |
+|:------------------------------------------|:-----------------|:--------------|:---------------------|:------------------|:--------------------|:-----------------------------------|
+| 100 Repeated Measurements (Single Sample) | 2.490 ms         | 3.416 ms      | 2.672 ± 0.554 ms     | ~45 MB RAM        | Standard x86_64 CPU | 0.032 ms / sample (Batch size 500) |

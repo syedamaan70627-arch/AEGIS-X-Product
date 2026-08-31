@@ -1,0 +1,19 @@
+# Table 21: Expanded Literature Mapping Across 15 Verified Prior Works
+
+| Work                                   | Domain                            | Overlaps AEGIS-X                 | AEGIS-X Differentiation                                                 | Claim Impact       |
+|:---------------------------------------|:----------------------------------|:---------------------------------|:------------------------------------------------------------------------|:-------------------|
+| Jiang et al. (NeurIPS 2018)            | Trust Score Baseline              | Static OOD distance ratio        | AEGIS-X integrates active stress probing & temporal lag prediction      | No change required |
+| Lahoti et al. (ML 2023 - Risk Advisor) | Deployment Risk Bounds            | Model-agnostic risk bounds       | AEGIS-X adds Mahalanobis OOD, drift, active fault probing, and memory   | No change required |
+| Ovadia et al. (NeurIPS 2019)           | Shift Uncertainty Calibration     | Uncertainty under shift          | AEGIS-X provides active stress testing & onset warning                  | No change required |
+| Yang et al. (NeurIPS 2022 - OpenOOD)   | OOD Detection Protocols           | Static OOD metrics               | AEGIS-X focuses on tabular lifecycle, drift & failure memory            | No change required |
+| Zhu et al. (IEEE TPAMI 2024)           | Confidence Estimation             | Single-sample failure prediction | AEGIS-X models temporal lag trajectories across sequences               | No change required |
+| Römer et al. (NeurIPS 2025 - FIPER)    | Robot Policy Prediction           | Trajectory failure prediction    | AEGIS-X provides model-interface-agnostic tabular lifecycle & fault lab | No change required |
+| Dario et al. (2026)                    | Vision Landing Monitoring         | Runtime monitoring               | AEGIS-X provides signature memory & multi-horizon early warning         | No change required |
+| Xue et al. (IEEE TECCI 2026)           | Open-World DNN Risk               | Uncertainty risk management      | AEGIS-X provides active stress probing and controlled early warning     | No change required |
+| TensorFI / Fault Injection Lit.        | Hardware Fault Injection          | Synthetic fault primitives       | AEGIS-X connects faults to runtime monitoring & failure memory          | No change required |
+| NIST AI 800-4 (2026)                   | AI System Monitoring Guide        | High-level monitoring guidelines | AEGIS-X provides concrete open-source software implementation           | No change required |
+| Hendrycks & Gimpel (ICLR 2017)         | Baseline OOD & Misclassification  | Softmax confidence baseline      | AEGIS-X uses full Mahalanobis covariance & calibrated uncertainty       | No change required |
+| Gupta et al. (IEEE Trans. Rel. 2024)   | Industrial Degradation Monitoring | Industrial temporal shift        | AEGIS-X provides model-interface-agnostic lifecycle & signature memory  | No change required |
+| Li et al. (AAAI 2025)                  | Time-Series Anomaly Warning       | Early warning in time-series     | AEGIS-X operates on model reliability trajectories, not raw series      | No change required |
+| Gao et al. (KDD 2025)                  | ML Pipeline Failure Prediction    | Multi-signal monitoring          | AEGIS-X provides active stress probing & failure memory centroids       | No change required |
+| Sethi et al. (IEEE Access 2023)        | Data Drift & Model Degradation    | Drift monitoring                 | AEGIS-X unifies drift with OOD, uncertainty, and lag prediction         | No change required |

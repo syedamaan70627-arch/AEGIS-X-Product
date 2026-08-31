@@ -1,0 +1,5 @@
+# Table 23: Natural Temporal Early Warning (NASA C-MAPSS Cycles)
+
+| Dataset                           | Temporal Unit      | Mean Lead Horizon       | Median Lead Horizon     |   False Warning Rate |   Missed Warning Rate |   Warning Threshold | Experiment Type                |
+|:----------------------------------|:-------------------|:------------------------|:------------------------|---------------------:|----------------------:|--------------------:|:-------------------------------|
+| NASA C-MAPSS Turbofan Degradation | operational_cycles | 18.4 operational_cycles | 19.0 operational_cycles |                0.035 |                     0 |                 0.5 | Natural Temporal Early Warning |

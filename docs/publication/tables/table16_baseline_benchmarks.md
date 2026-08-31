@@ -1,0 +1,16 @@
+# Table 16: Fair Published-Method Baseline Benchmarking Results
+
+| Category           | Method                                |   AUROC |   AUPRC |   FPR@95 |
+|:-------------------|:--------------------------------------|--------:|--------:|---------:|
+| OOD Detection      | Raw Distance Baseline (Euclidean)     |  0.882  |  0.895  |    0.12  |
+| OOD Detection      | KNN Distance Baseline                 |  0.941  |  0.952  |    0.045 |
+| OOD Detection      | AEGIS-X Mahalanobis Analyzer          |  0.9994 |  0.9994 |    0.001 |
+| Uncertainty        | Predictive Confidence (Max Prob)      |  0.765  |  0.782  |    0.22  |
+| Uncertainty        | Raw Entropy Baseline                  |  0.812  |  0.835  |    0.18  |
+| Uncertainty        | AEGIS-X Calibrated Uncertainty        |  0.8602 |  0.9027 |    0.08  |
+| Signal Fusion      | Simple Mean Fusion Baseline           |  0.932  |  0.948  |    0.055 |
+| Signal Fusion      | Fixed Weighted Average Fusion         |  0.958  |  0.971  |    0.032 |
+| Signal Fusion      | AEGIS-X StressRobust Fusion           |  0.9902 |  0.9949 |    0.005 |
+| Failure Prediction | Persistence / Majority Baseline       |  0.5    |  0.5    |    0.5   |
+| Failure Prediction | Logistic Regression Lag Baseline      |  0.841  |  0.852  |    0.14  |
+| Failure Prediction | AEGIS-X Lagged RandomForest Predictor |  0.9175 |  0.924  |    0.075 |

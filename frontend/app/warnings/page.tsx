@@ -1,0 +1,289 @@
+"use client";
+
+import React, { useEffect, useState } from "react";
+import { api } from "@/lib/api";
+import { DatasetRecord, ModelCapabilitiesResponse, ModelRecord, WarningEvaluationResponse, WarningResponse } from "@/types/api";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { LoadingState } from "@/components/ui/LoadingState";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { SectionCard } from "@/components/ui/SectionCard";
+import { StatusBadge } from "@/components/ui/StatusBadge";
+import { Activity, AlertCircle, Clock, Layers, Play, ShieldAlert } from "lucide-react";
+
+export default function EarlyWarningPage() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [models, setModels] = useState<ModelRecord[]>([]);
+  const [selectedModelId, setSelectedModelId] = useState<string>("");
+  const [capabilities, setCapabilities] = useState<ModelCapabilitiesResponse | null>(null);
+  const [datasets, setDatasets] = useState<DatasetRecord[]>([]);
+  const [selectedDatasetId, setSelectedDatasetId] = useState<string>("");
+
+  const [querying, setQuerying] = useState(false);
+  const [warningResult, setWarningResult] = useState<WarningResponse | null>(null);
+  const [warningError, setWarningError] = useState<string | null>(null);
+
+  const [evaluating, setEvaluating] = useState(false);
+  const [evalResult, setEvalResult] = useState<WarningEvaluationResponse | null>(null);
+
+  useEffect(() => {
+    async function loadModels() {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await api.listModels();
+        const loaded = res.models || [];
+        setModels(loaded);
+        if (loaded.length > 0) {
+          const activeId = selectedModelId || loaded[0].model_id;
+          setSelectedModelId(activeId);
+        }
+      } catch (err: any) {
+        setError(err.message || "Failed to load models.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadModels();
+  }, []);
+
+  useEffect(() => {
+    async function loadModelContext() {
+      if (!selectedModelId) return;
+      try {
+        const [capRes, dsRes] = await Promise.all([
+          api.getModelCapabilities(selectedModelId),
+          api.listDatasets(selectedModelId),
+        ]);
+        setCapabilities(capRes);
+        const evals = (dsRes.datasets || []).filter((d) => d.dataset_type === "EVALUATION");
+        setDatasets(evals);
+        if (evals.length > 0) setSelectedDatasetId(evals[0].dataset_id);
+        else setSelectedDatasetId("");
+      } catch (_) {}
+    }
+    loadModelContext();
+  }, [selectedModelId]);
+
+  const handleQueryWarning = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedModelId || !selectedDatasetId) {
+      setWarningError("Please select both a model and an evaluation dataset.");
+      return;
+    }
+
+    setQuerying(true);
+    setWarningError(null);
+    try {
+      const res = await api.queryEarlyWarning({
+        model_id: selectedModelId,
+        evaluation_dataset_id: selectedDatasetId,
+      });
+      setWarningResult(res);
+    } catch (err: any) {
+      setWarningError(err.message || "Early warning query execution failed.");
+    } finally {
+      setQuerying(false);
+    }
+  };
+
+  const handleEvaluateTrajectories = async () => {
+    if (!selectedModelId || !selectedDatasetId) return;
+    setEvaluating(true);
+    try {
+      const res = await api.evaluateEarlyWarning({
+        model_id: selectedModelId,
+        evaluation_dataset_id: selectedDatasetId,
+      });
+      setEvalResult(res);
+    } catch (err: any) {
+      setWarningError(err.message || "Trajectory evaluation failed.");
+    } finally {
+      setEvaluating(false);
+    }
+  };
+
+  if (loading) return <LoadingState message="Checking Early Warning engine readiness..." />;
+  if (error) return <ErrorState message={error} />;
+
+  const warnCap = capabilities?.capabilities?.early_warning;
+
+  return (
+    <div className="space-y-8">
+      <PageHeader
+        title="Early Warning Engine"
+        description="Dynamic multi-signal temporal warning query and lead time evaluation."
+        badge={<StatusBadge status={warnCap?.status || "NOT_AVAILABLE"} />}
+      />
+
+      {/* Model Selector Bar */}
+      {models.length > 0 && (
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center justify-between text-xs">
+          <div className="flex items-center space-x-3">
+            <Layers className="w-4 h-4 text-indigo-400" />
+            <span className="font-semibold text-slate-200">Active Model:</span>
+            <select
+              value={selectedModelId}
+              onChange={(e) => setSelectedModelId(e.target.value)}
+              className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-slate-100 font-mono focus:outline-none focus:border-indigo-500"
+            >
+              {models.map((m) => (
+                <option key={m.model_id} value={m.model_id}>
+                  {m.model_name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
+
+      {/* Scientific Horizon Safeguard Note */}
+      <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-300 flex items-start space-x-3">
+        <Clock className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
+        <div>
+          <span className="font-bold text-slate-100 block mb-0.5">Horizon Unit Standard</span>
+          Warning lead horizons are strictly measured in <strong>controlled_degradation_states</strong>. They reflect controlled degradation trajectory steps and must not be translated into wall-clock time (hours/minutes/days).
+        </div>
+      </div>
+
+      {/* Capability State Safeguard */}
+      {warnCap?.status !== "READY" ? (
+        <div className="space-y-4">
+          <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl space-y-3">
+            <div className="flex items-center space-x-3 text-amber-400 font-bold text-sm">
+              <AlertCircle className="w-5 h-5" />
+              <span>Early Warning Requires Setup</span>
+            </div>
+            <p className="text-xs text-slate-300">
+              {warnCap?.reason || "Early Warning engine requires pre-fitted degradation trajectory models."}
+            </p>
+            <div className="p-3 bg-slate-950 rounded-lg border border-slate-800/80 text-[11px] text-slate-400 font-mono">
+              Status: {warnCap?.status || "NOT_AVAILABLE"} | Horizon Unit: controlled_degradation_states
+            </div>
+          </div>
+
+          <EmptyState
+            title="Warning Engine Not Fitted"
+            description="Untrained deployments return status NOT_AVAILABLE. Pre-fitted trajectory warning models are required before querying operational warnings."
+            icon={<Activity className="w-8 h-8" />}
+          />
+        </div>
+      ) : (
+        <div className="space-y-6">
+          <SectionCard title="Query Early Warning Status" subtitle="Query multi-signal temporal warning state">
+            {warningError && <ErrorState message={warningError} />}
+
+            <form onSubmit={handleQueryWarning} className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs items-end">
+              <div>
+                <label className="block font-medium text-slate-300 mb-1">Evaluation Dataset *</label>
+                <select
+                  value={selectedDatasetId}
+                  onChange={(e) => setSelectedDatasetId(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
+                >
+                  {datasets.map((d) => (
+                    <option key={d.dataset_id} value={d.dataset_id}>
+                      {d.filename}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="md:col-span-2 flex space-x-3">
+                <button
+                  type="submit"
+                  disabled={querying || !selectedDatasetId}
+                  className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-semibold shadow-md transition-colors disabled:opacity-50 flex items-center justify-center space-x-2"
+                >
+                  <Play className="w-4 h-4 fill-current" />
+                  <span>{querying ? "Querying..." : "Query Early Warning"}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleEvaluateTrajectories}
+                  disabled={evaluating || !selectedDatasetId}
+                  className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-semibold border border-slate-700 transition-colors disabled:opacity-50"
+                >
+                  {evaluating ? "Evaluating..." : "Evaluate Lead Trajectories"}
+                </button>
+              </div>
+            </form>
+          </SectionCard>
+
+          {querying && <LoadingState message="Evaluating multi-signal temporal early warning state..." />}
+
+          {warningResult && (
+            <SectionCard title="Early Warning Query Response" subtitle={`Warning ID: ${warningResult.warning_id}`}>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                  <div className="text-slate-400 font-mono uppercase">Triggered Status</div>
+                  <div className="mt-1">
+                    <StatusBadge status={warningResult.is_warning_triggered ? "WARNING_TRIGGERED" : "NORMAL"} />
+                  </div>
+                </div>
+
+                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                  <div className="text-slate-400 font-mono uppercase">Warning Score</div>
+                  <div className="text-xl font-bold text-amber-400 mt-1">
+                    {warningResult.warning_score != null ? warningResult.warning_score.toFixed(4) : "N/A"}
+                  </div>
+                </div>
+
+                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                  <div className="text-slate-400 font-mono uppercase">Threshold</div>
+                  <div className="text-xl font-bold text-slate-200 mt-1">{warningResult.threshold}</div>
+                </div>
+
+                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                  <div className="text-slate-400 font-mono uppercase">Target Horizon</div>
+                  <div className="text-sm font-bold text-slate-100 mt-1">
+                    {warningResult.horizon_value} {warningResult.horizon_unit}
+                  </div>
+                </div>
+              </div>
+            </SectionCard>
+          )}
+
+          {evalResult && (
+            <SectionCard title="Retrospective Trajectory Evaluation Results" subtitle="Evaluated lead times and false warning rates">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 text-xs">
+                <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                  <div className="text-slate-400 font-mono">Positive Leads</div>
+                  <div className="text-lg font-bold text-emerald-400 mt-1">
+                    {evalResult.trajectory_level_metrics.positive_lead_count ?? "N/A"}
+                  </div>
+                </div>
+                <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                  <div className="text-slate-400 font-mono">Zero Leads</div>
+                  <div className="text-lg font-bold text-amber-400 mt-1">
+                    {evalResult.trajectory_level_metrics.zero_lead_count ?? "N/A"}
+                  </div>
+                </div>
+                <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                  <div className="text-slate-400 font-mono">Late Warnings</div>
+                  <div className="text-lg font-bold text-rose-400 mt-1">
+                    {evalResult.trajectory_level_metrics.late_warning_count ?? "N/A"}
+                  </div>
+                </div>
+                <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                  <div className="text-slate-400 font-mono">Missing Warnings</div>
+                  <div className="text-lg font-bold text-rose-500 mt-1">
+                    {evalResult.trajectory_level_metrics.missing_warning_count ?? "N/A"}
+                  </div>
+                </div>
+                <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                  <div className="text-slate-400 font-mono">False Warnings</div>
+                  <div className="text-lg font-bold text-slate-300 mt-1">
+                    {evalResult.trajectory_level_metrics.false_warning_count ?? "N/A"}
+                  </div>
+                </div>
+              </div>
+            </SectionCard>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

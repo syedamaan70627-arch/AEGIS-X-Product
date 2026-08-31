@@ -1,0 +1,18 @@
+{
+  "generated_at": "2026-08-31T21:32:52Z",
+  "phase": "PHASE_H_INTERNATIONAL_VALIDATION",
+  "suite_script": "aegis/experiments/run_phase_h_international.py",
+  "datasets_evaluated": [
+    "Breast Cancer (Real UCI/OpenML)",
+    "Wine Diagnostic (Real UCI/OpenML)",
+    "Tabular Benchmark"
+  ],
+  "seeds": [
+    42,
+    43,
+    44,
+    45,
+    46
+  ],
+  "negative_controls": "PASSED (Target permutation collapses to 0.5012)"
+}

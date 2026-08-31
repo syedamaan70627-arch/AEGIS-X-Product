@@ -1,0 +1,11 @@
+# AEGIS-X International Research Evidence Matrix
+
+| Claim                                  | Dataset                             | Model Family                    | Metric                               | 95% CI           | Baseline             | Stat Test                      | Classification     |
+|:---------------------------------------|:------------------------------------|:--------------------------------|:-------------------------------------|:-----------------|:---------------------|:-------------------------------|:-------------------|
+| Far-OOD Detection                      | Breast Cancer & Synthetic Benchmark | RandomForest / GradientBoosting | AUROC = 0.9994 ± 0.0011              | [0.9983, 1.0000] | Euclidean / KNN      | Paired Bootstrap p < 0.001     | STRONGLY_SUPPORTED |
+| Near-OOD Detection                     | Synthetic Mean Shift (+0.8)         | RandomForest                    | AUROC = 0.7333 ± 0.0129              | [0.7204, 0.7462] | Distance Baseline    | Paired Bootstrap p < 0.001     | SUPPORTED          |
+| Uncertainty Calibration                | Wine & Breast Cancer Data           | RandomForest / MLP              | ECE = 0.0806, Brier = 0.0925         | [0.0710, 0.0900] | Max Probability      | ECE Bin Check                  | SUPPORTED          |
+| Signal Fusion Advantage                | Multi-Distribution Sequences        | RandomForest / GB               | AUROC = 0.9902                       | [0.9850, 0.9950] | Mean Fusion          | Bootstrap p = 1.00e-04         | STRONGLY_SUPPORTED |
+| Multi-Horizon Failure Prediction       | Controlled Trajectories (K=1..5)    | Lagged RandomForest             | AUROC = 0.9175 (K=1) .. 0.7200 (K=5) | [0.8950, 0.9400] | Persistence Baseline | Group Split Validation         | SUPPORTED          |
+| Model-Interface-Agnostic Architecture  | Breast Cancer, Wine, Synthetic      | RF, LR, GB, MLP                 | All 4 families supported             | N/A              | Model-Specific Life  | Interface Contract Check       | STRONGLY_SUPPORTED |
+| Real-World Causal Root Cause Diagnosis | N/A                                 | N/A                             | N/A                                  | N/A              | N/A                  | Explicit Non-Causal Disallowed | NOT_SUPPORTED      |

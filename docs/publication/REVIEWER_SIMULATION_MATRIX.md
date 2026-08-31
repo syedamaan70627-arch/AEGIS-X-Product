@@ -1,0 +1,7 @@
+# AEGIS-X 3-Reviewer Peer Review Simulation & Resolution Matrix
+
+| Reviewer                             | Concern                                                                            | Resolution                                                                                                                          |
+|:-------------------------------------|:-----------------------------------------------------------------------------------|:------------------------------------------------------------------------------------------------------------------------------------|
+| Reviewer 1 (ML Methodology)          | AUROC = 0.9998 on Far-OOD may indicate trivial synthetic separation.               | Added Near-OOD evaluation (+0.8 mean shift) showing AUROC = 0.7333 ± 0.0129, proving non-trivial decision boundary behavior.        |
+| Reviewer 2 (AI Reliability)          | Is Failure Memory claiming root-cause diagnosis?                                   | Explicit non-causal disclosure added; Failure Memory clusters associative condition profiles without claiming root-cause inference. |
+| Reviewer 3 (Skeptical IEEE Reviewer) | Warning lead horizon is expressed as degradation states rather than physical time. | Confirmed horizon unit is strictly `controlled_degradation_states` across all endpoints, code, documentation, and paper tables.     |
