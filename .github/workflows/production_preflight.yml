@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  preflight-and-test:
+  backend-preflight-and-test:
     runs-on: ubuntu-latest
 
     steps:
@@ -26,10 +26,38 @@ jobs:
           pip install -r requirements.txt
           pip install pytest httpx
 
-      - name: Run Production Preflight Guard
+      - name: Run Backend Production Preflight Guard
         run: |
           python scripts/production_preflight.py
 
       - name: Run Backend Pytest Suite
         run: |
           python -m pytest -q
+
+  frontend-preflight-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "frontend/package-lock.json"
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Run Frontend Unit Tests
+        run: |
+          cd frontend
+          npx tsx --test __tests__/*.test.ts
+
+      - name: Run Frontend Production Preflight
+        run: |
+          python scripts/frontend_production_preflight.py
