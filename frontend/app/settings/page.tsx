@@ -11,6 +11,8 @@ import { SectionCard } from "@/components/ui/SectionCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Database, KeyRound, Server, Shield, User } from "lucide-react";
 
+import { isVercelEnvironment } from "@/lib/config";
+
 export default function SettingsPage() {
   const { user, isConfigured } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -18,6 +20,8 @@ export default function SettingsPage() {
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [readiness, setReadiness] = useState<ReadinessResponse | null>(null);
   const [me, setMe] = useState<UserMe | null>(null);
+
+  const isVercel = isVercelEnvironment();
 
   useEffect(() => {
     async function loadSettingsData() {
@@ -44,6 +48,28 @@ export default function SettingsPage() {
   if (loading) return <LoadingState message="Fetching system telemetry configuration..." />;
   if (error) return <ErrorState message={error} />;
 
+  const displayUserId = me?.user_id || (isVercel ? "Unauthenticated" : "local_dev_user");
+  const authStateLabel = me?.authenticated
+    ? "Supabase Bearer Verified"
+    : isVercel
+    ? "Unauthenticated Session"
+    : "Local Development Context";
+  const authStatusBadge = me?.authenticated ? "AUTHENTICATED" : isVercel ? "UNAUTHENTICATED" : "LOCAL_DEV";
+
+  const dbBackendLabel = status?.database_backend
+    ? status.database_backend.toUpperCase()
+    : isVercel
+    ? "SUPABASE PG"
+    : "SQLITE";
+  const dbStatusBadge = status?.database_backend === "supabase" ? "SUPABASE_PG" : isVercel ? "RAILWAY_PG" : "SQLITE_LOCAL";
+
+  const storageAdapterLabel = status?.storage_backend
+    ? status.storage_backend.toUpperCase()
+    : isVercel
+    ? "SUPABASE STORAGE"
+    : "LOCAL";
+  const storageStatusBadge = status?.storage_backend === "supabase" ? "SUPABASE_STORAGE" : isVercel ? "RAILWAY_FS" : "LOCAL_FS";
+
   return (
     <div className="space-y-8">
       <PageHeader
@@ -59,7 +85,7 @@ export default function SettingsPage() {
               <User className="w-5 h-5 text-indigo-400 shrink-0" />
               <div>
                 <div className="text-slate-400 font-mono">User ID</div>
-                <div className="text-sm font-bold text-slate-100 font-mono mt-0.5">{me?.user_id || "local_dev_user"}</div>
+                <div className="text-sm font-bold text-slate-100 font-mono mt-0.5">{displayUserId}</div>
               </div>
             </div>
 
@@ -67,10 +93,10 @@ export default function SettingsPage() {
               <div>
                 <div className="text-slate-400 font-mono">Authenticated State</div>
                 <div className="text-xs font-semibold text-slate-200 mt-0.5">
-                  {me?.authenticated ? "Supabase Bearer Verified" : "Local Development Context"}
+                  {authStateLabel}
                 </div>
               </div>
-              <StatusBadge status={me?.authenticated ? "AUTHENTICATED" : "LOCAL_DEV"} />
+              <StatusBadge status={authStatusBadge} />
             </div>
           </div>
         </SectionCard>
@@ -84,11 +110,11 @@ export default function SettingsPage() {
                 <div>
                   <div className="text-slate-400 font-mono">Database Backend</div>
                   <div className="text-sm font-bold text-slate-100 uppercase font-mono mt-0.5">
-                    {status?.database_backend || "sqlite"}
+                    {dbBackendLabel}
                   </div>
                 </div>
               </div>
-              <StatusBadge status={status?.database_backend === "supabase" ? "SUPABASE_PG" : "SQLITE_LOCAL"} />
+              <StatusBadge status={dbStatusBadge} />
             </div>
 
             <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
@@ -97,15 +123,16 @@ export default function SettingsPage() {
                 <div>
                   <div className="text-slate-400 font-mono">Storage Adapter</div>
                   <div className="text-sm font-bold text-slate-100 uppercase font-mono mt-0.5">
-                    {status?.storage_backend || "local"}
+                    {storageAdapterLabel}
                   </div>
                 </div>
               </div>
-              <StatusBadge status={status?.storage_backend === "supabase" ? "SUPABASE_STORAGE" : "LOCAL_FS"} />
+              <StatusBadge status={storageStatusBadge} />
             </div>
           </div>
         </SectionCard>
       </div>
+
 
       {/* API Readiness & Capabilities Summary */}
       <SectionCard title="Engine Capabilities & Readiness" subtitle="Exposed API capabilities and readiness check">

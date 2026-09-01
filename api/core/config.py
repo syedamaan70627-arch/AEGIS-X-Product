@@ -32,9 +32,14 @@ class Settings:
     SUPABASE_SERVICE_ROLE_KEY: str = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
     SUPABASE_STORAGE_BUCKET: str = os.getenv("SUPABASE_STORAGE_BUCKET", "aegis-private")
 
-    # CORS Allowed Origins
-    _raw_cors: str = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
+    # CORS Allowed Origins & Narrow Vercel Preview Regex
+    _raw_cors: str = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000,https://aegis-x-product.vercel.app")
     CORS_ALLOWED_ORIGINS: List[str] = [origin.strip() for origin in _raw_cors.split(",") if origin.strip()]
+    CORS_ALLOWED_ORIGIN_REGEX: Optional[str] = os.getenv(
+        "CORS_ALLOWED_ORIGIN_REGEX",
+        r"^https://aegis-x-product-[a-z0-9-]+-syedamaan70627-4156s-projects\.vercel\.app$",
+    )
+
 
     # Storage directory defaults (relative to project root, overridable by environment variable)
     STORAGE_DIR: Path = Path(os.getenv("AEGIS_STORAGE_DIR", BASE_DIR / "storage"))

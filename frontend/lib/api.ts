@@ -29,10 +29,22 @@ import {
   WarningResponse,
 } from "@/types/api";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000/api/v1";
+import { getEnvConfig } from "@/lib/config";
+
+export const getApiBaseUrl = (): string => {
+  const cfg = getEnvConfig();
+  if (cfg.isVercel && (!cfg.apiBaseUrl || cfg.missingVars.includes("NEXT_PUBLIC_API_BASE_URL"))) {
+    throw new ApiError(
+      "Missing NEXT_PUBLIC_API_BASE_URL configuration on Vercel deployment.",
+      "CONFIG_ERROR",
+      500
+    );
+  }
+  return cfg.apiBaseUrl || "http://127.0.0.1:8000/api/v1";
+};
 
 export const getApiServerRoot = (): string => {
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000/api/v1";
+  const baseUrl = getApiBaseUrl();
   try {
     const url = new URL(baseUrl);
     return url.origin;
@@ -40,6 +52,9 @@ export const getApiServerRoot = (): string => {
     return baseUrl.replace(/\/api\/v1\/?$/, "");
   }
 };
+
+const getBASE_URL = (): string => getApiBaseUrl();
+
 
 export class ApiError extends Error {
   code: string;
@@ -170,59 +185,59 @@ export const api = {
   },
 
   getStatus: async (): Promise<SystemStatus> => {
-    const res = await fetch(`${BASE_URL}/status`);
+    const res = await fetch(`${getBASE_URL()}/status`);
     return handleResponse<SystemStatus>(res);
   },
 
   getUserMe: async (): Promise<UserMe> => {
-    return authenticatedFetch<UserMe>(`${BASE_URL}/me`);
+    return authenticatedFetch<UserMe>(`${getBASE_URL()}/me`);
   },
 
   // Model Registry
   listModels: async (): Promise<ModelListResponse> => {
-    return authenticatedFetch<ModelListResponse>(`${BASE_URL}/models`);
+    return authenticatedFetch<ModelListResponse>(`${getBASE_URL()}/models`);
   },
 
   getModel: async (modelId: string): Promise<ModelRecord> => {
-    return authenticatedFetch<ModelRecord>(`${BASE_URL}/models/${modelId}`);
+    return authenticatedFetch<ModelRecord>(`${getBASE_URL()}/models/${modelId}`);
   },
 
   getModelCapabilities: async (modelId: string): Promise<ModelCapabilitiesResponse> => {
-    return authenticatedFetch<ModelCapabilitiesResponse>(`${BASE_URL}/models/${modelId}/capabilities`);
+    return authenticatedFetch<ModelCapabilitiesResponse>(`${getBASE_URL()}/models/${modelId}/capabilities`);
   },
 
   registerModel: async (formData: FormData): Promise<ModelRecord> => {
-    return authenticatedFetch<ModelRecord>(`${BASE_URL}/models`, {
+    return authenticatedFetch<ModelRecord>(`${getBASE_URL()}/models`, {
       method: "POST",
       body: formData,
     }, true);
   },
 
   fitReferenceState: async (modelId: string, datasetId: string): Promise<ReferenceFitResponse> => {
-    return authenticatedFetch<ReferenceFitResponse>(`${BASE_URL}/models/${modelId}/reference/${datasetId}/fit`, {
+    return authenticatedFetch<ReferenceFitResponse>(`${getBASE_URL()}/models/${modelId}/reference/${datasetId}/fit`, {
       method: "POST",
     });
   },
 
   // Dataset Registry
   listDatasets: async (modelId?: string): Promise<DatasetListResponse> => {
-    const url = modelId ? `${BASE_URL}/datasets?model_id=${encodeURIComponent(modelId)}` : `${BASE_URL}/datasets`;
+    const url = modelId ? `${getBASE_URL()}/datasets?model_id=${encodeURIComponent(modelId)}` : `${getBASE_URL()}/datasets`;
     return authenticatedFetch<DatasetListResponse>(url);
   },
 
   getDataset: async (datasetId: string): Promise<DatasetRecord> => {
-    return authenticatedFetch<DatasetRecord>(`${BASE_URL}/datasets/${datasetId}`);
+    return authenticatedFetch<DatasetRecord>(`${getBASE_URL()}/datasets/${datasetId}`);
   },
 
   registerDataset: async (formData: FormData): Promise<DatasetRecord> => {
-    return authenticatedFetch<DatasetRecord>(`${BASE_URL}/datasets`, {
+    return authenticatedFetch<DatasetRecord>(`${getBASE_URL()}/datasets`, {
       method: "POST",
       body: formData,
     }, true);
   },
 
   deleteDataset: async (datasetId: string): Promise<{ status: string; dataset_id: string }> => {
-    return authenticatedFetch<{ status: string; dataset_id: string }>(`${BASE_URL}/datasets/${datasetId}`, {
+    return authenticatedFetch<{ status: string; dataset_id: string }>(`${getBASE_URL()}/datasets/${datasetId}`, {
       method: "DELETE",
     });
   },
@@ -234,18 +249,18 @@ export const api = {
     reference_dataset_id?: string;
     fusion_method?: string;
   }): Promise<AnalysisResponse> => {
-    return authenticatedFetch<AnalysisResponse>(`${BASE_URL}/analysis`, {
+    return authenticatedFetch<AnalysisResponse>(`${getBASE_URL()}/analysis`, {
       method: "POST",
       body: JSON.stringify(body),
     });
   },
 
   getAnalysis: async (analysisId: string): Promise<any> => {
-    return authenticatedFetch<any>(`${BASE_URL}/analysis/${analysisId}`);
+    return authenticatedFetch<any>(`${getBASE_URL()}/analysis/${analysisId}`);
   },
 
   listModelAnalyses: async (modelId: string): Promise<AnalysisListResponse> => {
-    return authenticatedFetch<AnalysisListResponse>(`${BASE_URL}/models/${modelId}/analyses`);
+    return authenticatedFetch<AnalysisListResponse>(`${getBASE_URL()}/models/${modelId}/analyses`);
   },
 
   // Stress Lab
@@ -256,18 +271,18 @@ export const api = {
     severity: number;
     random_state?: number;
   }): Promise<StressTestResponse> => {
-    return authenticatedFetch<StressTestResponse>(`${BASE_URL}/stress-tests`, {
+    return authenticatedFetch<StressTestResponse>(`${getBASE_URL()}/stress-tests`, {
       method: "POST",
       body: JSON.stringify(body),
     });
   },
 
   getStressTest: async (stressTestId: string): Promise<any> => {
-    return authenticatedFetch<any>(`${BASE_URL}/stress-tests/${stressTestId}`);
+    return authenticatedFetch<any>(`${getBASE_URL()}/stress-tests/${stressTestId}`);
   },
 
   listModelStressTests: async (modelId: string): Promise<StressTestListResponse> => {
-    return authenticatedFetch<StressTestListResponse>(`${BASE_URL}/models/${modelId}/stress-tests`);
+    return authenticatedFetch<StressTestListResponse>(`${getBASE_URL()}/models/${modelId}/stress-tests`);
   },
 
   // Fault Lab & Failure Explorer
@@ -281,22 +296,22 @@ export const api = {
     feature_pair?: string[];
     random_state?: number;
   }): Promise<FaultTestResponse> => {
-    return authenticatedFetch<FaultTestResponse>(`${BASE_URL}/fault-tests`, {
+    return authenticatedFetch<FaultTestResponse>(`${getBASE_URL()}/fault-tests`, {
       method: "POST",
       body: JSON.stringify(body),
     });
   },
 
   getFaultTest: async (faultTestId: string): Promise<any> => {
-    return authenticatedFetch<any>(`${BASE_URL}/fault-tests/${faultTestId}`);
+    return authenticatedFetch<any>(`${getBASE_URL()}/fault-tests/${faultTestId}`);
   },
 
   getFailureExplorerData: async (faultTestId: string): Promise<FailureExplorerResponse> => {
-    return authenticatedFetch<FailureExplorerResponse>(`${BASE_URL}/fault-tests/${faultTestId}/failures`);
+    return authenticatedFetch<FailureExplorerResponse>(`${getBASE_URL()}/fault-tests/${faultTestId}/failures`);
   },
 
   listModelFaultTests: async (modelId: string): Promise<FaultTestListResponse> => {
-    return authenticatedFetch<FaultTestListResponse>(`${BASE_URL}/models/${modelId}/fault-tests`);
+    return authenticatedFetch<FaultTestListResponse>(`${getBASE_URL()}/models/${modelId}/fault-tests`);
   },
 
   // Failure Memory
@@ -304,28 +319,28 @@ export const api = {
     modelId: string,
     body: { fault_test_ids?: string[]; n_clusters?: number; random_state?: number }
   ): Promise<MemoryBuildResponse> => {
-    return authenticatedFetch<MemoryBuildResponse>(`${BASE_URL}/failure-memory/${modelId}/build`, {
+    return authenticatedFetch<MemoryBuildResponse>(`${getBASE_URL()}/failure-memory/${modelId}/build`, {
       method: "POST",
       body: JSON.stringify(body),
     });
   },
 
   getFailureMemory: async (memoryId: string): Promise<any> => {
-    return authenticatedFetch<any>(`${BASE_URL}/failure-memory/${memoryId}`);
+    return authenticatedFetch<any>(`${getBASE_URL()}/failure-memory/${memoryId}`);
   },
 
   matchFailureMemoryQuery: async (
     memoryId: string,
     body: { query_profile: Record<string, number> }
   ): Promise<MemoryMatchResponse> => {
-    return authenticatedFetch<MemoryMatchResponse>(`${BASE_URL}/failure-memory/${memoryId}/match`, {
+    return authenticatedFetch<MemoryMatchResponse>(`${getBASE_URL()}/failure-memory/${memoryId}/match`, {
       method: "POST",
       body: JSON.stringify(body),
     });
   },
 
   listModelFailureMemories: async (modelId: string): Promise<MemoryListResponse> => {
-    return authenticatedFetch<MemoryListResponse>(`${BASE_URL}/models/${modelId}/failure-memory`);
+    return authenticatedFetch<MemoryListResponse>(`${getBASE_URL()}/models/${modelId}/failure-memory`);
   },
 
   // Failure Prediction
@@ -333,14 +348,14 @@ export const api = {
     model_id: string;
     evaluation_dataset_id: string;
   }): Promise<PredictionResponse> => {
-    return authenticatedFetch<PredictionResponse>(`${BASE_URL}/predictions/failure`, {
+    return authenticatedFetch<PredictionResponse>(`${getBASE_URL()}/predictions/failure`, {
       method: "POST",
       body: JSON.stringify(body),
     });
   },
 
   getPrediction: async (predictionId: string): Promise<any> => {
-    return authenticatedFetch<any>(`${BASE_URL}/predictions/${predictionId}`);
+    return authenticatedFetch<any>(`${getBASE_URL()}/predictions/${predictionId}`);
   },
 
   // Early Warning
@@ -348,7 +363,7 @@ export const api = {
     model_id: string;
     evaluation_dataset_id: string;
   }): Promise<WarningResponse> => {
-    return authenticatedFetch<WarningResponse>(`${BASE_URL}/warnings`, {
+    return authenticatedFetch<WarningResponse>(`${getBASE_URL()}/warnings`, {
       method: "POST",
       body: JSON.stringify(body),
     });
@@ -358,21 +373,21 @@ export const api = {
     model_id: string;
     evaluation_dataset_id: string;
   }): Promise<WarningEvaluationResponse> => {
-    return authenticatedFetch<WarningEvaluationResponse>(`${BASE_URL}/warnings/evaluate`, {
+    return authenticatedFetch<WarningEvaluationResponse>(`${getBASE_URL()}/warnings/evaluate`, {
       method: "POST",
       body: JSON.stringify(body),
     });
   },
 
   getWarning: async (warningId: string): Promise<any> => {
-    return authenticatedFetch<any>(`${BASE_URL}/warnings/${warningId}`);
+    return authenticatedFetch<any>(`${getBASE_URL()}/warnings/${warningId}`);
   },
 
   fitFailurePrediction: async (
     modelId: string,
     body?: { trajectory_dataset_id?: string; feature_set_type?: string; model_type?: string; random_state?: number }
   ): Promise<any> => {
-    return authenticatedFetch<any>(`${BASE_URL}/failure-prediction/${modelId}/fit`, {
+    return authenticatedFetch<any>(`${getBASE_URL()}/failure-prediction/${modelId}/fit`, {
       method: "POST",
       body: JSON.stringify(body || {}),
     });
@@ -382,7 +397,7 @@ export const api = {
     modelId: string,
     body?: { trajectory_dataset_id?: string; horizon_val?: number; max_false_warning_rate?: number; random_state?: number }
   ): Promise<any> => {
-    return authenticatedFetch<any>(`${BASE_URL}/early-warning/${modelId}/fit`, {
+    return authenticatedFetch<any>(`${getBASE_URL()}/early-warning/${modelId}/fit`, {
       method: "POST",
       body: JSON.stringify(body || {}),
     });

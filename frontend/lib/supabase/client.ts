@@ -1,21 +1,23 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder-project.supabase.co";
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-anon-key";
+import { getEnvConfig } from "@/lib/config";
 
 export const isSupabaseConfigured = (): boolean => {
-  return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
-    !process.env.NEXT_PUBLIC_SUPABASE_URL.includes("placeholder-project")
-  );
+  const cfg = getEnvConfig();
+  return cfg.isSupabaseConfigured;
 };
 
 let clientInstance: SupabaseClient | null = null;
 
 export const getSupabaseClient = (): SupabaseClient => {
+  const cfg = getEnvConfig();
+  if (cfg.isVercel && (!cfg.supabaseUrl || !cfg.supabaseAnonKey)) {
+    throw new Error(
+      "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY on Vercel deployment."
+    );
+  }
+
   if (!clientInstance) {
-    clientInstance = createClient(supabaseUrl, supabaseAnonKey, {
+    clientInstance = createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
@@ -28,3 +30,4 @@ export const getSupabaseClient = (): SupabaseClient => {
 export const setSupabaseClientInstanceForTesting = (instance: SupabaseClient | null): void => {
   clientInstance = instance;
 };
+

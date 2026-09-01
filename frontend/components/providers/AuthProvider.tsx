@@ -5,6 +5,8 @@ import { setAuthToken } from "@/lib/api";
 import { getStoredAuthToken, setStoredAuthToken } from "@/lib/auth";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { AuthSession, AuthUser } from "@/lib/supabase/types";
+import { isVercelEnvironment } from "@/lib/config";
+
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -101,7 +103,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAuthToken(null);
   };
 
-  const authenticated = Boolean(session?.user) || !configured;
+  const isVercel = isVercelEnvironment();
+  const authenticated = Boolean(session?.user) || (!configured && !isVercel);
+
 
   return (
     <AuthContext.Provider
