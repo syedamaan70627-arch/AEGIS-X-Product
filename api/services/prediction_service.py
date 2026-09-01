@@ -206,37 +206,18 @@ class PredictionService:
             raise PredictionServiceError(f"Trajectory dataset '{request.trajectory_dataset_id}' not found.")
 
         loaded_ds = StorageService.load_dataset(dataset_rec.file_path, target_column=dataset_rec.target_column, user_id=user_id)
-        df = loaded_ds.X.copy()
+        raw_df = loaded_ds.X.copy()
         if loaded_ds.y is not None and dataset_rec.target_column:
-            df[dataset_rec.target_column] = loaded_ds.y
+            raw_df[dataset_rec.target_column] = loaded_ds.y
 
-        required_cols = {"ood_risk", "uncertainty_risk", "drift_risk", "fused_risk"}
-        missing_cols = required_cols - set(df.columns)
-        if missing_cols:
-            raise DatasetValidationError(
-                f"Raw feature dataset cannot be used for failure prediction setup. "
-                f"Dataset must be a TEMPORAL_TRAJECTORY containing columns {sorted(list(missing_cols))} and 'Failure_Onset_Next'."
-            )
+        from aegis.core.temporal import split_trajectories_group_safe, validate_and_prep_trajectory_df
 
-        if "Failure_Onset_Next" in df.columns:
-            df["Failure_Onset_Next"] = df["Failure_Onset_Next"].astype(int)
-        elif "is_failure" in df.columns:
-            if "trajectory_id" in df.columns:
-                df["Failure_Onset_Next"] = df.groupby("trajectory_id")["is_failure"].shift(-1).fillna(0).astype(int)
-            else:
-                df["Failure_Onset_Next"] = df["is_failure"].shift(-1).fillna(0).astype(int)
-        elif dataset_rec.target_column and dataset_rec.target_column in df.columns:
-            df["Failure_Onset_Next"] = df[dataset_rec.target_column].astype(int)
-        else:
-            raise DatasetValidationError(
-                "Trajectory dataset missing required target column 'Failure_Onset_Next' or 'is_failure' ground-truth state sequence."
-            )
+        # Validate temporal trajectory schema, temporal ordering (trajectory_id, step), duplicates, and target consistency
+        df = validate_and_prep_trajectory_df(raw_df, target_col="Failure_Onset_Next")
 
+        # Perform group-aware trajectory split (70% train / 30% val unique trajectory IDs)
+        train_df, val_df = split_trajectories_group_safe(df, target_col="Failure_Onset_Next", train_ratio=0.70)
 
-        # Leakage-safe train (70%) and validation (30%) split
-        split_idx = max(10, int(len(df) * 0.7))
-        train_df = df.iloc[:split_idx].copy()
-        val_df = df.iloc[split_idx:].copy()
 
         predictor = FailurePredictor(
             feature_set_type=request.feature_set_type or "dynamic",

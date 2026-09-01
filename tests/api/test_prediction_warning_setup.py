@@ -90,7 +90,9 @@ def test_prediction_setup_rejects_raw_evaluation_csv(registered_model, raw_evalu
     assert res.status_code == 400
     data = res.json()
     assert "error" in data
-    assert "cannot be used" in data["error"]["message"].lower() or "missing" in data["error"]["message"].lower()
+    assert "trajectory_id" in data["error"]["message"].lower() or "cannot be used" in data["error"]["message"].lower() or "missing" in data["error"]["message"].lower()
+
+
 
 
 def test_prediction_setup_valid_trajectory(registered_model, temporal_trajectory_dataset):
