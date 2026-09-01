@@ -6,7 +6,8 @@ Provides environment-configurable settings for local development and production 
 
 import os
 from pathlib import Path
-from typing import List, Set
+from typing import List, Optional, Set
+
 
 
 class Settings:

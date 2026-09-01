@@ -43,3 +43,12 @@ def test_system_status_endpoint():
     assert "binary_classification" in data["supported_task_types"]
     assert "ood_detection" in data["reliability_capabilities"]
     assert "reliability_fusion" in data["reliability_capabilities"]
+
+
+def test_config_and_api_import_smoke():
+    """Verify api.core.config settings and api.main module import cleanly without NameError."""
+    from api.core.config import settings
+    import api.main
+    assert settings.API_TITLE == "AEGIS-X API"
+    assert api.main.app is not None
+
