@@ -75,14 +75,15 @@ export default function FailurePredictionPage() {
         setCapabilities(capRes);
         const dsList = dsRes.datasets || [];
         setDatasets(dsList);
-        if (dsList.length > 0) {
-          const evalDs = dsList.find((d) => d.dataset_type === "EVALUATION") || dsList[0];
-          setSelectedDatasetId(evalDs.dataset_id);
-          const trajDs = dsList.find((d) => d.dataset_type === "TEMPORAL_TRAJECTORY" || d.dataset_type === "PREDICTION_TRAJECTORY");
-          if (trajDs) {
-            setSelectedTrajectoryId(trajDs.dataset_id);
-          }
+        const trajDsList = dsList.filter((d) => d.dataset_type === "TEMPORAL_TRAJECTORY" || d.dataset_type === "PREDICTION_TRAJECTORY");
+        if (trajDsList.length > 0) {
+          setSelectedDatasetId(trajDsList[0].dataset_id);
+          setSelectedTrajectoryId(trajDsList[0].dataset_id);
+        } else {
+          setSelectedDatasetId("");
+          setSelectedTrajectoryId("");
         }
+
       } catch (err: any) {
         setPredictionError(err.message || "Failed to load capabilities or datasets.");
       }
@@ -229,18 +230,20 @@ export default function FailurePredictionPage() {
 
             <form onSubmit={handleRunPrediction} className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs items-end">
               <div>
-                <label className="block font-medium text-slate-300 mb-1">Evaluation Dataset *</label>
+                <label className="block font-medium text-slate-300 mb-1">Temporal Trajectory Dataset *</label>
                 <select
                   value={selectedDatasetId}
                   onChange={(e) => setSelectedDatasetId(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
                 >
-                  {datasets.map((d) => (
+                  <option value="">-- Choose TEMPORAL_TRAJECTORY Dataset --</option>
+                  {trajectoryDatasets.map((d) => (
                     <option key={d.dataset_id} value={d.dataset_id}>
                       {d.filename}
                     </option>
                   ))}
                 </select>
+
               </div>
 
               <div className="md:col-span-2">

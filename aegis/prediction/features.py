@@ -72,12 +72,19 @@ class PredictionFeatureBuilder:
 
         data_copy = df.copy(deep=True)
 
-        # Compute backward-looking deltas (f_t - f_{t-1}) if dynamic or signature mode
+        # Compute backward-looking deltas (f_t - f_{t-1}) within each trajectory without boundary leakage
         for base_feat in ["ood_risk", "uncertainty_risk", "drift_risk", "fused_risk"]:
             delta_col = f"delta_{base_feat}"
             if base_feat in data_copy.columns and delta_col not in data_copy.columns:
-                # Backward-looking diff along trajectory (filling initial diff with 0.0)
-                data_copy[delta_col] = data_copy[base_feat].diff().fillna(0.0)
+                if "trajectory_id" in data_copy.columns:
+                    data_copy[delta_col] = (
+                        data_copy.groupby("trajectory_id", group_keys=False)[base_feat]
+                        .diff()
+                        .fillna(0.0)
+                    )
+                else:
+                    data_copy[delta_col] = data_copy[base_feat].diff().fillna(0.0)
+
 
         # Default fallback for missing optional columns
         for col in ["signature_distance", "is_known_pattern"]:

@@ -54,6 +54,12 @@ class WarningService:
         if not eval_rec:
             raise WarningServiceError(f"Evaluation dataset '{request.evaluation_dataset_id}' not found.")
 
+        if eval_rec.dataset_type not in {"TEMPORAL_TRAJECTORY", "PREDICTION_TRAJECTORY"}:
+            raise DatasetValidationError(
+                f"Early Warning execution requires a TEMPORAL_TRAJECTORY dataset. "
+                f"Raw '{eval_rec.dataset_type}' datasets cannot be used for early warning query."
+            )
+
         created_at = datetime.now(timezone.utc).isoformat()
         warning_id = str(uuid.uuid4())
 
@@ -93,10 +99,17 @@ class WarningService:
         # Load fitted warning engine via StorageService and evaluation dataset
         warning_engine: EarlyWarningEngine = StorageService.load_warning_artifact(request.model_id, user_id=user_id)
 
-        eval_dataset = StorageService.load_dataset(eval_rec.file_path, target_column=eval_rec.target_column, user_id=user_id)
+        loaded_ds = StorageService.load_dataset(eval_rec.file_path, target_column=eval_rec.target_column, user_id=user_id)
+        raw_df = loaded_ds.X.copy()
+        if loaded_ds.y is not None and eval_rec.target_column:
+            raw_df[eval_rec.target_column] = loaded_ds.y
 
+        from aegis.core.temporal import validate_and_prep_trajectory_df
+        target_col = eval_rec.target_column or "is_failure"
+        clean_df = validate_and_prep_trajectory_df(raw_df, target_col=target_col)
 
-        warning_res = warning_engine.predict_warning(eval_dataset.X)
+        warning_res = warning_engine.predict_warning(clean_df)
+
 
         response = WarningResponse(
             warning_id=warning_id,
@@ -150,15 +163,28 @@ class WarningService:
         if not eval_rec:
             raise WarningServiceError(f"Evaluation dataset '{request.evaluation_dataset_id}' not found.")
 
+        if eval_rec.dataset_type not in {"TEMPORAL_TRAJECTORY", "PREDICTION_TRAJECTORY"}:
+            raise DatasetValidationError(
+                f"Early Warning execution requires a TEMPORAL_TRAJECTORY dataset. "
+                f"Raw '{eval_rec.dataset_type}' datasets cannot be used for early warning trajectory evaluation."
+            )
+
         if not StorageService.has_warning_artifact(request.model_id, user_id=user_id):
             raise WarningServiceError(f"Early Warning engine is not fitted for model '{request.model_id}'.")
 
         warning_engine: EarlyWarningEngine = StorageService.load_warning_artifact(request.model_id, user_id=user_id)
 
-        eval_dataset = StorageService.load_dataset(eval_rec.file_path, target_column=eval_rec.target_column, user_id=user_id)
+        loaded_ds = StorageService.load_dataset(eval_rec.file_path, target_column=eval_rec.target_column, user_id=user_id)
+        raw_df = loaded_ds.X.copy()
+        if loaded_ds.y is not None and eval_rec.target_column:
+            raw_df[eval_rec.target_column] = loaded_ds.y
 
+        from aegis.core.temporal import validate_and_prep_trajectory_df
+        target_col = eval_rec.target_column or "is_failure"
+        clean_df = validate_and_prep_trajectory_df(raw_df, target_col=target_col)
 
-        eval_res = warning_engine.evaluate_trajectories(eval_dataset.X)
+        eval_res = warning_engine.evaluate_trajectories(clean_df)
+
 
         warning_id = str(uuid.uuid4())
         created_at = datetime.now(timezone.utc).isoformat()
@@ -261,10 +287,7 @@ class WarningService:
 
 
 
-        # Leakage-safe train (70%) and validation (30%) split
-        split_idx = max(10, int(len(df) * 0.7))
-        train_df = df.iloc[:split_idx].copy()
-        val_df = df.iloc[split_idx:].copy()
+
 
         engine = EarlyWarningEngine(horizon_val=h_val, random_state=request.random_state or 42)
 

@@ -35,14 +35,14 @@ def setup_warning_resources():
     assert res_m.status_code == 201
     model_id = res_m.json()["model_id"]
 
-    eval_rows = ["ood_risk,uncertainty_risk,drift_risk,fused_risk,Failure_Within_3"]
+    eval_rows = ["trajectory_id,step,ood_risk,uncertainty_risk,drift_risk,fused_risk,Failure_Within_3"]
     for i in range(5):
-        eval_rows.append(f"{i*0.1},{i*0.1 + 0.05},{i*0.05},{i*0.12},{i%2}")
+        eval_rows.append(f"0,{i},{i*0.1},{i*0.1 + 0.05},{i*0.05},{i*0.12},{i%2}")
     eval_csv = "\n".join(eval_rows) + "\n"
 
     res_e = client.post(
         "/api/v1/datasets",
-        data={"model_id": model_id, "dataset_type": "EVALUATION", "target_column": "Failure_Within_3"},
+        data={"model_id": model_id, "dataset_type": "TEMPORAL_TRAJECTORY", "target_column": "Failure_Within_3"},
         files={"file": ("eval.csv", io.BytesIO(eval_csv.encode("utf-8")), "text/csv")},
     )
     assert res_e.status_code == 201
@@ -72,6 +72,8 @@ def test_warning_fitted_artifact_returns_available(setup_warning_resources):
     import pandas as pd
     engine = EarlyWarningEngine(horizon_val=3)
     df_train = pd.DataFrame({
+        "trajectory_id": [0, 0, 0, 0, 0],
+        "step": [0, 1, 2, 3, 4],
         "ood_risk": [0.1, 0.4, 0.2, 0.8, 0.3],
         "uncertainty_risk": [0.1, 0.3, 0.2, 0.7, 0.2],
         "drift_risk": [0.0, 0.2, 0.1, 0.5, 0.1],

@@ -53,6 +53,12 @@ class PredictionService:
         if not eval_rec:
             raise PredictionServiceError(f"Evaluation dataset '{request.evaluation_dataset_id}' not found.")
 
+        if eval_rec.dataset_type not in {"TEMPORAL_TRAJECTORY", "PREDICTION_TRAJECTORY"}:
+            raise DatasetValidationError(
+                f"Failure Prediction execution requires a TEMPORAL_TRAJECTORY dataset. "
+                f"Raw '{eval_rec.dataset_type}' datasets cannot be used for failure prediction."
+            )
+
         created_at = datetime.now(timezone.utc).isoformat()
         prediction_id = str(uuid.uuid4())
 
@@ -91,9 +97,17 @@ class PredictionService:
         # Load fitted predictor via StorageService and evaluation dataset
         predictor: FailurePredictor = StorageService.load_prediction_artifact(request.model_id, user_id=user_id)
 
-        eval_dataset = StorageService.load_dataset(eval_rec.file_path, target_column=eval_rec.target_column, user_id=user_id)
+        loaded_ds = StorageService.load_dataset(eval_rec.file_path, target_column=eval_rec.target_column, user_id=user_id)
+        raw_df = loaded_ds.X.copy()
+        if loaded_ds.y is not None and eval_rec.target_column:
+            raw_df[eval_rec.target_column] = loaded_ds.y
 
-        pred_result = predictor.predict(eval_dataset.X, y_true_onset=eval_dataset.y)
+        from aegis.core.temporal import validate_and_prep_trajectory_df
+        clean_df = validate_and_prep_trajectory_df(raw_df, target_col="Failure_Onset_Next")
+        y_onset = clean_df["Failure_Onset_Next"] if "Failure_Onset_Next" in clean_df.columns else None
+
+        pred_result = predictor.predict(clean_df, y_true_onset=y_onset)
+
 
         events_detail = [
             PredictionEventDetail(

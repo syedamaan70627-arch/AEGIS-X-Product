@@ -35,14 +35,14 @@ def setup_prediction_resources():
     assert res_m.status_code == 201
     model_id = res_m.json()["model_id"]
 
-    eval_rows = ["ood_risk,uncertainty_risk,drift_risk,fused_risk,Failure_Onset_Next"]
+    eval_rows = ["trajectory_id,step,ood_risk,uncertainty_risk,drift_risk,fused_risk,Failure_Onset_Next"]
     for i in range(5):
-        eval_rows.append(f"{i*0.1},{i*0.1 + 0.05},{i*0.05},{i*0.12},{i%2}")
+        eval_rows.append(f"0,{i},{i*0.1},{i*0.1 + 0.05},{i*0.05},{i*0.12},{i%2}")
     eval_csv = "\n".join(eval_rows) + "\n"
 
     res_e = client.post(
         "/api/v1/datasets",
-        data={"model_id": model_id, "dataset_type": "EVALUATION", "target_column": "Failure_Onset_Next"},
+        data={"model_id": model_id, "dataset_type": "TEMPORAL_TRAJECTORY", "target_column": "Failure_Onset_Next"},
         files={"file": ("eval.csv", io.BytesIO(eval_csv.encode("utf-8")), "text/csv")},
     )
     assert res_e.status_code == 201
