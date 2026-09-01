@@ -52,12 +52,15 @@ class EarlyWarningHorizonEvaluator:
 
         for traj_id, group in grouped:
             group_sorted = group.reset_index(drop=True)
-            if failure_col in group_sorted.columns:
-                failures = (group_sorted[failure_col] >= failure_boundary).to_numpy()
-            elif f"Failure_Within_{horizon_val}" in group_sorted.columns:
-                failures = (group_sorted[f"Failure_Within_{horizon_val}"] == 1).to_numpy()
-            elif "Failure_Onset_Next" in group_sorted.columns:
-                failures = (group_sorted["Failure_Onset_Next"] == 1).to_numpy()
+            if failure_col in group_sorted.columns and failure_col not in {"Failure_Rate", "Failure_Onset_Next"} and not failure_col.startswith("Failure_Within_"):
+                if group_sorted[failure_col].dtype in [float, np.float64, np.float32]:
+                    failures = (group_sorted[failure_col] >= failure_boundary).to_numpy()
+                else:
+                    failures = (group_sorted[failure_col] == 1).to_numpy()
+            elif "is_failure" in group_sorted.columns:
+                failures = (group_sorted["is_failure"] == 1).to_numpy()
+            elif "Failure_Rate" in group_sorted.columns:
+                failures = (group_sorted["Failure_Rate"] >= failure_boundary).to_numpy()
             else:
                 failures = np.zeros(len(group_sorted), dtype=bool)
 
@@ -83,7 +86,7 @@ class EarlyWarningHorizonEvaluator:
                         first_warning_state_index=first_warn_idx,
                         failure_state_index=fail_idx,
                         lead_steps=lead,
-                        is_early_warning=True,
+                        is_early_warning=bool(lead > 0),
                         is_false_trajectory_warning=False,
                         details={"horizon": horizon.value, "unit": horizon.unit},
                     )

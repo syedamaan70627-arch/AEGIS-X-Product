@@ -243,3 +243,97 @@ def test_warning_service_group_safe_split_only(tmp_path):
     res = WarningService.fit_warning_engine(model_id, fit_req, user_id="local_dev_user")
     assert res.status == "fitted"
     assert StorageService.has_warning_artifact(model_id, user_id="local_dev_user")
+
+
+def test_retrospective_lead_time_sample_temporal_trajectory_e2e():
+    """
+    Tests exact E2E fixture (examples/sample_temporal_trajectory.csv):
+    - Ground truth is_failure onset occurs at step 6.
+    - Predictive target Failure_Within_3 onset occurs at step 3.
+    - Early warning triggers at step 3.
+    - Evaluated failure_state_index MUST be 6 (NOT 3).
+    - Evaluated first_warning_state_index MUST be 3.
+    - Evaluated lead_steps MUST be 3 controlled_degradation_states.
+    - Mean and median lead across all 6 trajectories MUST be 3.0.
+    """
+    from aegis.warning.horizon import EarlyWarningHorizonEvaluator
+    from aegis.warning.engine import EarlyWarningEngine
+
+    sample_path = "examples/sample_temporal_trajectory.csv"
+    df = pd.read_csv(sample_path)
+
+    # Train Early Warning Engine on the sample temporal trajectory dataset
+    engine = EarlyWarningEngine(horizon_val=3, random_state=42)
+    # Fit on first 4 trajectories (0..3), evaluate on all
+    train_df = df[df["trajectory_id"] < 4].copy()
+    val_df = df[df["trajectory_id"] >= 4].copy()
+    engine.fit(train_df, val_df, target_column="Failure_Within_3")
+
+    eval_res = engine.evaluate_trajectories(df)
+    metrics = eval_res.state_level_metrics
+    traj_metrics = eval_res.trajectory_level_metrics
+    traj_results = eval_res.trajectory_results
+
+    assert traj_metrics["failing_trajectories"] == 6
+    assert traj_metrics["warned_failing_trajectories"] == 6
+    assert traj_metrics["early_warning_coverage"] == 1.0
+    assert traj_metrics["mean_lead_steps"] == 3.0
+    assert traj_metrics["median_lead_steps"] == 3.0
+    assert traj_metrics["lead_time_unit"] == "controlled_degradation_states"
+
+    for tr in traj_results:
+        assert tr.eventually_fails is True
+        assert tr.failure_state_index == 6, f"Failure index for trajectory {tr.trajectory_id} must be 6, got {tr.failure_state_index}"
+        assert tr.first_warning_state_index == 3, f"Warning index for trajectory {tr.trajectory_id} must be 3, got {tr.first_warning_state_index}"
+        assert tr.lead_steps == 3, f"Lead steps for trajectory {tr.trajectory_id} must be 3, got {tr.lead_steps}"
+        assert tr.is_early_warning is True
+
+
+def test_predictive_targets_never_used_as_actual_failure_boundary():
+    """
+    Proves Failure_Within_3 and Failure_Onset_Next are NEVER used as actual failure boundary
+    when is_failure ground truth exists.
+    """
+    from aegis.warning.horizon import EarlyWarningHorizonEvaluator
+
+    df = pd.DataFrame({
+        "trajectory_id": [0, 0, 0, 0, 0],
+        "step": [0, 1, 2, 3, 4],
+        "Failure_Within_3": [1, 1, 1, 0, 0],
+        "Failure_Onset_Next": [1, 1, 0, 0, 0],
+        "is_failure": [0, 0, 0, 0, 1],  # Actual failure at step 4
+        "warning_probability": [0.1, 0.8, 0.9, 0.9, 0.95],
+    })
+
+    metrics, results = EarlyWarningHorizonEvaluator.evaluate_trajectories(
+        df, horizon_val=3, threshold=0.5
+    )
+
+    assert results[0].failure_state_index == 4  # Must be step 4 from is_failure, NOT step 0 from Failure_Within_3
+    assert results[0].first_warning_state_index == 1
+    assert results[0].lead_steps == 3
+    assert results[0].is_early_warning is True
+
+
+def test_same_state_warning_zero_lead_semantics():
+    """
+    Proves warning triggered at exact failure index gives lead_steps = 0 and is_early_warning = False.
+    """
+    from aegis.warning.horizon import EarlyWarningHorizonEvaluator
+
+    df = pd.DataFrame({
+        "trajectory_id": [0, 0, 0, 0, 0],
+        "step": [0, 1, 2, 3, 4],
+        "is_failure": [0, 0, 0, 0, 1],  # Failure at index 4
+        "warning_probability": [0.1, 0.2, 0.3, 0.4, 0.9],  # Warning triggers first at index 4
+    })
+
+    metrics, results = EarlyWarningHorizonEvaluator.evaluate_trajectories(
+        df, horizon_val=3, threshold=0.5
+    )
+
+    assert results[0].failure_state_index == 4
+    assert results[0].first_warning_state_index == 4
+    assert results[0].lead_steps == 0
+    assert results[0].is_early_warning is False  # Onset warning (lead = 0) is NOT an early warning
+
