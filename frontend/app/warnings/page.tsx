@@ -330,38 +330,110 @@ export default function EarlyWarningPage() {
 
           {evalResult && (
             <SectionCard title="Retrospective Trajectory Evaluation Results" subtitle="Evaluated lead times and false warning rates">
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
                 <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
-                  <div className="text-slate-400 font-mono">Positive Leads</div>
+                  <div className="text-slate-400 font-mono">Failing Trajectories</div>
+                  <div className="text-lg font-bold text-slate-100 mt-1">
+                    {evalResult.trajectory_level_metrics.failing_trajectories ?? 0}
+                  </div>
+                </div>
+                <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                  <div className="text-slate-400 font-mono">Warned Failing Trajectories</div>
                   <div className="text-lg font-bold text-emerald-400 mt-1">
-                    {evalResult.trajectory_level_metrics.positive_lead_count ?? "N/A"}
+                    {evalResult.trajectory_level_metrics.warned_failing_trajectories ?? 0}
                   </div>
                 </div>
                 <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
-                  <div className="text-slate-400 font-mono">Zero Leads</div>
+                  <div className="text-slate-400 font-mono">Early Warning Coverage</div>
+                  <div className="text-lg font-bold text-emerald-400 mt-1">
+                    {evalResult.trajectory_level_metrics.early_warning_coverage != null
+                      ? `${(evalResult.trajectory_level_metrics.early_warning_coverage * 100).toFixed(1)}%`
+                      : "0.0%"}
+                  </div>
+                </div>
+                <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                  <div className="text-slate-400 font-mono">False Warning Rate</div>
                   <div className="text-lg font-bold text-amber-400 mt-1">
-                    {evalResult.trajectory_level_metrics.zero_lead_count ?? "N/A"}
+                    {evalResult.trajectory_level_metrics.false_trajectory_warning_rate != null
+                      ? `${(evalResult.trajectory_level_metrics.false_trajectory_warning_rate * 100).toFixed(1)}%`
+                      : "0.0%"}
                   </div>
                 </div>
                 <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
-                  <div className="text-slate-400 font-mono">Late Warnings</div>
-                  <div className="text-lg font-bold text-rose-400 mt-1">
-                    {evalResult.trajectory_level_metrics.late_warning_count ?? "N/A"}
+                  <div className="text-slate-400 font-mono">Mean Lead</div>
+                  <div className="text-base font-bold text-amber-300 mt-1">
+                    {evalResult.trajectory_level_metrics.mean_lead_steps != null
+                      ? `${evalResult.trajectory_level_metrics.mean_lead_steps.toFixed(1)} controlled_degradation_states`
+                      : "N/A"}
                   </div>
                 </div>
                 <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
-                  <div className="text-slate-400 font-mono">Missing Warnings</div>
-                  <div className="text-lg font-bold text-rose-500 mt-1">
-                    {evalResult.trajectory_level_metrics.missing_warning_count ?? "N/A"}
+                  <div className="text-slate-400 font-mono">Median Lead</div>
+                  <div className="text-base font-bold text-amber-300 mt-1">
+                    {evalResult.trajectory_level_metrics.median_lead_steps != null
+                      ? `${evalResult.trajectory_level_metrics.median_lead_steps.toFixed(1)} controlled_degradation_states`
+                      : "N/A"}
                   </div>
                 </div>
                 <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
-                  <div className="text-slate-400 font-mono">False Warnings</div>
+                  <div className="text-slate-400 font-mono">Non-Failing Trajectories</div>
                   <div className="text-lg font-bold text-slate-300 mt-1">
-                    {evalResult.trajectory_level_metrics.false_warning_count ?? "N/A"}
+                    {evalResult.trajectory_level_metrics.non_failing_trajectories ?? 0}
+                  </div>
+                </div>
+                <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                  <div className="text-slate-400 font-mono">False Trajectory Warnings</div>
+                  <div className="text-lg font-bold text-rose-400 mt-1">
+                    {evalResult.trajectory_level_metrics.false_trajectory_warnings ?? 0}
                   </div>
                 </div>
               </div>
+
+              {evalResult.trajectory_results && evalResult.trajectory_results.length > 0 && (
+                <div className="mt-6 border-t border-slate-800 pt-4">
+                  <h4 className="text-sm font-semibold text-slate-200 mb-3">Trajectory Lead-Time Breakdown</h4>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="border-b border-slate-800 text-slate-400 font-mono">
+                          <th className="py-2 px-3">Trajectory ID</th>
+                          <th className="py-2 px-3">Eventually Fails</th>
+                          <th className="py-2 px-3">First Warning Index</th>
+                          <th className="py-2 px-3">Failure Index</th>
+                          <th className="py-2 px-3">Lead Steps</th>
+                          <th className="py-2 px-3">Early Warning</th>
+                          <th className="py-2 px-3">False Warning</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/60">
+                        {evalResult.trajectory_results.map((tr, idx) => (
+                          <tr key={idx} className="hover:bg-slate-900/50">
+                            <td className="py-2 px-3 font-mono text-slate-200">{tr.trajectory_id ?? "-"}</td>
+                            <td className="py-2 px-3">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${tr.eventually_fails ? "bg-rose-950 text-rose-300 border border-rose-800" : "bg-emerald-950 text-emerald-300 border border-emerald-800"}`}>
+                                {tr.eventually_fails ? "Yes" : "No"}
+                              </span>
+                            </td>
+                            <td className="py-2 px-3 text-slate-300">{tr.first_warning_state_index != null ? tr.first_warning_state_index : "-"}</td>
+                            <td className="py-2 px-3 text-slate-300">{tr.failure_state_index != null ? tr.failure_state_index : "-"}</td>
+                            <td className="py-2 px-3 text-amber-300 font-medium">{tr.lead_steps != null ? `${tr.lead_steps} controlled_degradation_states` : "-"}</td>
+                            <td className="py-2 px-3">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${tr.is_early_warning ? "bg-emerald-950 text-emerald-300 border border-emerald-800" : "bg-slate-900 text-slate-400 border border-slate-800"}`}>
+                                {tr.is_early_warning ? "Yes" : "No"}
+                              </span>
+                            </td>
+                            <td className="py-2 px-3">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${tr.is_false_trajectory_warning ? "bg-rose-950 text-rose-300 border border-rose-800" : "bg-slate-900 text-slate-400 border border-slate-800"}`}>
+                                {tr.is_false_trajectory_warning ? "Yes" : "No"}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </SectionCard>
           )}
         </div>

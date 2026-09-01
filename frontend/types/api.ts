@@ -310,6 +310,29 @@ export interface WarningResponse {
   created_at: string;
 }
 
+export interface TrajectoryLevelMetrics {
+  failing_trajectories: number;
+  warned_failing_trajectories: number;
+  early_warning_coverage: number;
+  mean_lead_steps?: number | null;
+  median_lead_steps?: number | null;
+  non_failing_trajectories: number;
+  false_trajectory_warnings: number;
+  false_trajectory_warning_rate: number;
+  lead_time_unit: "controlled_degradation_states";
+}
+
+export interface TrajectoryWarningResultItem {
+  trajectory_id: number | string;
+  eventually_fails: boolean;
+  first_warning_state_index?: number | null;
+  failure_state_index?: number | null;
+  lead_steps?: number | null;
+  is_early_warning: boolean;
+  is_false_trajectory_warning: boolean;
+  details?: Record<string, any>;
+}
+
 export interface WarningEvaluationResponse {
   warning_id: string;
   model_id: string;
@@ -318,8 +341,8 @@ export interface WarningEvaluationResponse {
   horizon_unit: "controlled_degradation_states";
   warning_threshold: number;
   state_level_metrics: Record<string, any>;
-  trajectory_level_metrics: Record<string, any>;
-  trajectory_results: any[];
+  trajectory_level_metrics: TrajectoryLevelMetrics;
+  trajectory_results: TrajectoryWarningResultItem[];
   warnings: string[];
   limitations: string[];
   created_at: string;
