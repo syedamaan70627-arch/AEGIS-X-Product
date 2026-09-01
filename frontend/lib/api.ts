@@ -3,6 +3,7 @@
  */
 
 import { getStoredAuthToken, setStoredAuthToken } from "@/lib/auth";
+import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import {
   AnalysisListResponse,
   AnalysisResponse,
@@ -30,6 +31,16 @@ import {
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000/api/v1";
 
+export const getApiServerRoot = (): string => {
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000/api/v1";
+  try {
+    const url = new URL(baseUrl);
+    return url.origin;
+  } catch (_) {
+    return baseUrl.replace(/\/api\/v1\/?$/, "");
+  }
+};
+
 export class ApiError extends Error {
   code: string;
   details?: any;
@@ -51,18 +62,32 @@ export const setAuthToken = (token: string | null) => {
   setStoredAuthToken(token);
 };
 
-const getHeaders = (isMultipart: boolean = false): HeadersInit => {
+export const getValidSessionToken = async (): Promise<string | null> => {
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = getSupabaseClient();
+      const { data } = await supabase.auth.getSession();
+      if (data?.session?.access_token) {
+        activeAuthToken = data.session.access_token;
+        return data.session.access_token;
+      }
+    } catch (_) {}
+  }
+  return activeAuthToken || getStoredAuthToken();
+};
+
+async function buildHeaders(isMultipart: boolean = false, tokenOverride?: string | null): Promise<HeadersInit> {
   const headers: Record<string, string> = {};
   if (!isMultipart) {
     headers["Content-Type"] = "application/json";
   }
 
-  const token = activeAuthToken || getStoredAuthToken();
+  const token = tokenOverride !== undefined ? tokenOverride : await getValidSessionToken();
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
   return headers;
-};
+}
 
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -86,15 +111,61 @@ async function handleResponse<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+async function authenticatedFetch<T>(
+  url: string,
+  options: RequestInit = {},
+  isMultipart: boolean = false,
+  isRetry: boolean = false
+): Promise<T> {
+  const headers = await buildHeaders(isMultipart);
+  const fetchOptions: RequestInit = {
+    ...options,
+    headers: {
+      ...(headers as Record<string, string>),
+      ...((options.headers as Record<string, string>) || {}),
+    },
+  };
+
+  const res = await fetch(url, fetchOptions);
+
+  if (res.status === 401 && !isRetry && isSupabaseConfigured()) {
+    try {
+      const supabase = getSupabaseClient();
+      const { data, error } = await supabase.auth.refreshSession();
+      if (!error && data?.session?.access_token) {
+        const newToken = data.session.access_token;
+        setAuthToken(newToken);
+
+        const newHeaders = await buildHeaders(isMultipart, newToken);
+        const retryOptions: RequestInit = {
+          ...options,
+          headers: {
+            ...(newHeaders as Record<string, string>),
+            ...((options.headers as Record<string, string>) || {}),
+          },
+        };
+        const retryRes = await fetch(url, retryOptions);
+        return handleResponse<T>(retryRes);
+      }
+    } catch (_) {}
+
+    setAuthToken(null);
+  } else if (res.status === 401) {
+    setAuthToken(null);
+  }
+
+  return handleResponse<T>(res);
+}
+
 export const api = {
   // System & Health
   getHealth: async () => {
-    const res = await fetch("http://127.0.0.1:8000/health");
+    const res = await fetch(`${getApiServerRoot()}/health`);
     return handleResponse<{ status: string; service: string; api_version: string; engine_available: boolean }>(res);
   },
 
   getReadiness: async (): Promise<ReadinessResponse> => {
-    const res = await fetch("http://127.0.0.1:8000/ready");
+    const res = await fetch(`${getApiServerRoot()}/ready`);
     return handleResponse<ReadinessResponse>(res);
   },
 
@@ -104,62 +175,50 @@ export const api = {
   },
 
   getUserMe: async (): Promise<UserMe> => {
-    const res = await fetch(`${BASE_URL}/me`, { headers: getHeaders() });
-    return handleResponse<UserMe>(res);
+    return authenticatedFetch<UserMe>(`${BASE_URL}/me`);
   },
 
   // Model Registry
   listModels: async (): Promise<ModelListResponse> => {
-    const res = await fetch(`${BASE_URL}/models`, { headers: getHeaders() });
-    return handleResponse<ModelListResponse>(res);
+    return authenticatedFetch<ModelListResponse>(`${BASE_URL}/models`);
   },
 
   getModel: async (modelId: string): Promise<ModelRecord> => {
-    const res = await fetch(`${BASE_URL}/models/${modelId}`, { headers: getHeaders() });
-    return handleResponse<ModelRecord>(res);
+    return authenticatedFetch<ModelRecord>(`${BASE_URL}/models/${modelId}`);
   },
 
   getModelCapabilities: async (modelId: string): Promise<ModelCapabilitiesResponse> => {
-    const res = await fetch(`${BASE_URL}/models/${modelId}/capabilities`, { headers: getHeaders() });
-    return handleResponse<ModelCapabilitiesResponse>(res);
+    return authenticatedFetch<ModelCapabilitiesResponse>(`${BASE_URL}/models/${modelId}/capabilities`);
   },
 
   registerModel: async (formData: FormData): Promise<ModelRecord> => {
-    const res = await fetch(`${BASE_URL}/models`, {
+    return authenticatedFetch<ModelRecord>(`${BASE_URL}/models`, {
       method: "POST",
-      headers: getHeaders(true),
       body: formData,
-    });
-    return handleResponse<ModelRecord>(res);
+    }, true);
   },
 
   fitReferenceState: async (modelId: string, datasetId: string): Promise<ReferenceFitResponse> => {
-    const res = await fetch(`${BASE_URL}/models/${modelId}/reference/${datasetId}/fit`, {
+    return authenticatedFetch<ReferenceFitResponse>(`${BASE_URL}/models/${modelId}/reference/${datasetId}/fit`, {
       method: "POST",
-      headers: getHeaders(),
     });
-    return handleResponse<ReferenceFitResponse>(res);
   },
 
   // Dataset Registry
   listDatasets: async (modelId?: string): Promise<DatasetListResponse> => {
     const url = modelId ? `${BASE_URL}/datasets?model_id=${encodeURIComponent(modelId)}` : `${BASE_URL}/datasets`;
-    const res = await fetch(url, { headers: getHeaders() });
-    return handleResponse<DatasetListResponse>(res);
+    return authenticatedFetch<DatasetListResponse>(url);
   },
 
   getDataset: async (datasetId: string): Promise<DatasetRecord> => {
-    const res = await fetch(`${BASE_URL}/datasets/${datasetId}`, { headers: getHeaders() });
-    return handleResponse<DatasetRecord>(res);
+    return authenticatedFetch<DatasetRecord>(`${BASE_URL}/datasets/${datasetId}`);
   },
 
   registerDataset: async (formData: FormData): Promise<DatasetRecord> => {
-    const res = await fetch(`${BASE_URL}/datasets`, {
+    return authenticatedFetch<DatasetRecord>(`${BASE_URL}/datasets`, {
       method: "POST",
-      headers: getHeaders(true),
       body: formData,
-    });
-    return handleResponse<DatasetRecord>(res);
+    }, true);
   },
 
   // Analysis Engine
@@ -169,22 +228,18 @@ export const api = {
     reference_dataset_id?: string;
     fusion_method?: string;
   }): Promise<AnalysisResponse> => {
-    const res = await fetch(`${BASE_URL}/analysis`, {
+    return authenticatedFetch<AnalysisResponse>(`${BASE_URL}/analysis`, {
       method: "POST",
-      headers: getHeaders(),
       body: JSON.stringify(body),
     });
-    return handleResponse<AnalysisResponse>(res);
   },
 
   getAnalysis: async (analysisId: string): Promise<any> => {
-    const res = await fetch(`${BASE_URL}/analysis/${analysisId}`, { headers: getHeaders() });
-    return handleResponse<any>(res);
+    return authenticatedFetch<any>(`${BASE_URL}/analysis/${analysisId}`);
   },
 
   listModelAnalyses: async (modelId: string): Promise<AnalysisListResponse> => {
-    const res = await fetch(`${BASE_URL}/models/${modelId}/analyses`, { headers: getHeaders() });
-    return handleResponse<AnalysisListResponse>(res);
+    return authenticatedFetch<AnalysisListResponse>(`${BASE_URL}/models/${modelId}/analyses`);
   },
 
   // Stress Lab
@@ -195,22 +250,18 @@ export const api = {
     severity: number;
     random_state?: number;
   }): Promise<StressTestResponse> => {
-    const res = await fetch(`${BASE_URL}/stress-tests`, {
+    return authenticatedFetch<StressTestResponse>(`${BASE_URL}/stress-tests`, {
       method: "POST",
-      headers: getHeaders(),
       body: JSON.stringify(body),
     });
-    return handleResponse<StressTestResponse>(res);
   },
 
   getStressTest: async (stressTestId: string): Promise<any> => {
-    const res = await fetch(`${BASE_URL}/stress-tests/${stressTestId}`, { headers: getHeaders() });
-    return handleResponse<any>(res);
+    return authenticatedFetch<any>(`${BASE_URL}/stress-tests/${stressTestId}`);
   },
 
   listModelStressTests: async (modelId: string): Promise<StressTestListResponse> => {
-    const res = await fetch(`${BASE_URL}/models/${modelId}/stress-tests`, { headers: getHeaders() });
-    return handleResponse<StressTestListResponse>(res);
+    return authenticatedFetch<StressTestListResponse>(`${BASE_URL}/models/${modelId}/stress-tests`);
   },
 
   // Fault Lab & Failure Explorer
@@ -224,27 +275,22 @@ export const api = {
     feature_pair?: string[];
     random_state?: number;
   }): Promise<FaultTestResponse> => {
-    const res = await fetch(`${BASE_URL}/fault-tests`, {
+    return authenticatedFetch<FaultTestResponse>(`${BASE_URL}/fault-tests`, {
       method: "POST",
-      headers: getHeaders(),
       body: JSON.stringify(body),
     });
-    return handleResponse<FaultTestResponse>(res);
   },
 
   getFaultTest: async (faultTestId: string): Promise<any> => {
-    const res = await fetch(`${BASE_URL}/fault-tests/${faultTestId}`, { headers: getHeaders() });
-    return handleResponse<any>(res);
+    return authenticatedFetch<any>(`${BASE_URL}/fault-tests/${faultTestId}`);
   },
 
   getFailureExplorerData: async (faultTestId: string): Promise<FailureExplorerResponse> => {
-    const res = await fetch(`${BASE_URL}/fault-tests/${faultTestId}/failures`, { headers: getHeaders() });
-    return handleResponse<FailureExplorerResponse>(res);
+    return authenticatedFetch<FailureExplorerResponse>(`${BASE_URL}/fault-tests/${faultTestId}/failures`);
   },
 
   listModelFaultTests: async (modelId: string): Promise<FaultTestListResponse> => {
-    const res = await fetch(`${BASE_URL}/models/${modelId}/fault-tests`, { headers: getHeaders() });
-    return handleResponse<FaultTestListResponse>(res);
+    return authenticatedFetch<FaultTestListResponse>(`${BASE_URL}/models/${modelId}/fault-tests`);
   },
 
   // Failure Memory
@@ -252,34 +298,28 @@ export const api = {
     modelId: string,
     body: { fault_test_ids?: string[]; n_clusters?: number; random_state?: number }
   ): Promise<MemoryBuildResponse> => {
-    const res = await fetch(`${BASE_URL}/failure-memory/${modelId}/build`, {
+    return authenticatedFetch<MemoryBuildResponse>(`${BASE_URL}/failure-memory/${modelId}/build`, {
       method: "POST",
-      headers: getHeaders(),
       body: JSON.stringify(body),
     });
-    return handleResponse<MemoryBuildResponse>(res);
   },
 
   getFailureMemory: async (memoryId: string): Promise<any> => {
-    const res = await fetch(`${BASE_URL}/failure-memory/${memoryId}`, { headers: getHeaders() });
-    return handleResponse<any>(res);
+    return authenticatedFetch<any>(`${BASE_URL}/failure-memory/${memoryId}`);
   },
 
   matchFailureMemoryQuery: async (
     memoryId: string,
     body: { query_profile: Record<string, number> }
   ): Promise<MemoryMatchResponse> => {
-    const res = await fetch(`${BASE_URL}/failure-memory/${memoryId}/match`, {
+    return authenticatedFetch<MemoryMatchResponse>(`${BASE_URL}/failure-memory/${memoryId}/match`, {
       method: "POST",
-      headers: getHeaders(),
       body: JSON.stringify(body),
     });
-    return handleResponse<MemoryMatchResponse>(res);
   },
 
   listModelFailureMemories: async (modelId: string): Promise<MemoryListResponse> => {
-    const res = await fetch(`${BASE_URL}/models/${modelId}/failure-memory`, { headers: getHeaders() });
-    return handleResponse<MemoryListResponse>(res);
+    return authenticatedFetch<MemoryListResponse>(`${BASE_URL}/models/${modelId}/failure-memory`);
   },
 
   // Failure Prediction
@@ -287,17 +327,14 @@ export const api = {
     model_id: string;
     evaluation_dataset_id: string;
   }): Promise<PredictionResponse> => {
-    const res = await fetch(`${BASE_URL}/predictions/failure`, {
+    return authenticatedFetch<PredictionResponse>(`${BASE_URL}/predictions/failure`, {
       method: "POST",
-      headers: getHeaders(),
       body: JSON.stringify(body),
     });
-    return handleResponse<PredictionResponse>(res);
   },
 
   getPrediction: async (predictionId: string): Promise<any> => {
-    const res = await fetch(`${BASE_URL}/predictions/${predictionId}`, { headers: getHeaders() });
-    return handleResponse<any>(res);
+    return authenticatedFetch<any>(`${BASE_URL}/predictions/${predictionId}`);
   },
 
   // Early Warning
@@ -305,28 +342,23 @@ export const api = {
     model_id: string;
     evaluation_dataset_id: string;
   }): Promise<WarningResponse> => {
-    const res = await fetch(`${BASE_URL}/warnings`, {
+    return authenticatedFetch<WarningResponse>(`${BASE_URL}/warnings`, {
       method: "POST",
-      headers: getHeaders(),
       body: JSON.stringify(body),
     });
-    return handleResponse<WarningResponse>(res);
   },
 
   evaluateEarlyWarning: async (body: {
     model_id: string;
     evaluation_dataset_id: string;
   }): Promise<WarningEvaluationResponse> => {
-    const res = await fetch(`${BASE_URL}/warnings/evaluate`, {
+    return authenticatedFetch<WarningEvaluationResponse>(`${BASE_URL}/warnings/evaluate`, {
       method: "POST",
-      headers: getHeaders(),
       body: JSON.stringify(body),
     });
-    return handleResponse<WarningEvaluationResponse>(res);
   },
 
   getWarning: async (warningId: string): Promise<any> => {
-    const res = await fetch(`${BASE_URL}/warnings/${warningId}`, { headers: getHeaders() });
-    return handleResponse<any>(res);
+    return authenticatedFetch<any>(`${BASE_URL}/warnings/${warningId}`);
   },
 };

@@ -46,6 +46,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
       if (session?.access_token) {
         setAuthToken(session.access_token);
+      } else {
+        setAuthToken(null);
       }
       setLoading(false);
     });

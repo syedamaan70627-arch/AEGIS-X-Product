@@ -24,3 +24,7 @@ export const getSupabaseClient = (): SupabaseClient => {
   }
   return clientInstance;
 };
+
+export const setSupabaseClientInstanceForTesting = (instance: SupabaseClient | null): void => {
+  clientInstance = instance;
+};

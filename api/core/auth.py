@@ -4,12 +4,15 @@ AEGIS-X API Authentication & Authorization Module.
 Integrates Supabase Bearer token verification and resource ownership isolation.
 """
 
+import logging
 from dataclasses import dataclass
 from typing import Optional
 from fastapi import Header, HTTPException, Request, status
 import httpx
 
 from api.core.config import settings
+
+logger = logging.getLogger("aegis.auth")
 
 
 @dataclass
@@ -61,6 +64,7 @@ async def get_current_user(authorization: Optional[str] = Header(None)) -> UserC
             res = await client.get(auth_url, headers=headers)
 
         if res.status_code != 200:
+            logger.warning(f"Supabase auth validation returned HTTP status {res.status_code}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid or expired access token.",
