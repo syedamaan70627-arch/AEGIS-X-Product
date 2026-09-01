@@ -9,7 +9,7 @@ import { LoadingState } from "@/components/ui/LoadingState";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { CheckCircle2, Database, FileSpreadsheet, Layers, Play, Plus, Upload } from "lucide-react";
+import { CheckCircle2, Database, FileSpreadsheet, Layers, Play, Plus, Trash2, Upload } from "lucide-react";
 
 export default function DataSetupPage() {
   const [loading, setLoading] = useState(true);
@@ -26,7 +26,7 @@ export default function DataSetupPage() {
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   // Reference Fit State
-  const [fitting, setFitting] = useState(false);
+  const [fittingDatasetId, setFittingDatasetId] = useState<string | null>(null);
   const [fitResult, setFitResult] = useState<ReferenceFitResponse | null>(null);
   const [fitError, setFitError] = useState<string | null>(null);
 
@@ -83,8 +83,8 @@ export default function DataSetupPage() {
   };
 
   const handleFitReference = async (refDatasetId: string) => {
-    if (!selectedModelId) return;
-    setFitting(true);
+    if (!selectedModelId || fittingDatasetId !== null) return;
+    setFittingDatasetId(refDatasetId);
     setFitError(null);
     try {
       const res = await api.fitReferenceState(selectedModelId, refDatasetId);
@@ -93,7 +93,19 @@ export default function DataSetupPage() {
     } catch (err: any) {
       setFitError(err.message || "Failed to fit reference baseline state.");
     } finally {
-      setFitting(false);
+      setFittingDatasetId(null);
+    }
+  };
+
+  const handleDeleteDataset = async (datasetId: string) => {
+    if (typeof window !== "undefined" && !window.confirm("Are you sure you want to delete this dataset?")) {
+      return;
+    }
+    try {
+      await api.deleteDataset(datasetId);
+      await loadData();
+    } catch (err: any) {
+      setError(err.message || "Failed to delete dataset.");
     }
   };
 
@@ -265,14 +277,21 @@ export default function DataSetupPage() {
                           <td className="p-3 font-mono text-slate-300">{d.num_samples}</td>
                           <td className="p-3 font-mono text-slate-300">{d.num_features}</td>
                           <td className="p-3 font-mono text-slate-400">{d.target_column || "Label-Free"}</td>
-                          <td className="p-3 text-right">
+                          <td className="p-3 text-right space-x-2">
                             <button
                               onClick={() => handleFitReference(d.dataset_id)}
-                              disabled={fitting}
+                              disabled={fittingDatasetId !== null}
                               className="px-3 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white rounded-md transition-colors disabled:opacity-50 inline-flex items-center space-x-1"
                             >
                               <Play className="w-3 h-3 fill-current mr-1" />
-                              <span>{fitting ? "Fitting..." : "FIT REFERENCE STATE"}</span>
+                              <span>{fittingDatasetId === d.dataset_id ? "Fitting..." : "FIT REFERENCE STATE"}</span>
+                            </button>
+                            <button
+                              onClick={() => handleDeleteDataset(d.dataset_id)}
+                              title="Delete Dataset"
+                              className="p-1.5 text-slate-400 hover:text-rose-400 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-md transition-colors inline-flex items-center"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </td>
                         </tr>
@@ -297,6 +316,7 @@ export default function DataSetupPage() {
                         <th className="p-3">Features</th>
                         <th className="p-3">Target</th>
                         <th className="p-3">Uploaded</th>
+                        <th className="p-3 text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/60">
@@ -307,6 +327,15 @@ export default function DataSetupPage() {
                           <td className="p-3 font-mono text-slate-300">{d.num_features}</td>
                           <td className="p-3 font-mono text-slate-400">{d.target_column || "Label-Free"}</td>
                           <td className="p-3 text-slate-400">{new Date(d.created_at).toLocaleDateString()}</td>
+                          <td className="p-3 text-right">
+                            <button
+                              onClick={() => handleDeleteDataset(d.dataset_id)}
+                              title="Delete Dataset"
+                              className="p-1.5 text-slate-400 hover:text-rose-400 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-md transition-colors inline-flex items-center"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -314,6 +343,7 @@ export default function DataSetupPage() {
                 </div>
               )}
             </SectionCard>
+
           </div>
         </div>
       )}

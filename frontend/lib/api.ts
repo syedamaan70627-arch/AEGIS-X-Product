@@ -221,6 +221,12 @@ export const api = {
     }, true);
   },
 
+  deleteDataset: async (datasetId: string): Promise<{ status: string; dataset_id: string }> => {
+    return authenticatedFetch<{ status: string; dataset_id: string }>(`${BASE_URL}/datasets/${datasetId}`, {
+      method: "DELETE",
+    });
+  },
+
   // Analysis Engine
   runAnalysis: async (body: {
     model_id: string;

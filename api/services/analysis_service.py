@@ -73,39 +73,45 @@ class AnalysisService:
                 f"Dataset '{dataset_id}' is of type '{dataset_rec.dataset_type}'. Reference fit requires 'REFERENCE' dataset."
             )
 
-        # Load model and dataset via StorageService
-        model_adapter = StorageService.load_model_adapter(model_rec.file_path, user_id=user_id)
-        ref_dataset = StorageService.load_dataset(dataset_rec.file_path, target_column=dataset_rec.target_column, user_id=user_id)
+        try:
+            # Load model and dataset via StorageService
+            model_adapter = StorageService.load_model_adapter(model_rec.file_path, user_id=user_id)
+            ref_dataset = StorageService.load_dataset(dataset_rec.file_path, target_column=dataset_rec.target_column, user_id=user_id)
 
-        # Fit CoreReliabilityAnalyzer
-        analyzer = CoreReliabilityAnalyzer()
-        analyzer.fit_reference(
-            reference_data=ref_dataset.X,
-            feature_names=ref_dataset.feature_names,
-            calibration_data=ref_dataset.X if ref_dataset.y is not None else None,
-            calibration_labels=ref_dataset.y,
-            model_adapter=model_adapter,
-        )
+            # Fit CoreReliabilityAnalyzer
+            analyzer = CoreReliabilityAnalyzer()
+            analyzer.fit_reference(
+                reference_data=ref_dataset.X,
+                feature_names=ref_dataset.feature_names,
+                calibration_data=ref_dataset.X if ref_dataset.y is not None else None,
+                calibration_labels=ref_dataset.y,
+                model_adapter=model_adapter,
+            )
 
-        # Save analyzer artifact via StorageService
-        sub_path = f"{model_id}/reference_analyzer.joblib"
-        artifact_path = StorageService.save_joblib_artifact(sub_path, analyzer, user_id=user_id)
+            # Save analyzer artifact via StorageService
+            sub_path = f"{model_id}/reference_analyzer.joblib"
+            artifact_path = StorageService.save_joblib_artifact(sub_path, analyzer, user_id=user_id)
 
-        fitted_at = datetime.now(timezone.utc).isoformat()
-        ref_id = str(uuid.uuid4())
+            fitted_at = datetime.now(timezone.utc).isoformat()
+            ref_id = str(uuid.uuid4())
 
-        ref_record = ReferenceStateRecord(
-            id=ref_id,
-            user_id=user_id,
-            model_id=model_id,
-            dataset_id=dataset_id,
-            artifact_path=str(artifact_path),
-            feature_names=ref_dataset.feature_names,
-            num_samples=ref_dataset.num_samples,
-            fitted_at=fitted_at,
-        )
+            ref_record = ReferenceStateRecord(
+                id=ref_id,
+                user_id=user_id,
+                model_id=model_id,
+                dataset_id=dataset_id,
+                artifact_path=str(artifact_path),
+                feature_names=ref_dataset.feature_names,
+                num_samples=ref_dataset.num_samples,
+                fitted_at=fitted_at,
+            )
 
-        ref_repo.save_or_update(ref_record)
+            ref_repo.save_or_update(ref_record)
+        except AegisError:
+            raise
+        except Exception as exc:
+            raise AnalysisServiceError(f"Reference state fit failed: {str(exc)}") from exc
+
 
         return ReferenceFitResponse(
             model_id=model_id,

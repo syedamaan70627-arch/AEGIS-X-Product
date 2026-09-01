@@ -50,3 +50,13 @@ async def get_dataset(dataset_id: str, user: UserContext = Depends(get_current_u
     if not ds:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Dataset '{dataset_id}' not found.")
     return ds
+
+
+@router.delete("/{dataset_id}", summary="Delete Dataset")
+async def delete_dataset(dataset_id: str, user: UserContext = Depends(get_current_user)):
+    """Delete a registered dataset metadata record and stored CSV file."""
+    success = DatasetService.delete_dataset(dataset_id, user_id=user.user_id)
+    if not success:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Dataset '{dataset_id}' not found.")
+    return {"status": "deleted", "dataset_id": dataset_id}
+

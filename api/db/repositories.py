@@ -215,6 +215,16 @@ class DatasetRepository(IDatasetRepository):
             )
         return datasets
 
+    def delete(self, dataset_id: str, owner_id: Optional[str] = None) -> bool:
+        if owner_id:
+            query = "DELETE FROM datasets WHERE id = ? AND user_id = ?;"
+            cursor = self.conn.execute(query, (dataset_id, owner_id))
+        else:
+            query = "DELETE FROM datasets WHERE id = ?;"
+            cursor = self.conn.execute(query, (dataset_id,))
+        self.conn.commit()
+        return cursor.rowcount > 0
+
 
 class ReferenceStateRepository(IReferenceStateRepository):
     """SQLite repository for managing Reference State records."""

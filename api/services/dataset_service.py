@@ -142,3 +142,22 @@ class DatasetService:
             )
             for r in records
         ]
+
+    @classmethod
+    def delete_dataset(cls, dataset_id: str, user_id: str = "local_dev_user") -> bool:
+        """Delete dataset metadata record and remove file from storage."""
+        repo = get_dataset_repository()
+        owner = user_id if user_id != "local_dev_user" else None
+        record = repo.get_by_id(dataset_id, owner_id=owner)
+        if not record:
+            raise DatasetValidationError(f"Dataset '{dataset_id}' not found.")
+
+        try:
+            from api.core.dependencies import get_storage_provider
+            provider = get_storage_provider()
+            provider.delete_file(record.file_path, user_id=user_id)
+        except Exception:
+            pass
+
+        return repo.delete(dataset_id, owner_id=owner)
+

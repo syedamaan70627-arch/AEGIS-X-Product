@@ -205,6 +205,13 @@ class SupabaseDatasetRepository(BaseSupabaseRepository, IDatasetRepository):
             )
         return datasets
 
+    def delete(self, dataset_id: str, owner_id: Optional[str] = None) -> bool:
+        endpoint = f"{self.url}/datasets?id=eq.{dataset_id}"
+        if owner_id:
+            endpoint += f"&user_id=eq.{owner_id}"
+        res = self.client.delete(endpoint, headers=self.headers)
+        return res.status_code in (200, 204)
+
 
 class SupabaseReferenceStateRepository(BaseSupabaseRepository, IReferenceStateRepository):
     def save_or_update(self, record: ReferenceStateRecord) -> ReferenceStateRecord:
