@@ -7,11 +7,12 @@ from pydantic import BaseModel, Field
 
 
 class MemoryBuildRequest(BaseModel):
-    model_id: str = Field(..., description="ID of registered model")
+    model_id: Optional[str] = Field(None, description="Optional legacy model ID; path model_id is canonical")
     fault_test_ids: Optional[List[str]] = Field(None, description="Optional list of fault test IDs to include")
     stress_test_ids: Optional[List[str]] = Field(None, description="Optional list of stress test IDs to include")
     n_clusters: int = Field(3, description="Number of failure signature centroids to fit")
     random_state: Optional[int] = Field(42, description="Random seed")
+
 
 
 class SignatureDetail(BaseModel):

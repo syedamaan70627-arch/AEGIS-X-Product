@@ -116,3 +116,32 @@ def test_match_failure_memory_query(setup_memory_resources):
     assert "matched_signature_id" in match_data
     assert "signature_distance" in match_data
     assert "is_known_pattern" in match_data
+
+
+def test_build_failure_memory_without_body_model_id(setup_memory_resources):
+    """Test building Failure Memory when request body omits model_id (matching frontend behavior)."""
+    res = setup_memory_resources
+    response = client.post(
+        f"/api/v1/failure-memory/{res['model_id']}/build",
+        json={"n_clusters": 3, "random_state": 42},
+    )
+    assert response.status_code == 201
+    data = response.json()
+    assert "memory_id" in data
+    assert data["model_id"] == res["model_id"]
+    assert data["status"] == "AVAILABLE"
+
+
+def test_build_failure_memory_unknown_model_error():
+    """Test building Failure Memory for non-existent model returns structured error."""
+    response = client.post(
+        "/api/v1/failure-memory/nonexistent-model-9999/build",
+        json={"n_clusters": 3, "random_state": 42},
+    )
+    assert response.status_code in (400, 404)
+    data = response.json()
+    assert "error" in data
+    assert data["error"]["code"] in ("AEGIS_ERROR", "ANALYSIS_ERROR")
+    assert "not found" in data["error"]["message"].lower()
+
+
