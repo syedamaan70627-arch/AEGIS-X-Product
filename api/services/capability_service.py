@@ -48,10 +48,9 @@ class CapabilityService:
         memories = memory_repo.list_by_model(model_id, owner_id=user_id)
 
         has_ref = ref_state is not None and (Path(ref_state.artifact_path).exists() or StorageService.has_artifact(ref_state.artifact_path, user_id=user_id or "local_dev_user"))
-        pred_key = f"{model_id}/prediction_model.joblib"
-        has_pred = StorageService.has_artifact(pred_key, user_id=user_id or "local_dev_user")
-        warn_key = f"{model_id}/warning_engine.joblib"
-        has_warn = StorageService.has_artifact(warn_key, user_id=user_id or "local_dev_user")
+        has_pred = StorageService.has_prediction_artifact(model_id, user_id=user_id or "local_dev_user")
+        has_warn = StorageService.has_warning_artifact(model_id, user_id=user_id or "local_dev_user")
+
 
         core_status = "READY" if has_ref else "REQUIRES_SETUP"
         core_reason = None if has_ref else "Reference state not fitted. Call POST /api/v1/models/{model_id}/reference/{dataset_id}/fit"

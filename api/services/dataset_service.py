@@ -31,9 +31,10 @@ class DatasetService:
     ) -> DatasetResponse:
         """Upload, validate CSV, check model feature compatibility, and persist dataset record."""
         upper_type = dataset_type.upper().strip()
-        if upper_type not in {"REFERENCE", "EVALUATION"}:
+        allowed_types = {"REFERENCE", "EVALUATION", "TEMPORAL_TRAJECTORY", "PREDICTION_TRAJECTORY"}
+        if upper_type not in allowed_types:
             raise DatasetValidationError(
-                f"Invalid dataset_type '{dataset_type}'. Must be 'REFERENCE' or 'EVALUATION'."
+                f"Invalid dataset_type '{dataset_type}'. Allowed types: {sorted(list(allowed_types))}."
             )
 
         # Verify model exists and belongs to user
@@ -50,21 +51,23 @@ class DatasetService:
         # Validate CSV using StorageService
         loaded_ds = StorageService.load_dataset(str(file_path), target_column=target_column, user_id=user_id)
 
-        # Verify feature count compatibility with model if n_features_in is known
-        if model_rec.n_features_in is not None and model_rec.n_features_in != loaded_ds.num_features:
-            raise FeatureMismatchError(
-                f"Dataset feature count ({loaded_ds.num_features}) does not match model expected features ({model_rec.n_features_in})."
-            )
-
-        # Verify feature names compatibility with model if feature_names_in is known
-        if model_rec.feature_names:
-            model_feat_set = set(model_rec.feature_names)
-            ds_feat_set = set(loaded_ds.feature_names)
-            missing = model_feat_set - ds_feat_set
-            if missing:
+        if upper_type in {"REFERENCE", "EVALUATION"}:
+            # Verify feature count compatibility with model if n_features_in is known
+            if model_rec.n_features_in is not None and model_rec.n_features_in != loaded_ds.num_features:
                 raise FeatureMismatchError(
-                    f"Dataset is missing required model features: {sorted(list(missing))}."
+                    f"Dataset feature count ({loaded_ds.num_features}) does not match model expected features ({model_rec.n_features_in})."
                 )
+
+            # Verify feature names compatibility with model if feature_names_in is known
+            if model_rec.feature_names:
+                model_feat_set = set(model_rec.feature_names)
+                ds_feat_set = set(loaded_ds.feature_names)
+                missing = model_feat_set - ds_feat_set
+                if missing:
+                    raise FeatureMismatchError(
+                        f"Dataset is missing required model features: {sorted(list(missing))}."
+                    )
+
 
         created_at = datetime.now(timezone.utc).isoformat()
 

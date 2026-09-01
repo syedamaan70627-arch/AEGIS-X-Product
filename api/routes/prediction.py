@@ -6,6 +6,8 @@ from fastapi import APIRouter, Depends, status
 
 from api.core.auth import UserContext, get_current_user
 from api.schemas.prediction import (
+    PredictionFitRequest,
+    PredictionFitResponse,
     PredictionListResponse,
     PredictionRequest,
     PredictionResponse,
@@ -13,6 +15,24 @@ from api.schemas.prediction import (
 from api.services.prediction_service import PredictionService
 
 router = APIRouter(tags=["Failure Prediction"])
+
+
+@router.post(
+    "/api/v1/failure-prediction/{model_id}/fit",
+    response_model=PredictionFitResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Fit Failure Predictor Engine",
+)
+async def fit_failure_prediction(
+    model_id: str,
+    request: PredictionFitRequest = PredictionFitRequest(),
+    user: UserContext = Depends(get_current_user),
+):
+    """
+    Fits FailurePredictor engine on a temporal degradation trajectory split and saves artifact to persistent storage.
+    """
+    return PredictionService.fit_prediction_model(model_id, request, user_id=user.user_id)
+
 
 
 @router.post(

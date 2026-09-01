@@ -159,9 +159,26 @@ class StorageService:
         if local_path.exists() and local_path.is_file():
             return joblib.load(local_path)
 
+        clean = artifact_path_str.lstrip("/")
+        if (settings.ARTIFACTS_DIR / clean).exists() and (settings.ARTIFACTS_DIR / clean).is_file():
+            return joblib.load(settings.ARTIFACTS_DIR / clean)
+
+        if clean.startswith("artifacts/"):
+            raw_sub = clean[len("artifacts/"):]
+            if (settings.ARTIFACTS_DIR / raw_sub).exists() and (settings.ARTIFACTS_DIR / raw_sub).is_file():
+                return joblib.load(settings.ARTIFACTS_DIR / raw_sub)
+
         provider = get_storage_provider()
-        content = provider.load_file(artifact_path_str, user_id=user_id)
+        try:
+            content = provider.load_file(artifact_path_str, user_id=user_id)
+        except Exception:
+            if clean.startswith("artifacts/"):
+                raw_sub = clean[len("artifacts/"):]
+                content = provider.load_file(raw_sub, user_id=user_id)
+            else:
+                content = provider.load_file(f"artifacts/{clean}", user_id=user_id)
         return joblib.load(io.BytesIO(content))
+
 
     @classmethod
     def has_artifact(cls, sub_path_str: str, user_id: str = "local_dev_user") -> bool:
@@ -169,12 +186,57 @@ class StorageService:
         local_path = Path(sub_path_str)
         if local_path.exists():
             return True
-        local_art_path = settings.ARTIFACTS_DIR / sub_path_str.lstrip("/")
-        if local_art_path.exists():
+        clean_sub = sub_path_str.lstrip("/")
+        if (settings.ARTIFACTS_DIR / clean_sub).exists():
+            return True
+        if (settings.ARTIFACTS_DIR / "artifacts" / clean_sub).exists():
             return True
         try:
             provider = get_storage_provider()
-            provider.load_file(sub_path_str, user_id=user_id)
+            provider.load_file(f"artifacts/{clean_sub}", user_id=user_id)
             return True
         except Exception:
-            return False
+            try:
+                provider = get_storage_provider()
+                provider.load_file(clean_sub, user_id=user_id)
+                return True
+            except Exception:
+                return False
+
+    @classmethod
+    def save_prediction_artifact(cls, model_id: str, predictor: Any, user_id: str = "local_dev_user") -> Path:
+        """Serialize and save FailurePredictor artifact for a model."""
+        sub_path = f"{model_id}/prediction_model.joblib"
+        return cls.save_joblib_artifact(sub_path, predictor, user_id=user_id)
+
+    @classmethod
+    def load_prediction_artifact(cls, model_id: str, user_id: str = "local_dev_user") -> Any:
+        """Load FailurePredictor artifact for a model via StorageProvider."""
+        sub_path = f"{model_id}/prediction_model.joblib"
+        artifact_key = f"artifacts/{sub_path}"
+        return cls.load_joblib_artifact(artifact_key, user_id=user_id)
+
+    @classmethod
+    def has_prediction_artifact(cls, model_id: str, user_id: str = "local_dev_user") -> bool:
+        """Check if FailurePredictor artifact exists for a model."""
+        sub_path = f"{model_id}/prediction_model.joblib"
+        return cls.has_artifact(sub_path, user_id=user_id)
+
+    @classmethod
+    def save_warning_artifact(cls, model_id: str, engine: Any, user_id: str = "local_dev_user") -> Path:
+        """Serialize and save EarlyWarningEngine artifact for a model."""
+        sub_path = f"{model_id}/warning_engine.joblib"
+        return cls.save_joblib_artifact(sub_path, engine, user_id=user_id)
+
+    @classmethod
+    def load_warning_artifact(cls, model_id: str, user_id: str = "local_dev_user") -> Any:
+        """Load EarlyWarningEngine artifact for a model via StorageProvider."""
+        sub_path = f"{model_id}/warning_engine.joblib"
+        artifact_key = f"artifacts/{sub_path}"
+        return cls.load_joblib_artifact(artifact_key, user_id=user_id)
+
+    @classmethod
+    def has_warning_artifact(cls, model_id: str, user_id: str = "local_dev_user") -> bool:
+        """Check if EarlyWarningEngine artifact exists for a model."""
+        sub_path = f"{model_id}/warning_engine.joblib"
+        return cls.has_artifact(sub_path, user_id=user_id)

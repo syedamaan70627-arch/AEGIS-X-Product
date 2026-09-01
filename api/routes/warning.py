@@ -8,6 +8,8 @@ from api.core.auth import UserContext, get_current_user
 from api.schemas.warning import (
     WarningEvaluationRequest,
     WarningEvaluationResponse,
+    WarningFitRequest,
+    WarningFitResponse,
     WarningListResponse,
     WarningRequest,
     WarningResponse,
@@ -15,6 +17,24 @@ from api.schemas.warning import (
 from api.services.warning_service import WarningService
 
 router = APIRouter(tags=["Early Warning Engine"])
+
+
+@router.post(
+    "/api/v1/early-warning/{model_id}/fit",
+    response_model=WarningFitResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Fit Early Warning Engine",
+)
+async def fit_early_warning(
+    model_id: str,
+    request: WarningFitRequest = WarningFitRequest(),
+    user: UserContext = Depends(get_current_user),
+):
+    """
+    Fits EarlyWarningEngine on a temporal degradation trajectory split and saves artifact to persistent storage.
+    """
+    return WarningService.fit_warning_engine(model_id, request, user_id=user.user_id)
+
 
 
 @router.post(

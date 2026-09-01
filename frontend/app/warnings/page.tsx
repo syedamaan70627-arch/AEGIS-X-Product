@@ -26,6 +26,26 @@ export default function EarlyWarningPage() {
 
   const [evaluating, setEvaluating] = useState(false);
   const [evalResult, setEvalResult] = useState<WarningEvaluationResponse | null>(null);
+  const [fitting, setFitting] = useState(false);
+  const [fitSuccess, setFitSuccess] = useState<string | null>(null);
+
+  const handleFitWarning = async () => {
+    if (!selectedModelId) return;
+    setFitting(true);
+    setWarningError(null);
+    setFitSuccess(null);
+    try {
+      await api.fitEarlyWarning(selectedModelId, {});
+      setFitSuccess("Early Warning engine fitted successfully! Capability updated to READY.");
+      const updatedCap = await api.getModelCapabilities(selectedModelId);
+      setCapabilities(updatedCap);
+    } catch (err: any) {
+      setWarningError(err.message || "Failed to fit early warning engine.");
+    } finally {
+      setFitting(false);
+    }
+  };
+
 
   useEffect(() => {
     async function loadModels() {
@@ -150,7 +170,7 @@ export default function EarlyWarningPage() {
       {/* Capability State Safeguard */}
       {warnCap?.status !== "READY" ? (
         <div className="space-y-4">
-          <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl space-y-3">
+          <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl space-y-4">
             <div className="flex items-center space-x-3 text-amber-400 font-bold text-sm">
               <AlertCircle className="w-5 h-5" />
               <span>Early Warning Requires Setup</span>
@@ -161,15 +181,32 @@ export default function EarlyWarningPage() {
             <div className="p-3 bg-slate-950 rounded-lg border border-slate-800/80 text-[11px] text-slate-400 font-mono">
               Status: {warnCap?.status || "NOT_AVAILABLE"} | Horizon Unit: controlled_degradation_states
             </div>
+
+            {warningError && <ErrorState message={warningError} />}
+            {fitSuccess && (
+              <div className="p-3 bg-emerald-950/80 border border-emerald-800 rounded-lg text-emerald-300 text-xs font-semibold">
+                {fitSuccess}
+              </div>
+            )}
+
+            <button
+              onClick={handleFitWarning}
+              disabled={fitting || !selectedModelId}
+              className="w-full md:w-auto px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-semibold text-xs shadow-md transition-colors disabled:opacity-50 flex items-center justify-center space-x-2"
+            >
+              <Play className="w-4 h-4 fill-current" />
+              <span>{fitting ? "Fitting Warning Engine..." : "Setup Early Warning"}</span>
+            </button>
           </div>
 
           <EmptyState
             title="Warning Engine Not Fitted"
-            description="Untrained deployments return status NOT_AVAILABLE. Pre-fitted trajectory warning models are required before querying operational warnings."
+            description="Click 'Setup Early Warning' above to fit the early warning engine on controlled multi-signal temporal degradation trajectory data."
             icon={<Activity className="w-8 h-8" />}
           />
         </div>
       ) : (
+
         <div className="space-y-6">
           <SectionCard title="Query Early Warning Status" subtitle="Query multi-signal temporal warning state">
             {warningError && <ErrorState message={warningError} />}

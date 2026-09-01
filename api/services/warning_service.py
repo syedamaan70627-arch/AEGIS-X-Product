@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional
 import joblib
 
 from aegis.core.data_loader import CSVDataLoader
-from aegis.core.exceptions import AegisError
+from aegis.core.exceptions import AegisError, DatasetValidationError
 from aegis.warning.engine import EarlyWarningEngine
 from api.core.config import settings
 from api.core.dependencies import (
@@ -23,10 +23,13 @@ from api.db.models import WarningRecord
 from api.schemas.warning import (
     WarningEvaluationRequest,
     WarningEvaluationResponse,
+    WarningFitRequest,
+    WarningFitResponse,
     WarningRequest,
     WarningResponse,
 )
 from api.services.storage_service import StorageService
+
 
 
 class WarningServiceError(AegisError):
@@ -54,9 +57,8 @@ class WarningService:
         created_at = datetime.now(timezone.utc).isoformat()
         warning_id = str(uuid.uuid4())
 
-        # Check for pre-fitted warning engine artifact under storage/artifacts/<model_id>/warning_engine.joblib
-        artifact_path = settings.ARTIFACTS_DIR / request.model_id / "warning_engine.joblib"
-        if not artifact_path.exists():
+        # Check for pre-fitted warning engine artifact via StorageService
+        if not StorageService.has_warning_artifact(request.model_id, user_id=user_id):
             response = WarningResponse(
                 warning_id=warning_id,
                 model_id=request.model_id,
@@ -88,8 +90,9 @@ class WarningService:
 
             return response
 
-        # Load fitted warning engine and evaluation dataset
-        warning_engine: EarlyWarningEngine = joblib.load(artifact_path)
+        # Load fitted warning engine via StorageService and evaluation dataset
+        warning_engine: EarlyWarningEngine = StorageService.load_warning_artifact(request.model_id, user_id=user_id)
+
         eval_dataset = CSVDataLoader.load(eval_rec.file_path, target_column=eval_rec.target_column)
 
         warning_res = warning_engine.predict_warning(eval_dataset.X)
@@ -146,11 +149,11 @@ class WarningService:
         if not eval_rec:
             raise WarningServiceError(f"Evaluation dataset '{request.evaluation_dataset_id}' not found.")
 
-        artifact_path = settings.ARTIFACTS_DIR / request.model_id / "warning_engine.joblib"
-        if not artifact_path.exists():
+        if not StorageService.has_warning_artifact(request.model_id, user_id=user_id):
             raise WarningServiceError(f"Early Warning engine is not fitted for model '{request.model_id}'.")
 
-        warning_engine: EarlyWarningEngine = joblib.load(artifact_path)
+        warning_engine: EarlyWarningEngine = StorageService.load_warning_artifact(request.model_id, user_id=user_id)
+
         eval_dataset = CSVDataLoader.load(eval_rec.file_path, target_column=eval_rec.target_column)
 
         eval_res = warning_engine.evaluate_trajectories(eval_dataset.X)
@@ -209,3 +212,100 @@ class WarningService:
             }
             for r in records
         ]
+
+    @classmethod
+    def fit_warning_engine(
+        cls,
+        model_id: str,
+        request: WarningFitRequest,
+        user_id: str = "local_dev_user",
+    ) -> WarningFitResponse:
+        """Fits EarlyWarningEngine on a validated temporal degradation trajectory split and saves artifact via StorageService."""
+        import numpy as np
+        import pandas as pd
+
+        model_repo = get_model_repository()
+        model_rec = model_repo.get_by_id(model_id, owner_id=user_id if user_id != "local_dev_user" else None)
+        if not model_rec:
+            raise WarningServiceError(f"Model '{model_id}' not found.")
+
+        dataset_repo = get_dataset_repository()
+        h_val = request.horizon_val if request.horizon_val is not None else 3
+        target_col = f"Failure_Within_{h_val}"
+
+        if request.trajectory_dataset_id:
+            dataset_rec = dataset_repo.get_by_id(request.trajectory_dataset_id, owner_id=user_id if user_id != "local_dev_user" else None)
+            if not dataset_rec:
+                raise WarningServiceError(f"Trajectory dataset '{request.trajectory_dataset_id}' not found.")
+
+            loaded_ds = StorageService.load_dataset(dataset_rec.file_path, target_column=dataset_rec.target_column, user_id=user_id)
+            df = loaded_ds.X.copy()
+            if loaded_ds.y is not None and dataset_rec.target_column:
+                df[dataset_rec.target_column] = loaded_ds.y
+
+            required_cols = {"ood_risk", "uncertainty_risk", "drift_risk", "fused_risk"}
+            missing_cols = required_cols - set(df.columns)
+            if missing_cols:
+                raise DatasetValidationError(
+                    f"Raw feature dataset cannot be used for early warning setup. Dataset must be a TEMPORAL_TRAJECTORY containing columns {sorted(list(missing_cols))} and '{target_col}'."
+                )
+
+            if target_col not in df.columns:
+                if dataset_rec.target_column and dataset_rec.target_column in df.columns:
+                    df[target_col] = df[dataset_rec.target_column].astype(int)
+                else:
+                    raise DatasetValidationError(
+                        f"Trajectory dataset missing required target column '{target_col}'."
+                    )
+        else:
+            # Deterministic controlled degradation trajectory generator for warning setup
+            seed = request.random_state if request.random_state is not None else 42
+            np.random.seed(seed)
+            n_samples = 60
+            ood = np.random.uniform(0.1, 0.9, n_samples)
+            unc = np.random.uniform(0.1, 0.9, n_samples)
+            drift = np.random.uniform(0.0, 0.5, n_samples)
+            fused = (ood * 0.4 + unc * 0.4 + drift * 0.2)
+            target = np.array([1 if (i % h_val == 0) else 0 for i in range(n_samples)])
+
+            df = pd.DataFrame({
+                "ood_risk": ood,
+                "uncertainty_risk": unc,
+                "drift_risk": drift,
+                "fused_risk": fused,
+                target_col: target,
+                "trajectory_id": np.repeat(np.arange(6), 10),
+            })
+
+        # Leakage-safe train (70%) and validation (30%) split
+        split_idx = max(10, int(len(df) * 0.7))
+        train_df = df.iloc[:split_idx].copy()
+        val_df = df.iloc[split_idx:].copy()
+
+        engine = EarlyWarningEngine(horizon_val=h_val, random_state=request.random_state or 42)
+
+        eval_res = engine.fit(
+            train_df=train_df,
+            validation_df=val_df,
+            target_column=target_col,
+            max_false_warning_rate=request.max_false_warning_rate or 0.20,
+            random_state=request.random_state or 42,
+        )
+
+        # Save fitted warning engine artifact via StorageService
+        StorageService.save_warning_artifact(model_id, engine, user_id=user_id)
+
+        fitted_at = datetime.now(timezone.utc).isoformat()
+
+        return WarningFitResponse(
+            model_id=model_id,
+            status="fitted",
+            horizon_value=h_val,
+            horizon_unit="controlled_degradation_states",
+            warning_threshold=eval_res.warning_threshold,
+            state_level_metrics=eval_res.state_level_metrics,
+            fitted_at=fitted_at,
+            warnings=eval_res.warnings,
+            limitations=eval_res.limitations,
+        )
+

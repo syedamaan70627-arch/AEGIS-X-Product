@@ -367,4 +367,25 @@ export const api = {
   getWarning: async (warningId: string): Promise<any> => {
     return authenticatedFetch<any>(`${BASE_URL}/warnings/${warningId}`);
   },
+
+  fitFailurePrediction: async (
+    modelId: string,
+    body?: { trajectory_dataset_id?: string; feature_set_type?: string; model_type?: string; random_state?: number }
+  ): Promise<any> => {
+    return authenticatedFetch<any>(`${BASE_URL}/failure-prediction/${modelId}/fit`, {
+      method: "POST",
+      body: JSON.stringify(body || {}),
+    });
+  },
+
+  fitEarlyWarning: async (
+    modelId: string,
+    body?: { trajectory_dataset_id?: string; horizon_val?: number; max_false_warning_rate?: number; random_state?: number }
+  ): Promise<any> => {
+    return authenticatedFetch<any>(`${BASE_URL}/early-warning/${modelId}/fit`, {
+      method: "POST",
+      body: JSON.stringify(body || {}),
+    });
+  },
 };
+

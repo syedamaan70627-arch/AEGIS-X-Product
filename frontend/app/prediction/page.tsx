@@ -23,6 +23,26 @@ export default function FailurePredictionPage() {
   const [executing, setExecuting] = useState(false);
   const [predictionResult, setPredictionResult] = useState<PredictionResponse | null>(null);
   const [predictionError, setPredictionError] = useState<string | null>(null);
+  const [fitting, setFitting] = useState(false);
+  const [fitSuccess, setFitSuccess] = useState<string | null>(null);
+
+  const handleFitPrediction = async () => {
+    if (!selectedModelId) return;
+    setFitting(true);
+    setPredictionError(null);
+    setFitSuccess(null);
+    try {
+      await api.fitFailurePrediction(selectedModelId, {});
+      setFitSuccess("Failure prediction model fitted successfully! Capability updated to READY.");
+      const updatedCap = await api.getModelCapabilities(selectedModelId);
+      setCapabilities(updatedCap);
+    } catch (err: any) {
+      setPredictionError(err.message || "Failed to fit failure predictor.");
+    } finally {
+      setFitting(false);
+    }
+  };
+
 
   useEffect(() => {
     async function loadModels() {
@@ -120,9 +140,10 @@ export default function FailurePredictionPage() {
       )}
 
       {/* Capability State Safeguard */}
+
       {predCap?.status !== "READY" ? (
         <div className="space-y-4">
-          <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl space-y-3">
+          <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl space-y-4">
             <div className="flex items-center space-x-3 text-amber-400 font-bold text-sm">
               <AlertCircle className="w-5 h-5" />
               <span>Failure Prediction Requires Setup</span>
@@ -133,15 +154,32 @@ export default function FailurePredictionPage() {
             <div className="p-3 bg-slate-950 rounded-lg border border-slate-800/80 text-[11px] text-slate-400 font-mono">
               Status: {predCap?.status || "NOT_AVAILABLE"} | Horizon Unit: controlled_degradation_states
             </div>
+
+            {predictionError && <ErrorState message={predictionError} />}
+            {fitSuccess && (
+              <div className="p-3 bg-emerald-950/80 border border-emerald-800 rounded-lg text-emerald-300 text-xs font-semibold">
+                {fitSuccess}
+              </div>
+            )}
+
+            <button
+              onClick={handleFitPrediction}
+              disabled={fitting || !selectedModelId}
+              className="w-full md:w-auto px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-semibold text-xs shadow-md transition-colors disabled:opacity-50 flex items-center justify-center space-x-2"
+            >
+              <Play className="w-4 h-4 fill-current" />
+              <span>{fitting ? "Fitting Predictor Engine..." : "Setup Failure Prediction"}</span>
+            </button>
           </div>
 
           <EmptyState
             title="Prediction Artifact Not Fitted"
-            description="Untrained deployments return status NOT_AVAILABLE. Pre-fitted degradation models are required before invoking onset prediction."
+            description="Click 'Setup Failure Prediction' above to fit the failure predictor on controlled temporal degradation trajectory data."
             icon={<FileCheck className="w-8 h-8" />}
           />
         </div>
       ) : (
+
         <div className="space-y-6">
           <SectionCard title="Execute Failure Prediction" subtitle="Predict onset probability across evaluation dataset">
             {predictionError && <ErrorState message={predictionError} />}

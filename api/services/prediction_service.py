@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional
 import joblib
 
 from aegis.core.data_loader import CSVDataLoader
-from aegis.core.exceptions import AegisError
+from aegis.core.exceptions import AegisError, DatasetValidationError
 from aegis.prediction.engine import FailurePredictor
 from api.core.config import settings
 from api.core.dependencies import (
@@ -22,10 +22,13 @@ from api.core.dependencies import (
 from api.db.models import PredictionRecord
 from api.schemas.prediction import (
     PredictionEventDetail,
+    PredictionFitRequest,
+    PredictionFitResponse,
     PredictionRequest,
     PredictionResponse,
 )
 from api.services.storage_service import StorageService
+
 
 
 class PredictionServiceError(AegisError):
@@ -53,9 +56,8 @@ class PredictionService:
         created_at = datetime.now(timezone.utc).isoformat()
         prediction_id = str(uuid.uuid4())
 
-        # Check for pre-fitted predictor artifact under storage/artifacts/<model_id>/prediction_model.joblib
-        artifact_path = settings.ARTIFACTS_DIR / request.model_id / "prediction_model.joblib"
-        if not artifact_path.exists():
+        # Check for pre-fitted predictor artifact via StorageService
+        if not StorageService.has_prediction_artifact(request.model_id, user_id=user_id):
             response = PredictionResponse(
                 prediction_id=prediction_id,
                 model_id=request.model_id,
@@ -86,8 +88,9 @@ class PredictionService:
 
             return response
 
-        # Load fitted predictor and evaluation dataset
-        predictor: FailurePredictor = joblib.load(artifact_path)
+        # Load fitted predictor via StorageService and evaluation dataset
+        predictor: FailurePredictor = StorageService.load_prediction_artifact(request.model_id, user_id=user_id)
+
         eval_dataset = CSVDataLoader.load(eval_rec.file_path, target_column=eval_rec.target_column)
 
         pred_result = predictor.predict(eval_dataset.X, y_true_onset=eval_dataset.y)
@@ -173,3 +176,106 @@ class PredictionService:
             }
             for r in records
         ]
+
+    @classmethod
+    def fit_prediction_model(
+        cls,
+        model_id: str,
+        request: PredictionFitRequest,
+        user_id: str = "local_dev_user",
+    ) -> PredictionFitResponse:
+        """Fits FailurePredictor on a validated temporal degradation trajectory split and saves artifact via StorageService."""
+        import numpy as np
+        import pandas as pd
+
+        model_repo = get_model_repository()
+        model_rec = model_repo.get_by_id(model_id, owner_id=user_id if user_id != "local_dev_user" else None)
+        if not model_rec:
+            raise PredictionServiceError(f"Model '{model_id}' not found.")
+
+        dataset_repo = get_dataset_repository()
+
+        if request.trajectory_dataset_id:
+            dataset_rec = dataset_repo.get_by_id(request.trajectory_dataset_id, owner_id=user_id if user_id != "local_dev_user" else None)
+            if not dataset_rec:
+                raise PredictionServiceError(f"Trajectory dataset '{request.trajectory_dataset_id}' not found.")
+
+            loaded_ds = StorageService.load_dataset(dataset_rec.file_path, target_column=dataset_rec.target_column, user_id=user_id)
+            df = loaded_ds.X.copy()
+            if loaded_ds.y is not None and dataset_rec.target_column:
+                df[dataset_rec.target_column] = loaded_ds.y
+
+            required_cols = {"ood_risk", "uncertainty_risk", "drift_risk", "fused_risk"}
+            missing_cols = required_cols - set(df.columns)
+            if missing_cols:
+                raise DatasetValidationError(
+                    f"Raw feature dataset cannot be used for failure prediction setup. Dataset must be a TEMPORAL_TRAJECTORY containing columns {sorted(list(missing_cols))} and 'Failure_Onset_Next'."
+                )
+
+            if "Failure_Onset_Next" not in df.columns:
+                if dataset_rec.target_column and dataset_rec.target_column in df.columns:
+                    df["Failure_Onset_Next"] = df[dataset_rec.target_column].astype(int)
+                else:
+                    raise DatasetValidationError(
+                        "Trajectory dataset missing required target column 'Failure_Onset_Next'."
+                    )
+        else:
+            # Deterministic controlled degradation trajectory generator for setup
+            seed = request.random_state if request.random_state is not None else 42
+            np.random.seed(seed)
+            n_samples = 60
+            ood = np.random.uniform(0.1, 0.9, n_samples)
+            unc = np.random.uniform(0.1, 0.9, n_samples)
+            drift = np.random.uniform(0.0, 0.5, n_samples)
+            fused = (ood * 0.4 + unc * 0.4 + drift * 0.2)
+            target = np.array([1 if (i % 4 == 0) else 0 for i in range(n_samples)])
+
+            df = pd.DataFrame({
+                "ood_risk": ood,
+                "uncertainty_risk": unc,
+                "drift_risk": drift,
+                "fused_risk": fused,
+                "Failure_Onset_Next": target,
+            })
+
+        # Leakage-safe train (70%) and validation (30%) split
+        split_idx = max(10, int(len(df) * 0.7))
+        train_df = df.iloc[:split_idx].copy()
+        val_df = df.iloc[split_idx:].copy()
+
+        predictor = FailurePredictor(
+            feature_set_type=request.feature_set_type or "dynamic",
+            model_type=request.model_type or "random_forest",
+            random_state=request.random_state or 42,
+        )
+
+        fit_res = predictor.fit(
+            train_df=train_df,
+            validation_df=val_df,
+            target_column="Failure_Onset_Next",
+            random_state=request.random_state or 42,
+        )
+
+        # Save fitted predictor via StorageService
+        StorageService.save_prediction_artifact(model_id, predictor, user_id=user_id)
+
+        fitted_at = datetime.now(timezone.utc).isoformat()
+        t_info = fit_res.threshold_info
+
+        return PredictionFitResponse(
+            model_id=model_id,
+            status="fitted",
+            selected_predictor=fit_res.selected_predictor,
+            horizon_steps=fit_res.horizon_steps,
+            horizon_unit="controlled_degradation_states",
+            threshold=t_info.threshold if t_info else None,
+            heldout_metrics={
+                "validation_f1": t_info.validation_f1 if t_info else 0.0,
+                "validation_recall": t_info.validation_recall if t_info else 0.0,
+                "validation_precision": t_info.validation_precision if t_info else 0.0,
+            } if t_info else None,
+            fitted_at=fitted_at,
+            warnings=fit_res.warnings,
+            limitations=fit_res.limitations,
+        )
+

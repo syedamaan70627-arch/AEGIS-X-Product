@@ -40,3 +40,24 @@ class PredictionResponse(BaseModel):
 class PredictionListResponse(BaseModel):
     total: int
     predictions: List[Dict[str, Any]]
+
+
+class PredictionFitRequest(BaseModel):
+    trajectory_dataset_id: Optional[str] = Field(None, description="Optional ID of uploaded TEMPORAL_TRAJECTORY dataset")
+    feature_set_type: str = Field("dynamic", description="Feature set type: dynamic or static")
+    model_type: str = Field("random_forest", description="Predictor model type: random_forest or gradient_boosting")
+    random_state: Optional[int] = Field(42, description="Random seed")
+
+
+class PredictionFitResponse(BaseModel):
+    model_id: str
+    status: str = "fitted"
+    selected_predictor: str
+    horizon_steps: int = 1
+    horizon_unit: str = "controlled_degradation_states"
+    threshold: Optional[float] = None
+    heldout_metrics: Optional[Dict[str, float]] = None
+    fitted_at: str
+    warnings: List[str] = Field(default_factory=list)
+    limitations: List[str] = Field(default_factory=list)
+

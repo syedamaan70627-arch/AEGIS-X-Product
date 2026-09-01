@@ -50,3 +50,23 @@ class WarningEvaluationResponse(BaseModel):
 class WarningListResponse(BaseModel):
     total: int
     warnings: List[Dict[str, Any]]
+
+
+class WarningFitRequest(BaseModel):
+    trajectory_dataset_id: Optional[str] = Field(None, description="Optional ID of uploaded TEMPORAL_TRAJECTORY dataset")
+    horizon_val: int = Field(3, description="Early warning lead horizon in controlled degradation states")
+    max_false_warning_rate: float = Field(0.20, description="Max allowed false warning rate on validation split")
+    random_state: Optional[int] = Field(42, description="Random seed")
+
+
+class WarningFitResponse(BaseModel):
+    model_id: str
+    status: str = "fitted"
+    horizon_value: int = 3
+    horizon_unit: str = "controlled_degradation_states"
+    warning_threshold: float
+    state_level_metrics: Optional[Dict[str, float]] = None
+    fitted_at: str
+    warnings: List[str] = Field(default_factory=list)
+    limitations: List[str] = Field(default_factory=list)
+
