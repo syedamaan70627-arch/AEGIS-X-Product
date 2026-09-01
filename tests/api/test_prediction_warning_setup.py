@@ -119,12 +119,20 @@ def test_prediction_setup_valid_trajectory(registered_model, temporal_trajectory
     assert predictor.is_fitted
 
 
-def test_auto_synthetic_prediction_setup(registered_model):
-    """Test setup without uploading a trajectory dataset (auto-synthesizes temporal trajectory)."""
+def test_prediction_setup_missing_trajectory_dataset_returns_error(registered_model):
+    """Scientific Integrity Fix: Setup without trajectory_dataset_id must return HTTP 400 error."""
     res = client.post(f"/api/v1/failure-prediction/{registered_model}/fit", json={})
-    assert res.status_code == 200
-    assert res.json()["status"] == "fitted"
-    assert StorageService.has_prediction_artifact(registered_model)
+    assert res.status_code == 400
+    data = res.json()
+    assert "requires" in data["error"]["message"].lower() or "dataset" in data["error"]["message"].lower()
+
+
+def test_warning_setup_missing_trajectory_dataset_returns_error(registered_model):
+    """Scientific Integrity Fix: Early warning setup without trajectory_dataset_id must return HTTP 400 error."""
+    res = client.post(f"/api/v1/early-warning/{registered_model}/fit", json={})
+    assert res.status_code == 400
+    data = res.json()
+    assert "requires" in data["error"]["message"].lower() or "dataset" in data["error"]["message"].lower()
 
 
 def test_warning_setup_valid_trajectory(registered_model, temporal_trajectory_dataset):
@@ -151,9 +159,15 @@ def test_warning_setup_valid_trajectory(registered_model, temporal_trajectory_da
 
 def test_prediction_and_warning_execution_after_setup(registered_model, temporal_trajectory_dataset):
     """Requirements 12 & 16: Prediction and warning execution succeed after setup."""
-    # Fit prediction & warning engines
-    client.post(f"/api/v1/failure-prediction/{registered_model}/fit", json={})
-    client.post(f"/api/v1/early-warning/{registered_model}/fit", json={})
+    # Fit prediction & warning engines with valid trajectory
+    client.post(
+        f"/api/v1/failure-prediction/{registered_model}/fit",
+        json={"trajectory_dataset_id": temporal_trajectory_dataset},
+    )
+    client.post(
+        f"/api/v1/early-warning/{registered_model}/fit",
+        json={"trajectory_dataset_id": temporal_trajectory_dataset},
+    )
 
     # Execute Prediction
     pred_res = client.post(
@@ -172,9 +186,8 @@ def test_prediction_and_warning_execution_after_setup(registered_model, temporal
     assert warn_res.json()["status"] == "AVAILABLE"
 
 
-
 def test_setup_unauthorized_model_access():
     """Requirement 10: Owner isolation preserved."""
-    # Trying to setup non-existent or unowned model ID
-    res = client.post("/api/v1/failure-prediction/nonexistent-model-999/fit", json={})
+    res = client.post("/api/v1/failure-prediction/nonexistent-model-999/fit", json={"trajectory_dataset_id": "ds-1"})
     assert res.status_code in (400, 404)
+

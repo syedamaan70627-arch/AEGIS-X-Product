@@ -13,7 +13,7 @@ afterEach(() => {
   setAuthToken(null);
 });
 
-test("Scenario 7: Failure Prediction setup API call sends fit request to model endpoint", async () => {
+test("Scenario 7: Failure Prediction setup API call sends fit request with trajectory_dataset_id", async () => {
   let targetUrl = "";
   let parsedBody: any = null;
 
@@ -34,13 +34,14 @@ test("Scenario 7: Failure Prediction setup API call sends fit request to model e
     );
   }) as typeof fetch;
 
-  const res = await api.fitFailurePrediction("model-pred-123", {});
+  const res = await api.fitFailurePrediction("model-pred-123", { trajectory_dataset_id: "ds-traj-789" });
   assert.ok(targetUrl.endsWith("/failure-prediction/model-pred-123/fit"));
+  assert.strictEqual(parsedBody.trajectory_dataset_id, "ds-traj-789");
   assert.strictEqual(res.status, "fitted");
   assert.strictEqual(res.horizon_unit, "controlled_degradation_states");
 });
 
-test("Scenario 8: Early Warning setup API call sends fit request to model endpoint", async () => {
+test("Scenario 8: Early Warning setup API call sends fit request with trajectory_dataset_id", async () => {
   let targetUrl = "";
   let parsedBody: any = null;
 
@@ -60,9 +61,11 @@ test("Scenario 8: Early Warning setup API call sends fit request to model endpoi
     );
   }) as typeof fetch;
 
-  const res = await api.fitEarlyWarning("model-warn-456", { horizon_val: 3 });
+  const res = await api.fitEarlyWarning("model-warn-456", { trajectory_dataset_id: "ds-traj-789", horizon_val: 3 });
   assert.ok(targetUrl.endsWith("/early-warning/model-warn-456/fit"));
+  assert.strictEqual(parsedBody.trajectory_dataset_id, "ds-traj-789");
   assert.strictEqual(parsedBody.horizon_val, 3);
   assert.strictEqual(res.status, "fitted");
   assert.strictEqual(res.horizon_unit, "controlled_degradation_states");
 });
+

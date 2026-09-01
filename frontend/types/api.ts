@@ -50,7 +50,7 @@ export interface ModelListResponse {
 export interface DatasetRecord {
   dataset_id: string;
   model_id: string;
-  dataset_type: "REFERENCE" | "EVALUATION";
+  dataset_type: "REFERENCE" | "EVALUATION" | "TEMPORAL_TRAJECTORY" | "PREDICTION_TRAJECTORY";
   filename: string;
   target_column?: string | null;
   num_samples: number;
@@ -58,6 +58,7 @@ export interface DatasetRecord {
   feature_names: string[];
   has_target: boolean;
   created_at: string;
+
   status: string;
 }
 

@@ -93,7 +93,8 @@ class WarningService:
         # Load fitted warning engine via StorageService and evaluation dataset
         warning_engine: EarlyWarningEngine = StorageService.load_warning_artifact(request.model_id, user_id=user_id)
 
-        eval_dataset = CSVDataLoader.load(eval_rec.file_path, target_column=eval_rec.target_column)
+        eval_dataset = StorageService.load_dataset(eval_rec.file_path, target_column=eval_rec.target_column, user_id=user_id)
+
 
         warning_res = warning_engine.predict_warning(eval_dataset.X)
 
@@ -154,7 +155,8 @@ class WarningService:
 
         warning_engine: EarlyWarningEngine = StorageService.load_warning_artifact(request.model_id, user_id=user_id)
 
-        eval_dataset = CSVDataLoader.load(eval_rec.file_path, target_column=eval_rec.target_column)
+        eval_dataset = StorageService.load_dataset(eval_rec.file_path, target_column=eval_rec.target_column, user_id=user_id)
+
 
         eval_res = warning_engine.evaluate_trajectories(eval_dataset.X)
 
@@ -229,53 +231,62 @@ class WarningService:
         if not model_rec:
             raise WarningServiceError(f"Model '{model_id}' not found.")
 
+        if not request.trajectory_dataset_id:
+            raise DatasetValidationError(
+                f"Early Warning setup requires selecting an uploaded TEMPORAL_TRAJECTORY dataset containing "
+                f"temporal reliability signals ['ood_risk', 'uncertainty_risk', 'drift_risk', 'fused_risk'] "
+                f"and ground-truth failure labels."
+            )
+
         dataset_repo = get_dataset_repository()
         h_val = request.horizon_val if request.horizon_val is not None else 3
         target_col = f"Failure_Within_{h_val}"
 
-        if request.trajectory_dataset_id:
-            dataset_rec = dataset_repo.get_by_id(request.trajectory_dataset_id, owner_id=user_id if user_id != "local_dev_user" else None)
-            if not dataset_rec:
-                raise WarningServiceError(f"Trajectory dataset '{request.trajectory_dataset_id}' not found.")
+        dataset_rec = dataset_repo.get_by_id(request.trajectory_dataset_id, owner_id=user_id if user_id != "local_dev_user" else None)
+        if not dataset_rec:
+            raise WarningServiceError(f"Trajectory dataset '{request.trajectory_dataset_id}' not found.")
 
-            loaded_ds = StorageService.load_dataset(dataset_rec.file_path, target_column=dataset_rec.target_column, user_id=user_id)
-            df = loaded_ds.X.copy()
-            if loaded_ds.y is not None and dataset_rec.target_column:
-                df[dataset_rec.target_column] = loaded_ds.y
+        loaded_ds = StorageService.load_dataset(dataset_rec.file_path, target_column=dataset_rec.target_column, user_id=user_id)
+        df = loaded_ds.X.copy()
+        if loaded_ds.y is not None and dataset_rec.target_column:
+            df[dataset_rec.target_column] = loaded_ds.y
 
-            required_cols = {"ood_risk", "uncertainty_risk", "drift_risk", "fused_risk"}
-            missing_cols = required_cols - set(df.columns)
-            if missing_cols:
-                raise DatasetValidationError(
-                    f"Raw feature dataset cannot be used for early warning setup. Dataset must be a TEMPORAL_TRAJECTORY containing columns {sorted(list(missing_cols))} and '{target_col}'."
+        required_cols = {"ood_risk", "uncertainty_risk", "drift_risk", "fused_risk"}
+        missing_cols = required_cols - set(df.columns)
+        if missing_cols:
+            raise DatasetValidationError(
+                f"Raw feature dataset cannot be used for early warning setup. "
+                f"Dataset must be a TEMPORAL_TRAJECTORY containing columns {sorted(list(missing_cols))} and '{target_col}'."
+            )
+
+        if target_col in df.columns:
+            df[target_col] = df[target_col].astype(int)
+        elif "is_failure" in df.columns:
+            if "trajectory_id" in df.columns:
+                df[target_col] = (
+                    df.groupby("trajectory_id")["is_failure"]
+                    .shift(-1)
+                    .rolling(h_val, min_periods=1)
+                    .max()
+                    .fillna(0)
+                    .astype(int)
                 )
-
-            if target_col not in df.columns:
-                if dataset_rec.target_column and dataset_rec.target_column in df.columns:
-                    df[target_col] = df[dataset_rec.target_column].astype(int)
-                else:
-                    raise DatasetValidationError(
-                        f"Trajectory dataset missing required target column '{target_col}'."
-                    )
+            else:
+                df[target_col] = (
+                    df["is_failure"]
+                    .shift(-1)
+                    .rolling(h_val, min_periods=1)
+                    .max()
+                    .fillna(0)
+                    .astype(int)
+                )
+        elif dataset_rec.target_column and dataset_rec.target_column in df.columns:
+            df[target_col] = df[dataset_rec.target_column].astype(int)
         else:
-            # Deterministic controlled degradation trajectory generator for warning setup
-            seed = request.random_state if request.random_state is not None else 42
-            np.random.seed(seed)
-            n_samples = 60
-            ood = np.random.uniform(0.1, 0.9, n_samples)
-            unc = np.random.uniform(0.1, 0.9, n_samples)
-            drift = np.random.uniform(0.0, 0.5, n_samples)
-            fused = (ood * 0.4 + unc * 0.4 + drift * 0.2)
-            target = np.array([1 if (i % h_val == 0) else 0 for i in range(n_samples)])
+            raise DatasetValidationError(
+                f"Trajectory dataset missing required target column '{target_col}' or 'is_failure' ground-truth state sequence."
+            )
 
-            df = pd.DataFrame({
-                "ood_risk": ood,
-                "uncertainty_risk": unc,
-                "drift_risk": drift,
-                "fused_risk": fused,
-                target_col: target,
-                "trajectory_id": np.repeat(np.arange(6), 10),
-            })
 
         # Leakage-safe train (70%) and validation (30%) split
         split_idx = max(10, int(len(df) * 0.7))

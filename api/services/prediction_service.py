@@ -91,7 +91,7 @@ class PredictionService:
         # Load fitted predictor via StorageService and evaluation dataset
         predictor: FailurePredictor = StorageService.load_prediction_artifact(request.model_id, user_id=user_id)
 
-        eval_dataset = CSVDataLoader.load(eval_rec.file_path, target_column=eval_rec.target_column)
+        eval_dataset = StorageService.load_dataset(eval_rec.file_path, target_column=eval_rec.target_column, user_id=user_id)
 
         pred_result = predictor.predict(eval_dataset.X, y_true_onset=eval_dataset.y)
 
@@ -193,50 +193,45 @@ class PredictionService:
         if not model_rec:
             raise PredictionServiceError(f"Model '{model_id}' not found.")
 
+        if not request.trajectory_dataset_id:
+            raise DatasetValidationError(
+                "Failure Prediction setup requires selecting an uploaded TEMPORAL_TRAJECTORY dataset containing "
+                "temporal reliability signals ['ood_risk', 'uncertainty_risk', 'drift_risk', 'fused_risk'] "
+                "and ground-truth failure labels."
+            )
+
         dataset_repo = get_dataset_repository()
+        dataset_rec = dataset_repo.get_by_id(request.trajectory_dataset_id, owner_id=user_id if user_id != "local_dev_user" else None)
+        if not dataset_rec:
+            raise PredictionServiceError(f"Trajectory dataset '{request.trajectory_dataset_id}' not found.")
 
-        if request.trajectory_dataset_id:
-            dataset_rec = dataset_repo.get_by_id(request.trajectory_dataset_id, owner_id=user_id if user_id != "local_dev_user" else None)
-            if not dataset_rec:
-                raise PredictionServiceError(f"Trajectory dataset '{request.trajectory_dataset_id}' not found.")
+        loaded_ds = StorageService.load_dataset(dataset_rec.file_path, target_column=dataset_rec.target_column, user_id=user_id)
+        df = loaded_ds.X.copy()
+        if loaded_ds.y is not None and dataset_rec.target_column:
+            df[dataset_rec.target_column] = loaded_ds.y
 
-            loaded_ds = StorageService.load_dataset(dataset_rec.file_path, target_column=dataset_rec.target_column, user_id=user_id)
-            df = loaded_ds.X.copy()
-            if loaded_ds.y is not None and dataset_rec.target_column:
-                df[dataset_rec.target_column] = loaded_ds.y
+        required_cols = {"ood_risk", "uncertainty_risk", "drift_risk", "fused_risk"}
+        missing_cols = required_cols - set(df.columns)
+        if missing_cols:
+            raise DatasetValidationError(
+                f"Raw feature dataset cannot be used for failure prediction setup. "
+                f"Dataset must be a TEMPORAL_TRAJECTORY containing columns {sorted(list(missing_cols))} and 'Failure_Onset_Next'."
+            )
 
-            required_cols = {"ood_risk", "uncertainty_risk", "drift_risk", "fused_risk"}
-            missing_cols = required_cols - set(df.columns)
-            if missing_cols:
-                raise DatasetValidationError(
-                    f"Raw feature dataset cannot be used for failure prediction setup. Dataset must be a TEMPORAL_TRAJECTORY containing columns {sorted(list(missing_cols))} and 'Failure_Onset_Next'."
-                )
-
-            if "Failure_Onset_Next" not in df.columns:
-                if dataset_rec.target_column and dataset_rec.target_column in df.columns:
-                    df["Failure_Onset_Next"] = df[dataset_rec.target_column].astype(int)
-                else:
-                    raise DatasetValidationError(
-                        "Trajectory dataset missing required target column 'Failure_Onset_Next'."
-                    )
+        if "Failure_Onset_Next" in df.columns:
+            df["Failure_Onset_Next"] = df["Failure_Onset_Next"].astype(int)
+        elif "is_failure" in df.columns:
+            if "trajectory_id" in df.columns:
+                df["Failure_Onset_Next"] = df.groupby("trajectory_id")["is_failure"].shift(-1).fillna(0).astype(int)
+            else:
+                df["Failure_Onset_Next"] = df["is_failure"].shift(-1).fillna(0).astype(int)
+        elif dataset_rec.target_column and dataset_rec.target_column in df.columns:
+            df["Failure_Onset_Next"] = df[dataset_rec.target_column].astype(int)
         else:
-            # Deterministic controlled degradation trajectory generator for setup
-            seed = request.random_state if request.random_state is not None else 42
-            np.random.seed(seed)
-            n_samples = 60
-            ood = np.random.uniform(0.1, 0.9, n_samples)
-            unc = np.random.uniform(0.1, 0.9, n_samples)
-            drift = np.random.uniform(0.0, 0.5, n_samples)
-            fused = (ood * 0.4 + unc * 0.4 + drift * 0.2)
-            target = np.array([1 if (i % 4 == 0) else 0 for i in range(n_samples)])
+            raise DatasetValidationError(
+                "Trajectory dataset missing required target column 'Failure_Onset_Next' or 'is_failure' ground-truth state sequence."
+            )
 
-            df = pd.DataFrame({
-                "ood_risk": ood,
-                "uncertainty_risk": unc,
-                "drift_risk": drift,
-                "fused_risk": fused,
-                "Failure_Onset_Next": target,
-            })
 
         # Leakage-safe train (70%) and validation (30%) split
         split_idx = max(10, int(len(df) * 0.7))

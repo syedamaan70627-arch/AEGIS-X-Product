@@ -26,16 +26,17 @@ export default function EarlyWarningPage() {
 
   const [evaluating, setEvaluating] = useState(false);
   const [evalResult, setEvalResult] = useState<WarningEvaluationResponse | null>(null);
+  const [selectedTrajectoryId, setSelectedTrajectoryId] = useState<string>("");
   const [fitting, setFitting] = useState(false);
   const [fitSuccess, setFitSuccess] = useState<string | null>(null);
 
   const handleFitWarning = async () => {
-    if (!selectedModelId) return;
+    if (!selectedModelId || !selectedTrajectoryId) return;
     setFitting(true);
     setWarningError(null);
     setFitSuccess(null);
     try {
-      await api.fitEarlyWarning(selectedModelId, {});
+      await api.fitEarlyWarning(selectedModelId, { trajectory_dataset_id: selectedTrajectoryId });
       setFitSuccess("Early Warning engine fitted successfully! Capability updated to READY.");
       const updatedCap = await api.getModelCapabilities(selectedModelId);
       setCapabilities(updatedCap);
@@ -46,7 +47,6 @@ export default function EarlyWarningPage() {
     }
   };
 
-
   useEffect(() => {
     async function loadModels() {
       setLoading(true);
@@ -56,8 +56,7 @@ export default function EarlyWarningPage() {
         const loaded = res.models || [];
         setModels(loaded);
         if (loaded.length > 0) {
-          const activeId = selectedModelId || loaded[0].model_id;
-          setSelectedModelId(activeId);
+          setSelectedModelId(loaded[0].model_id);
         }
       } catch (err: any) {
         setError(err.message || "Failed to load models.");
@@ -69,21 +68,29 @@ export default function EarlyWarningPage() {
   }, []);
 
   useEffect(() => {
-    async function loadModelContext() {
-      if (!selectedModelId) return;
+    if (!selectedModelId) return;
+    async function loadCapabilitiesAndDatasets() {
       try {
         const [capRes, dsRes] = await Promise.all([
           api.getModelCapabilities(selectedModelId),
           api.listDatasets(selectedModelId),
         ]);
         setCapabilities(capRes);
-        const evals = (dsRes.datasets || []).filter((d) => d.dataset_type === "EVALUATION");
-        setDatasets(evals);
-        if (evals.length > 0) setSelectedDatasetId(evals[0].dataset_id);
-        else setSelectedDatasetId("");
-      } catch (_) {}
+        const dsList = dsRes.datasets || [];
+        setDatasets(dsList);
+        if (dsList.length > 0) {
+          const evalDs = dsList.find((d) => d.dataset_type === "EVALUATION") || dsList[0];
+          setSelectedDatasetId(evalDs.dataset_id);
+          const trajDs = dsList.find((d) => d.dataset_type === "TEMPORAL_TRAJECTORY" || d.dataset_type === "PREDICTION_TRAJECTORY");
+          if (trajDs) {
+            setSelectedTrajectoryId(trajDs.dataset_id);
+          }
+        }
+      } catch (err: any) {
+        setWarningError(err.message || "Failed to load capabilities or datasets.");
+      }
     }
-    loadModelContext();
+    loadCapabilitiesAndDatasets();
   }, [selectedModelId]);
 
   const handleQueryWarning = async (e: React.FormEvent) => {
@@ -125,27 +132,38 @@ export default function EarlyWarningPage() {
   };
 
   if (loading) return <LoadingState message="Checking Early Warning engine readiness..." />;
-  if (error) return <ErrorState message={error} />;
 
   const warnCap = capabilities?.capabilities?.early_warning;
+  const trajectoryDatasets = datasets.filter((d) => d.dataset_type === "TEMPORAL_TRAJECTORY" || d.dataset_type === "PREDICTION_TRAJECTORY");
 
   return (
     <div className="space-y-8">
-      <PageHeader
-        title="Early Warning Engine"
-        description="Dynamic multi-signal temporal warning query and lead time evaluation."
-        badge={<StatusBadge status={warnCap?.status || "NOT_AVAILABLE"} />}
-      />
+      <div>
+        <h1 className="text-2xl font-bold text-slate-100 flex items-center space-x-3">
+          <Activity className="w-7 h-7 text-indigo-400" />
+          <span>Early Warning System</span>
+        </h1>
+        <p className="text-sm text-slate-400 mt-1">
+          Multi-signal temporal warning status and lead-time evaluation across controlled degradation trajectories.
+        </p>
+      </div>
 
-      {/* Model Selector Bar */}
+      {error && <ErrorState message={error} />}
+
+      {/* Model Selector Card */}
       {models.length > 0 && (
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center justify-between text-xs">
-          <div className="flex items-center space-x-3">
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center justify-between">
+          <div className="flex items-center space-x-3 text-xs">
             <Layers className="w-4 h-4 text-indigo-400" />
             <span className="font-semibold text-slate-200">Active Model:</span>
             <select
               value={selectedModelId}
-              onChange={(e) => setSelectedModelId(e.target.value)}
+              onChange={(e) => {
+                setSelectedModelId(e.target.value);
+                setEvalResult(null);
+                setWarningError(null);
+                setFitSuccess(null);
+              }}
               className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-slate-100 font-mono focus:outline-none focus:border-indigo-500"
             >
               {models.map((m) => (
@@ -158,7 +176,6 @@ export default function EarlyWarningPage() {
         </div>
       )}
 
-      {/* Scientific Horizon Safeguard Note */}
       <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-300 flex items-start space-x-3">
         <Clock className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
         <div>
@@ -167,7 +184,6 @@ export default function EarlyWarningPage() {
         </div>
       </div>
 
-      {/* Capability State Safeguard */}
       {warnCap?.status !== "READY" ? (
         <div className="space-y-4">
           <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl space-y-4">
@@ -176,10 +192,36 @@ export default function EarlyWarningPage() {
               <span>Early Warning Requires Setup</span>
             </div>
             <p className="text-xs text-slate-300">
-              {warnCap?.reason || "Early Warning engine requires pre-fitted degradation trajectory models."}
+              Early Warning fits multi-signal thresholds over temporal degradation trajectories.
+              Ordinary <code className="text-amber-300">REFERENCE</code> or <code className="text-amber-300">EVALUATION</code> raw feature datasets cannot be used for warning setup.
+              Select an uploaded <code className="text-emerald-400">TEMPORAL_TRAJECTORY</code> dataset containing temporal reliability features and ground-truth failure labels to fit the warning engine.
             </p>
             <div className="p-3 bg-slate-950 rounded-lg border border-slate-800/80 text-[11px] text-slate-400 font-mono">
               Status: {warnCap?.status || "NOT_AVAILABLE"} | Horizon Unit: controlled_degradation_states
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-slate-300">
+                Select Labeled Temporal Trajectory Dataset (*Required)
+              </label>
+              <select
+                value={selectedTrajectoryId}
+                onChange={(e) => setSelectedTrajectoryId(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+              >
+                <option value="">-- Choose TEMPORAL_TRAJECTORY Dataset --</option>
+                {trajectoryDatasets.map((ds) => (
+                  <option key={ds.dataset_id} value={ds.dataset_id}>
+                    {ds.filename} ({ds.num_samples} samples, {ds.dataset_type})
+                  </option>
+                ))}
+              </select>
+
+              {trajectoryDatasets.length === 0 && (
+                <p className="text-[11px] text-amber-400/90 italic">
+                  No TEMPORAL_TRAJECTORY datasets found. Upload a temporal trajectory CSV on the Data page to proceed.
+                </p>
+              )}
             </div>
 
             {warningError && <ErrorState message={warningError} />}
@@ -191,7 +233,7 @@ export default function EarlyWarningPage() {
 
             <button
               onClick={handleFitWarning}
-              disabled={fitting || !selectedModelId}
+              disabled={fitting || !selectedModelId || !selectedTrajectoryId}
               className="w-full md:w-auto px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-semibold text-xs shadow-md transition-colors disabled:opacity-50 flex items-center justify-center space-x-2"
             >
               <Play className="w-4 h-4 fill-current" />
@@ -201,7 +243,7 @@ export default function EarlyWarningPage() {
 
           <EmptyState
             title="Warning Engine Not Fitted"
-            description="Click 'Setup Early Warning' above to fit the early warning engine on controlled multi-signal temporal degradation trajectory data."
+            description="Select an uploaded TEMPORAL_TRAJECTORY dataset above and click 'Setup Early Warning' to fit the warning engine."
             icon={<Activity className="w-8 h-8" />}
           />
         </div>
