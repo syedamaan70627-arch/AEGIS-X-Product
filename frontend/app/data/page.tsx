@@ -9,7 +9,7 @@ import { LoadingState } from "@/components/ui/LoadingState";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { CheckCircle2, Database, FileSpreadsheet, Layers, Play, Plus, Trash2, Upload } from "lucide-react";
+import { Activity, CheckCircle2, Database, FileSpreadsheet, Layers, Play, Trash2, Upload } from "lucide-react";
 
 export default function DataSetupPage() {
   const [loading, setLoading] = useState(true);
@@ -19,7 +19,7 @@ export default function DataSetupPage() {
   const [datasets, setDatasets] = useState<DatasetRecord[]>([]);
 
   // Upload Dataset State
-  const [datasetType, setDatasetType] = useState<"REFERENCE" | "EVALUATION">("REFERENCE");
+  const [datasetType, setDatasetType] = useState<"REFERENCE" | "EVALUATION" | "TEMPORAL_TRAJECTORY">("REFERENCE");
   const [targetColumn, setTargetColumn] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -111,30 +111,41 @@ export default function DataSetupPage() {
 
   const referenceDatasets = datasets.filter((d) => d.dataset_type === "REFERENCE");
   const evaluationDatasets = datasets.filter((d) => d.dataset_type === "EVALUATION");
+  const temporalDatasets = datasets.filter(
+    (d) => d.dataset_type === "TEMPORAL_TRAJECTORY" || d.dataset_type === "PREDICTION_TRAJECTORY"
+  );
 
   return (
     <div className="space-y-8">
       <PageHeader
         title="Data Setup & Reference Fitting"
-        description="Configure baseline REFERENCE data distributions and current EVALUATION batches for AEGIS-X."
+        description="Configure baseline REFERENCE data distributions, EVALUATION batches, and TEMPORAL TRAJECTORY degradation sequences."
       />
 
       {/* Concept Explanation Header */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 border-l-4 border-l-indigo-500">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 border-l-4 border-l-indigo-500">
           <h4 className="font-bold text-slate-100 uppercase tracking-wider mb-1 flex items-center gap-2">
-            <Database className="w-4 h-4 text-indigo-400" /> Reference Data (Baseline)
+            <Database className="w-4 h-4 text-indigo-400" /> Reference Data
           </h4>
           <p className="text-slate-400 leading-relaxed">
-            Represents known, clean operating data distribution used to compute baseline distance statistics for OOD, Drift, and Calibration.
+            Known clean operating distribution used to compute baseline distance statistics for OOD, Drift, and Fusion.
           </p>
         </div>
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 border-l-4 border-l-emerald-500">
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 border-l-4 border-l-emerald-500">
           <h4 className="font-bold text-slate-100 uppercase tracking-wider mb-1 flex items-center gap-2">
-            <FileSpreadsheet className="w-4 h-4 text-emerald-400" /> Evaluation Data (Batch)
+            <FileSpreadsheet className="w-4 h-4 text-emerald-400" /> Evaluation Data
           </h4>
           <p className="text-slate-400 leading-relaxed">
-            New production or test batch data evaluated against the fitted baseline state to measure operational risk signals.
+            New production or test batch data evaluated against the fitted baseline state to measure operational risk.
+          </p>
+        </div>
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 border-l-4 border-l-amber-500">
+          <h4 className="font-bold text-slate-100 uppercase tracking-wider mb-1 flex items-center gap-2">
+            <Activity className="w-4 h-4 text-amber-400" /> Temporal Trajectory
+          </h4>
+          <p className="text-slate-400 leading-relaxed">
+            Sequential degradation state sequences containing reliability signals used to fit Failure Prediction and Early Warning.
           </p>
         </div>
       </div>
@@ -174,28 +185,44 @@ export default function DataSetupPage() {
               <form onSubmit={handleDatasetUpload} className="space-y-4 text-xs">
                 <div>
                   <label className="block font-medium text-slate-300 mb-1">Dataset Category *</label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 gap-2">
                     <button
                       type="button"
                       onClick={() => setDatasetType("REFERENCE")}
-                      className={`py-2 rounded-lg font-semibold border transition-all ${
+                      className={`py-2 px-3 rounded-lg font-semibold text-left border transition-all flex items-center justify-between ${
                         datasetType === "REFERENCE"
                           ? "bg-indigo-600/20 text-indigo-300 border-indigo-500/50"
                           : "bg-slate-950 text-slate-400 border-slate-800"
                       }`}
                     >
-                      REFERENCE
+                      <span>REFERENCE</span>
+                      <span className="text-[10px] text-slate-500 font-normal">Baseline Distribution</span>
                     </button>
+
                     <button
                       type="button"
                       onClick={() => setDatasetType("EVALUATION")}
-                      className={`py-2 rounded-lg font-semibold border transition-all ${
+                      className={`py-2 px-3 rounded-lg font-semibold text-left border transition-all flex items-center justify-between ${
                         datasetType === "EVALUATION"
                           ? "bg-emerald-600/20 text-emerald-300 border-emerald-500/50"
                           : "bg-slate-950 text-slate-400 border-slate-800"
                       }`}
                     >
-                      EVALUATION
+                      <span>EVALUATION</span>
+                      <span className="text-[10px] text-slate-500 font-normal">Test Batch</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setDatasetType("TEMPORAL_TRAJECTORY")}
+                      className={`py-2 px-3 rounded-lg font-semibold text-left border transition-all flex items-center justify-between ${
+                        datasetType === "TEMPORAL_TRAJECTORY"
+                          ? "bg-amber-600/20 text-amber-300 border-amber-500/50"
+                          : "bg-slate-950 text-slate-400 border-slate-800"
+                      }`}
+                    >
+                      <span>TEMPORAL TRAJECTORY</span>
+                      <span className="text-[10px] text-slate-500 font-normal">Degradation Sequences</span>
                     </button>
                   </div>
                 </div>
@@ -206,11 +233,11 @@ export default function DataSetupPage() {
                     type="text"
                     value={targetColumn}
                     onChange={(e) => setTargetColumn(e.target.value)}
-                    placeholder="e.g. target or label"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
+                    placeholder="e.g. target, Failure_Onset_Next"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500 font-mono"
                   />
                   <p className="mt-1 text-[11px] text-slate-500">
-                    If omitted, dataset is treated as label-free operational data.
+                    Required for supervised training or ground-truth verification.
                   </p>
                 </div>
 
@@ -344,6 +371,50 @@ export default function DataSetupPage() {
               )}
             </SectionCard>
 
+            {/* Temporal Trajectory Datasets */}
+            <SectionCard
+              title="Temporal Trajectory Datasets"
+              subtitle="Registered degradation state sequences for Failure Prediction and Early Warning model setup"
+            >
+              {temporalDatasets.length === 0 ? (
+                <p className="text-xs text-slate-500 py-4">No temporal trajectory datasets registered for this model.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-950/60 text-slate-400 uppercase font-mono border-b border-slate-800">
+                      <tr>
+                        <th className="p-3">Filename</th>
+                        <th className="p-3">Samples</th>
+                        <th className="p-3">Features</th>
+                        <th className="p-3">Target</th>
+                        <th className="p-3">Uploaded</th>
+                        <th className="p-3 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/60">
+                      {temporalDatasets.map((d) => (
+                        <tr key={d.dataset_id} className="hover:bg-slate-800/40">
+                          <td className="p-3 font-semibold text-amber-300">{d.filename}</td>
+                          <td className="p-3 font-mono text-slate-300">{d.num_samples}</td>
+                          <td className="p-3 font-mono text-slate-300">{d.num_features}</td>
+                          <td className="p-3 font-mono text-slate-400">{d.target_column || "Failure_Onset_Next"}</td>
+                          <td className="p-3 text-slate-400">{new Date(d.created_at).toLocaleDateString()}</td>
+                          <td className="p-3 text-right">
+                            <button
+                              onClick={() => handleDeleteDataset(d.dataset_id)}
+                              title="Delete Dataset"
+                              className="p-1.5 text-slate-400 hover:text-rose-400 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-md transition-colors inline-flex items-center"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </SectionCard>
           </div>
         </div>
       )}
