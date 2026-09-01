@@ -96,3 +96,37 @@ def test_warning_fitted_artifact_returns_available(setup_warning_resources):
     assert data["status"] == "AVAILABLE"
     assert data["horizon_unit"] == "controlled_degradation_states"
     assert data["is_warning_triggered"] is not None
+
+
+def test_warning_evaluate_endpoint_calls_service(setup_warning_resources):
+    """Test that POST /api/v1/warnings/evaluate correctly reaches WarningService.evaluate_trajectories."""
+    res = setup_warning_resources
+
+    import pandas as pd
+    engine = EarlyWarningEngine(horizon_val=3)
+    df_train = pd.DataFrame({
+        "trajectory_id": [0, 0, 0, 0, 0],
+        "step": [0, 1, 2, 3, 4],
+        "ood_risk": [0.1, 0.4, 0.2, 0.8, 0.3],
+        "uncertainty_risk": [0.1, 0.3, 0.2, 0.7, 0.2],
+        "drift_risk": [0.0, 0.2, 0.1, 0.5, 0.1],
+        "fused_risk": [0.1, 0.35, 0.2, 0.75, 0.25],
+        "Failure_Within_3": [0, 1, 0, 1, 0],
+    })
+    df_val = df_train.copy()
+    engine.fit(df_train, df_val, target_column="Failure_Within_3")
+
+    artifact_dir = settings.ARTIFACTS_DIR / res["model_id"]
+    artifact_dir.mkdir(parents=True, exist_ok=True)
+    joblib.dump(engine, artifact_dir / "warning_engine.joblib")
+
+    response = client.post(
+        "/api/v1/warnings/evaluate",
+        json={"model_id": res["model_id"], "evaluation_dataset_id": res["eval_id"]},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "AVAILABLE"
+    assert data["horizon_unit"] == "controlled_degradation_states"
+    assert "trajectory_level_metrics" in data
+

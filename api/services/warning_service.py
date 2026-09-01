@@ -4,6 +4,7 @@ AEGIS-X API Early Warning Service.
 Executes dynamic multi-signal temporal warning and trajectory lead evaluation when fitted warning artifacts exist.
 """
 
+import dataclasses
 from datetime import datetime, timezone
 from pathlib import Path
 import uuid
@@ -198,7 +199,12 @@ class WarningService:
             warning_threshold=eval_res.warning_threshold,
             state_level_metrics=eval_res.state_level_metrics,
             trajectory_level_metrics=eval_res.trajectory_level_metrics,
-            trajectory_results=[r.to_dict() if hasattr(r, "to_dict") else str(r) for r in eval_res.trajectory_results],
+            trajectory_results=[
+                r.to_dict() if hasattr(r, "to_dict")
+                else (dataclasses.asdict(r) if dataclasses.is_dataclass(r)
+                else (r if isinstance(r, dict) else dict(r)))
+                for r in eval_res.trajectory_results
+            ],
             warnings=eval_res.warnings,
             limitations=eval_res.limitations,
             created_at=created_at,

@@ -63,7 +63,7 @@ async def evaluate_warning_trajectories(request: WarningEvaluationRequest, user:
     Evaluates full held-out trajectory lead times, early warning rates, and false warning caps
     using a pre-fitted Early Warning engine.
     """
-    return WarningService.evaluate_warning_trajectories(request, user_id=user.user_id)
+    return WarningService.evaluate_trajectories(request, user_id=user.user_id)
 
 
 @router.get(
