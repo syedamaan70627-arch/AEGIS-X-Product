@@ -3,15 +3,18 @@
 import React, { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { DatasetRecord, ModelCapabilitiesResponse, ModelRecord, WarningEvaluationResponse, WarningResponse } from "@/types/api";
+import { CopyButton } from "@/components/ui/CopyButton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { useToast } from "@/components/providers/ToastProvider";
 import { Activity, AlertCircle, Clock, Layers, Play, ShieldAlert } from "lucide-react";
 
 export default function EarlyWarningPage() {
+  const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [models, setModels] = useState<ModelRecord[]>([]);
@@ -38,10 +41,12 @@ export default function EarlyWarningPage() {
     try {
       await api.fitEarlyWarning(selectedModelId, { trajectory_dataset_id: selectedTrajectoryId });
       setFitSuccess("Early Warning engine fitted successfully! Capability updated to READY.");
+      toast.success("Early Warning Setup Complete", "Engine fitted and capability updated to READY.");
       const updatedCap = await api.getModelCapabilities(selectedModelId);
       setCapabilities(updatedCap);
     } catch (err: any) {
       setWarningError(err.message || "Failed to fit early warning engine.");
+      toast.error("Setup Failed", err.message || "Could not fit early warning engine.");
     } finally {
       setFitting(false);
     }
@@ -109,8 +114,10 @@ export default function EarlyWarningPage() {
         evaluation_dataset_id: selectedDatasetId,
       });
       setWarningResult(res);
+      toast.success("Warning Query Complete", res.is_warning_triggered ? "WARNING TRIGGERED" : "Normal Operational State");
     } catch (err: any) {
       setWarningError(err.message || "Early warning query execution failed.");
+      toast.error("Query Error", err.message || "Execution failed.");
     } finally {
       setQuerying(false);
     }
@@ -125,8 +132,10 @@ export default function EarlyWarningPage() {
         evaluation_dataset_id: selectedDatasetId,
       });
       setEvalResult(res);
+      toast.success("Trajectory Evaluation Complete", `Coverage: ${res.trajectory_level_metrics.early_warning_coverage != null ? (res.trajectory_level_metrics.early_warning_coverage * 100).toFixed(1) : 0}%`);
     } catch (err: any) {
       setWarningError(err.message || "Trajectory evaluation failed.");
+      toast.error("Evaluation Failed", err.message || "Execution failed.");
     } finally {
       setEvaluating(false);
     }
@@ -139,23 +148,20 @@ export default function EarlyWarningPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-100 flex items-center space-x-3">
-          <Activity className="w-7 h-7 text-indigo-400" />
-          <span>Early Warning System</span>
-        </h1>
-        <p className="text-sm text-slate-400 mt-1">
-          Multi-signal temporal warning status and lead-time evaluation across controlled degradation trajectories.
-        </p>
-      </div>
+      <PageHeader
+        title="Early Warning System"
+        description="Multi-signal temporal warning status and lead-time evaluation across controlled degradation trajectories."
+        icon={<Activity className="w-6 h-6 text-amber-400" />}
+        breadcrumbs={[{ label: "Intelligence" }, { label: "Early Warning" }]}
+      />
 
       {error && <ErrorState message={error} />}
 
       {/* Model Selector Card */}
       {models.length > 0 && (
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3 text-xs">
-            <Layers className="w-4 h-4 text-indigo-400" />
+        <div className="bg-slate-900/90 border border-slate-800/80 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs font-mono shadow-md">
+          <div className="flex items-center space-x-3">
+            <Layers className="w-4 h-4 text-indigo-400 shrink-0" />
             <span className="font-semibold text-slate-200">Active Model:</span>
             <select
               value={selectedModelId}
@@ -165,7 +171,7 @@ export default function EarlyWarningPage() {
                 setWarningError(null);
                 setFitSuccess(null);
               }}
-              className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-slate-100 font-mono focus:outline-none focus:border-indigo-500"
+              className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-slate-100 font-mono focus:outline-none focus:border-indigo-500 text-xs"
             >
               {models.map((m) => (
                 <option key={m.model_id} value={m.model_id}>
@@ -174,31 +180,33 @@ export default function EarlyWarningPage() {
               ))}
             </select>
           </div>
+          {selectedModelId && <CopyButton text={selectedModelId} label="Copy Model ID" />}
         </div>
       )}
 
-      <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-300 flex items-start space-x-3">
+      <div className="p-4 bg-slate-900/80 border border-slate-800/80 rounded-xl text-xs text-slate-300 flex items-start space-x-3 shadow-md">
         <Clock className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
-        <div>
-          <span className="font-bold text-slate-100 block mb-0.5">Horizon Unit Standard</span>
-          Warning lead horizons are strictly measured in <strong>controlled_degradation_states</strong>. They reflect controlled degradation trajectory steps and must not be translated into wall-clock time (hours/minutes/days).
+        <div className="leading-relaxed">
+          <span className="font-mono font-bold text-slate-100 uppercase tracking-wider block mb-0.5 text-[11px]">Horizon Unit Standard</span>
+          Warning lead horizons are strictly measured in <strong className="text-amber-300 font-mono">controlled_degradation_states</strong>. They reflect controlled degradation trajectory steps and must not be translated into wall-clock time (hours/minutes/days).
         </div>
       </div>
 
       {warnCap?.status !== "READY" ? (
         <div className="space-y-4">
-          <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl space-y-4">
+          <div className="p-6 bg-slate-900/90 border border-slate-800/80 rounded-2xl space-y-4 shadow-xl">
             <div className="flex items-center space-x-3 text-amber-400 font-bold text-sm">
-              <AlertCircle className="w-5 h-5" />
+              <AlertCircle className="w-5 h-5 shrink-0" />
               <span>Early Warning Requires Setup</span>
             </div>
-            <p className="text-xs text-slate-300">
+            <p className="text-xs text-slate-300 leading-relaxed">
               Early Warning fits multi-signal thresholds over temporal degradation trajectories.
-              Ordinary <code className="text-amber-300">REFERENCE</code> or <code className="text-amber-300">EVALUATION</code> raw feature datasets cannot be used for warning setup.
-              Select an uploaded <code className="text-emerald-400">TEMPORAL_TRAJECTORY</code> dataset containing temporal reliability features and ground-truth failure labels to fit the warning engine.
+              Ordinary <code className="text-amber-300 font-mono">REFERENCE</code> or <code className="text-amber-300 font-mono">EVALUATION</code> raw feature datasets cannot be used for warning setup.
+              Select an uploaded <code className="text-emerald-400 font-mono">TEMPORAL_TRAJECTORY</code> dataset containing temporal reliability features and ground-truth failure labels to fit the warning engine.
             </p>
-            <div className="p-3 bg-slate-950 rounded-lg border border-slate-800/80 text-[11px] text-slate-400 font-mono">
-              Status: {warnCap?.status || "NOT_AVAILABLE"} | Horizon Unit: controlled_degradation_states
+            <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800/80 text-[11px] text-slate-400 font-mono flex items-center justify-between">
+              <span>Status: {warnCap?.status || "NOT_AVAILABLE"}</span>
+              <span className="text-indigo-400">Horizon Unit: controlled_degradation_states</span>
             </div>
 
             <div className="space-y-2">
@@ -208,7 +216,7 @@ export default function EarlyWarningPage() {
               <select
                 value={selectedTrajectoryId}
                 onChange={(e) => setSelectedTrajectoryId(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                className="w-full bg-slate-950 border border-slate-800/80 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 font-mono"
               >
                 <option value="">-- Choose TEMPORAL_TRAJECTORY Dataset --</option>
                 {trajectoryDatasets.map((ds) => (
@@ -219,7 +227,7 @@ export default function EarlyWarningPage() {
               </select>
 
               {trajectoryDatasets.length === 0 && (
-                <p className="text-[11px] text-amber-400/90 italic">
+                <p className="text-[11px] text-amber-400/90 italic font-mono">
                   No TEMPORAL_TRAJECTORY datasets found. Upload a temporal trajectory CSV on the Data page to proceed.
                 </p>
               )}
@@ -227,7 +235,7 @@ export default function EarlyWarningPage() {
 
             {warningError && <ErrorState message={warningError} />}
             {fitSuccess && (
-              <div className="p-3 bg-emerald-950/80 border border-emerald-800 rounded-lg text-emerald-300 text-xs font-semibold">
+              <div className="p-3 bg-emerald-950/80 border border-emerald-800 rounded-lg text-emerald-300 text-xs font-semibold font-mono">
                 {fitSuccess}
               </div>
             )}
@@ -235,7 +243,7 @@ export default function EarlyWarningPage() {
             <button
               onClick={handleFitWarning}
               disabled={fitting || !selectedModelId || !selectedTrajectoryId}
-              className="w-full md:w-auto px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-semibold text-xs shadow-md transition-colors disabled:opacity-50 flex items-center justify-center space-x-2"
+              className="w-full md:w-auto px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-semibold text-xs shadow-md transition-all disabled:opacity-50 flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
               <Play className="w-4 h-4 fill-current" />
               <span>{fitting ? "Fitting Warning Engine..." : "Setup Early Warning"}</span>
@@ -256,11 +264,11 @@ export default function EarlyWarningPage() {
 
             <form onSubmit={handleQueryWarning} className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs items-end">
               <div>
-                <label className="block font-medium text-slate-300 mb-1">Temporal Trajectory Dataset *</label>
+                <label className="block font-semibold text-slate-300 mb-1">Temporal Trajectory Dataset *</label>
                 <select
                   value={selectedDatasetId}
                   onChange={(e) => setSelectedDatasetId(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
+                  className="w-full bg-slate-950 border border-slate-800/80 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500 font-mono"
                 >
                   <option value="">-- Choose TEMPORAL_TRAJECTORY Dataset --</option>
                   {trajectoryDatasets.map((d) => (
@@ -269,14 +277,13 @@ export default function EarlyWarningPage() {
                     </option>
                   ))}
                 </select>
-
               </div>
 
               <div className="md:col-span-2 flex space-x-3">
                 <button
                   type="submit"
                   disabled={querying || !selectedDatasetId}
-                  className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-semibold shadow-md transition-colors disabled:opacity-50 flex items-center justify-center space-x-2"
+                  className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-semibold shadow-md transition-all disabled:opacity-50 flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                   <Play className="w-4 h-4 fill-current" />
                   <span>{querying ? "Querying..." : "Query Early Warning"}</span>
@@ -286,7 +293,7 @@ export default function EarlyWarningPage() {
                   type="button"
                   onClick={handleEvaluateTrajectories}
                   disabled={evaluating || !selectedDatasetId}
-                  className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-semibold border border-slate-700 transition-colors disabled:opacity-50"
+                  className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-semibold border border-slate-700/80 transition-all disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-slate-500"
                 >
                   {evaluating ? "Evaluating..." : "Evaluate Lead Trajectories"}
                 </button>
@@ -297,31 +304,35 @@ export default function EarlyWarningPage() {
           {querying && <LoadingState message="Evaluating multi-signal temporal early warning state..." />}
 
           {warningResult && (
-            <SectionCard title="Early Warning Query Response" subtitle={`Warning ID: ${warningResult.warning_id}`}>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
-                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                  <div className="text-slate-400 font-mono uppercase">Triggered Status</div>
+            <SectionCard
+              title="Early Warning Query Response"
+              subtitle={`Warning ID: ${warningResult.warning_id}`}
+              action={<CopyButton text={warningResult.warning_id} label="Copy Warning ID" />}
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs font-mono">
+                <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800/80 shadow-md">
+                  <div className="text-slate-400 uppercase font-semibold text-[11px]">Triggered Status</div>
                   <div className="mt-1">
                     <StatusBadge status={warningResult.is_warning_triggered ? "WARNING_TRIGGERED" : "NORMAL"} />
                   </div>
                 </div>
 
-                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                  <div className="text-slate-400 font-mono uppercase">Warning Score</div>
-                  <div className="text-xl font-bold text-amber-400 mt-1">
+                <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800/80 shadow-md">
+                  <div className="text-slate-400 uppercase font-semibold text-[11px]">Warning Score</div>
+                  <div className="text-xl font-bold text-amber-400 mt-1 font-sans">
                     {warningResult.warning_score != null ? warningResult.warning_score.toFixed(4) : "N/A"}
                   </div>
                 </div>
 
-                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                  <div className="text-slate-400 font-mono uppercase">Threshold</div>
-                  <div className="text-xl font-bold text-slate-200 mt-1">{warningResult.threshold}</div>
+                <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800/80 shadow-md">
+                  <div className="text-slate-400 uppercase font-semibold text-[11px]">Threshold</div>
+                  <div className="text-xl font-bold text-slate-200 mt-1 font-sans">{warningResult.threshold}</div>
                 </div>
 
-                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                  <div className="text-slate-400 font-mono uppercase">Target Horizon</div>
+                <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800/80 shadow-md">
+                  <div className="text-slate-400 uppercase font-semibold text-[11px]">Target Horizon</div>
                   <div className="text-sm font-bold text-slate-100 mt-1">
-                    {warningResult.horizon_value} {warningResult.horizon_unit}
+                    {warningResult.horizon_value} <span className="text-xs text-indigo-400">{warningResult.horizon_unit}</span>
                   </div>
                 </div>
               </div>
@@ -330,100 +341,100 @@ export default function EarlyWarningPage() {
 
           {evalResult && (
             <SectionCard title="Retrospective Trajectory Evaluation Results" subtitle="Evaluated lead times and false warning rates">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-                <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
-                  <div className="text-slate-400 font-mono">Failing Trajectories</div>
-                  <div className="text-lg font-bold text-slate-100 mt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs font-mono">
+                <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800/80 shadow-md">
+                  <div className="text-slate-400 uppercase font-semibold text-[11px]">Failing Trajectories</div>
+                  <div className="text-lg font-bold text-slate-100 mt-1 font-sans">
                     {evalResult.trajectory_level_metrics.failing_trajectories ?? 0}
                   </div>
                 </div>
-                <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
-                  <div className="text-slate-400 font-mono">Warned Failing Trajectories</div>
-                  <div className="text-lg font-bold text-emerald-400 mt-1">
+                <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800/80 shadow-md">
+                  <div className="text-slate-400 uppercase font-semibold text-[11px]">Warned Failing</div>
+                  <div className="text-lg font-bold text-emerald-400 mt-1 font-sans">
                     {evalResult.trajectory_level_metrics.warned_failing_trajectories ?? 0}
                   </div>
                 </div>
-                <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
-                  <div className="text-slate-400 font-mono">Early Warning Coverage</div>
-                  <div className="text-lg font-bold text-emerald-400 mt-1">
+                <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800/80 shadow-md">
+                  <div className="text-slate-400 uppercase font-semibold text-[11px]">Early Warning Coverage</div>
+                  <div className="text-lg font-bold text-emerald-400 mt-1 font-sans">
                     {evalResult.trajectory_level_metrics.early_warning_coverage != null
                       ? `${(evalResult.trajectory_level_metrics.early_warning_coverage * 100).toFixed(1)}%`
                       : "0.0%"}
                   </div>
                 </div>
-                <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
-                  <div className="text-slate-400 font-mono">False Warning Rate</div>
-                  <div className="text-lg font-bold text-amber-400 mt-1">
+                <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800/80 shadow-md">
+                  <div className="text-slate-400 uppercase font-semibold text-[11px]">False Warning Rate</div>
+                  <div className="text-lg font-bold text-amber-400 mt-1 font-sans">
                     {evalResult.trajectory_level_metrics.false_trajectory_warning_rate != null
                       ? `${(evalResult.trajectory_level_metrics.false_trajectory_warning_rate * 100).toFixed(1)}%`
                       : "0.0%"}
                   </div>
                 </div>
-                <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
-                  <div className="text-slate-400 font-mono">Mean Lead</div>
+                <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800/80 shadow-md">
+                  <div className="text-slate-400 uppercase font-semibold text-[11px]">Mean Lead</div>
                   <div className="text-base font-bold text-amber-300 mt-1">
                     {evalResult.trajectory_level_metrics.mean_lead_steps != null
                       ? `${evalResult.trajectory_level_metrics.mean_lead_steps.toFixed(1)} controlled_degradation_states`
                       : "N/A"}
                   </div>
                 </div>
-                <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
-                  <div className="text-slate-400 font-mono">Median Lead</div>
+                <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800/80 shadow-md">
+                  <div className="text-slate-400 uppercase font-semibold text-[11px]">Median Lead</div>
                   <div className="text-base font-bold text-amber-300 mt-1">
                     {evalResult.trajectory_level_metrics.median_lead_steps != null
                       ? `${evalResult.trajectory_level_metrics.median_lead_steps.toFixed(1)} controlled_degradation_states`
                       : "N/A"}
                   </div>
                 </div>
-                <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
-                  <div className="text-slate-400 font-mono">Non-Failing Trajectories</div>
-                  <div className="text-lg font-bold text-slate-300 mt-1">
+                <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800/80 shadow-md">
+                  <div className="text-slate-400 uppercase font-semibold text-[11px]">Non-Failing Trajectories</div>
+                  <div className="text-lg font-bold text-slate-300 mt-1 font-sans">
                     {evalResult.trajectory_level_metrics.non_failing_trajectories ?? 0}
                   </div>
                 </div>
-                <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
-                  <div className="text-slate-400 font-mono">False Trajectory Warnings</div>
-                  <div className="text-lg font-bold text-rose-400 mt-1">
+                <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800/80 shadow-md">
+                  <div className="text-slate-400 uppercase font-semibold text-[11px]">False Warnings</div>
+                  <div className="text-lg font-bold text-rose-400 mt-1 font-sans">
                     {evalResult.trajectory_level_metrics.false_trajectory_warnings ?? 0}
                   </div>
                 </div>
               </div>
 
               {evalResult.trajectory_results && evalResult.trajectory_results.length > 0 && (
-                <div className="mt-6 border-t border-slate-800 pt-4">
-                  <h4 className="text-sm font-semibold text-slate-200 mb-3">Trajectory Lead-Time Breakdown</h4>
-                  <div className="overflow-x-auto">
+                <div className="mt-6 border-t border-slate-800/80 pt-4">
+                  <h4 className="text-xs font-bold font-mono text-slate-200 uppercase tracking-wider mb-3">Trajectory Lead-Time Breakdown</h4>
+                  <div className="overflow-x-auto rounded-xl border border-slate-800/80 bg-slate-950/40">
                     <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="border-b border-slate-800 text-slate-400 font-mono">
-                          <th className="py-2 px-3">Trajectory ID</th>
-                          <th className="py-2 px-3">Eventually Fails</th>
-                          <th className="py-2 px-3">First Warning Index</th>
-                          <th className="py-2 px-3">Failure Index</th>
-                          <th className="py-2 px-3">Lead Steps</th>
-                          <th className="py-2 px-3">Early Warning</th>
-                          <th className="py-2 px-3">False Warning</th>
+                      <thead className="bg-slate-950/80 text-slate-400 font-mono uppercase tracking-wider text-[11px] border-b border-slate-800">
+                        <tr>
+                          <th className="py-3 px-3.5">Trajectory ID</th>
+                          <th className="py-3 px-3.5">Eventually Fails</th>
+                          <th className="py-3 px-3.5">First Warning Index</th>
+                          <th className="py-3 px-3.5">Failure Index</th>
+                          <th className="py-3 px-3.5">Lead Steps</th>
+                          <th className="py-3 px-3.5">Early Warning</th>
+                          <th className="py-3 px-3.5">False Warning</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-800/60">
+                      <tbody className="divide-y divide-slate-800/60 font-mono">
                         {evalResult.trajectory_results.map((tr, idx) => (
-                          <tr key={idx} className="hover:bg-slate-900/50">
-                            <td className="py-2 px-3 font-mono text-slate-200">{tr.trajectory_id ?? "-"}</td>
-                            <td className="py-2 px-3">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${tr.eventually_fails ? "bg-rose-950 text-rose-300 border border-rose-800" : "bg-emerald-950 text-emerald-300 border border-emerald-800"}`}>
+                          <tr key={idx} className="hover:bg-slate-800/40 transition-colors">
+                            <td className="py-3 px-3.5 font-bold text-slate-200">{tr.trajectory_id ?? "-"}</td>
+                            <td className="py-3 px-3.5">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${tr.eventually_fails ? "bg-rose-950/80 text-rose-300 border border-rose-800/80" : "bg-emerald-950/80 text-emerald-300 border border-emerald-800/80"}`}>
                                 {tr.eventually_fails ? "Yes" : "No"}
                               </span>
                             </td>
-                            <td className="py-2 px-3 text-slate-300">{tr.first_warning_state_index != null ? tr.first_warning_state_index : "-"}</td>
-                            <td className="py-2 px-3 text-slate-300">{tr.failure_state_index != null ? tr.failure_state_index : "-"}</td>
-                            <td className="py-2 px-3 text-amber-300 font-medium">{tr.lead_steps != null ? `${tr.lead_steps} controlled_degradation_states` : "-"}</td>
-                            <td className="py-2 px-3">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${tr.is_early_warning ? "bg-emerald-950 text-emerald-300 border border-emerald-800" : "bg-slate-900 text-slate-400 border border-slate-800"}`}>
+                            <td className="py-3 px-3.5 text-slate-300">{tr.first_warning_state_index != null ? tr.first_warning_state_index : "-"}</td>
+                            <td className="py-3 px-3.5 text-slate-300">{tr.failure_state_index != null ? tr.failure_state_index : "-"}</td>
+                            <td className="py-3 px-3.5 text-amber-300 font-bold">{tr.lead_steps != null ? `${tr.lead_steps} controlled_degradation_states` : "-"}</td>
+                            <td className="py-3 px-3.5">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${tr.is_early_warning ? "bg-emerald-950/80 text-emerald-300 border border-emerald-800/80" : "bg-slate-900 text-slate-500 border border-slate-800"}`}>
                                 {tr.is_early_warning ? "Yes" : "No"}
                               </span>
                             </td>
-                            <td className="py-2 px-3">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${tr.is_false_trajectory_warning ? "bg-rose-950 text-rose-300 border border-rose-800" : "bg-slate-900 text-slate-400 border border-slate-800"}`}>
+                            <td className="py-3 px-3.5">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${tr.is_false_trajectory_warning ? "bg-rose-950/80 text-rose-300 border border-rose-800/80" : "bg-slate-900 text-slate-500 border border-slate-800"}`}>
                                 {tr.is_false_trajectory_warning ? "Yes" : "No"}
                               </span>
                             </td>
@@ -441,3 +452,4 @@ export default function EarlyWarningPage() {
     </div>
   );
 }
+

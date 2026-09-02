@@ -6,12 +6,13 @@ import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { ModelCapabilitiesResponse, ModelRecord } from "@/types/api";
 import { CapabilityBadge } from "@/components/ui/CapabilityBadge";
+import { CopyButton } from "@/components/ui/CopyButton";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { ArrowLeft, ArrowRight, CheckCircle, Clock, Database, Layers, ShieldCheck, Zap } from "lucide-react";
+import { ArrowLeft, ArrowRight, Database, Layers, ShieldCheck, Zap } from "lucide-react";
 
 export default function ModelDetailsPage() {
   const params = useParams();
@@ -49,43 +50,42 @@ export default function ModelDetailsPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <Link
-          href="/models"
-          className="inline-flex items-center text-xs font-medium text-slate-400 hover:text-slate-200 mb-4 transition-colors"
-        >
-          <ArrowLeft className="w-3.5 h-3.5 mr-1" /> Back to Models
-        </Link>
-        <PageHeader
-          title={model.model_name}
-          description={`ID: ${model.model_id} | Filename: ${model.filename}`}
-          badge={<StatusBadge status={model.status} />}
-        />
-      </div>
+      <PageHeader
+        title={model.model_name}
+        description={`Model ID: ${model.model_id} | Filename: ${model.filename}`}
+        icon={<Layers className="w-6 h-6 text-indigo-400" />}
+        breadcrumbs={[{ label: "Operations" }, { label: "Model Registry", href: "/models" }, { label: model.model_name }]}
+        badge={<StatusBadge status={model.status} />}
+        actions={
+          <div className="flex items-center space-x-2">
+            <CopyButton text={model.model_id} label="Copy Model ID" />
+          </div>
+        }
+      />
 
       {/* Metadata Overview Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-          <div className="text-slate-400 uppercase font-mono font-semibold">Task Type</div>
-          <div className="mt-1 font-bold text-slate-100">{model.task_type}</div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs font-mono">
+        <div className="bg-slate-900/90 border border-slate-800/80 rounded-xl p-4 shadow-md">
+          <div className="text-slate-400 uppercase font-semibold text-[11px]">Task Type</div>
+          <div className="mt-1.5 font-bold text-slate-100 text-sm capitalize">{model.task_type.replace("_", " ")}</div>
         </div>
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-          <div className="text-slate-400 uppercase font-mono font-semibold">Expected Features</div>
-          <div className="mt-1 font-bold text-slate-100">{model.n_features_in ?? "Unknown"}</div>
+        <div className="bg-slate-900/90 border border-slate-800/80 rounded-xl p-4 shadow-md">
+          <div className="text-slate-400 uppercase font-semibold text-[11px]">Expected Features</div>
+          <div className="mt-1.5 font-bold text-indigo-400 text-sm">{model.n_features_in ?? "Unknown"}</div>
         </div>
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-          <div className="text-slate-400 uppercase font-mono font-semibold">Probability Output</div>
-          <div className="mt-1 font-bold text-slate-100">{model.predict_proba_supported ? "Yes (predict_proba)" : "No"}</div>
+        <div className="bg-slate-900/90 border border-slate-800/80 rounded-xl p-4 shadow-md">
+          <div className="text-slate-400 uppercase font-semibold text-[11px]">Probability Output</div>
+          <div className="mt-1.5 font-bold text-emerald-400 text-sm">{model.predict_proba_supported ? "Supported (predict_proba)" : "Not Supported"}</div>
         </div>
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-          <div className="text-slate-400 uppercase font-mono font-semibold">Registered Date</div>
-          <div className="mt-1 font-bold text-slate-100">{new Date(model.created_at).toLocaleString()}</div>
+        <div className="bg-slate-900/90 border border-slate-800/80 rounded-xl p-4 shadow-md">
+          <div className="text-slate-400 uppercase font-semibold text-[11px]">Registered Date</div>
+          <div className="mt-1.5 font-bold text-slate-100 text-xs">{new Date(model.created_at).toLocaleString()}</div>
         </div>
       </div>
 
       {/* Capability Readiness Inspection Card */}
       <SectionCard title="Operational Capability Readiness" subtitle="Evaluates AEGIS-X engine readiness for this model deployment">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <CapabilityBadge label="Core Analysis (OOD/Drift/Fusion)" capability={caps?.core_analysis} />
           <CapabilityBadge label="Stress Lab Testing" capability={caps?.stress_testing} />
           <CapabilityBadge label="Fault Lab Injection" capability={caps?.fault_testing} />
@@ -98,13 +98,13 @@ export default function ModelDetailsPage() {
       {/* Quick Action Workflows */}
       <SectionCard title="Action Workflows" subtitle="Execute model reference baseline setup or operational analyses">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 flex flex-col justify-between">
+          <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-5 flex flex-col justify-between shadow-md">
             <div>
               <div className="flex items-center space-x-2 text-indigo-400 font-semibold text-sm">
-                <Database className="w-4 h-4" />
+                <Database className="w-4 h-4 shrink-0" />
                 <span>Reference Fit Baseline</span>
               </div>
-              <p className="text-xs text-slate-400 mt-2">
+              <p className="text-xs text-slate-400 mt-2 leading-relaxed">
                 Fit baseline distributions on a registered REFERENCE dataset before monitoring evaluation batches.
               </p>
             </div>
@@ -116,13 +116,13 @@ export default function ModelDetailsPage() {
             </Link>
           </div>
 
-          <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 flex flex-col justify-between">
+          <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-5 flex flex-col justify-between shadow-md">
             <div>
               <div className="flex items-center space-x-2 text-emerald-400 font-semibold text-sm">
-                <ShieldCheck className="w-4 h-4" />
+                <ShieldCheck className="w-4 h-4 shrink-0" />
                 <span>Batch Operational Monitor</span>
               </div>
-              <p className="text-xs text-slate-400 mt-2">
+              <p className="text-xs text-slate-400 mt-2 leading-relaxed">
                 Run core reliability detection across OOD, Uncertainty, Drift, and Fusion signals on evaluation data.
               </p>
             </div>
@@ -134,13 +134,13 @@ export default function ModelDetailsPage() {
             </Link>
           </div>
 
-          <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 flex flex-col justify-between">
+          <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-5 flex flex-col justify-between shadow-md">
             <div>
               <div className="flex items-center space-x-2 text-amber-400 font-semibold text-sm">
-                <Zap className="w-4 h-4" />
+                <Zap className="w-4 h-4 shrink-0" />
                 <span>Stress & Fault Testing</span>
               </div>
-              <p className="text-xs text-slate-400 mt-2">
+              <p className="text-xs text-slate-400 mt-2 leading-relaxed">
                 Execute controlled noise stress or inject sensor bias/gain faults to evaluate robust performance.
               </p>
             </div>
@@ -156,3 +156,4 @@ export default function ModelDetailsPage() {
     </div>
   );
 }
+

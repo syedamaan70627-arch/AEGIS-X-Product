@@ -3,15 +3,18 @@
 import React, { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { MemoryBuildResponse, MemoryMatchResponse, ModelRecord } from "@/types/api";
+import { CopyButton } from "@/components/ui/CopyButton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { useToast } from "@/components/providers/ToastProvider";
 import { BrainCircuit, CheckCircle2, Layers, Play, Search } from "lucide-react";
 
 export default function FailureMemoryPage() {
+  const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [models, setModels] = useState<ModelRecord[]>([]);
@@ -75,6 +78,7 @@ export default function FailureMemoryPage() {
     try {
       const res = await api.buildFailureMemory(selectedModelId, { n_clusters: 3, random_state: 42 });
       setBuildResult(res);
+      toast.success("Failure Memory Built", `Fitted ${res.signatures.length} signature centroids`);
       const memsRes = await api.listModelFailureMemories(selectedModelId);
       setMemories(memsRes.memories || []);
       if (memsRes.memories && memsRes.memories.length > 0) {
@@ -82,6 +86,7 @@ export default function FailureMemoryPage() {
       }
     } catch (err: any) {
       setBuildError(err.message || "Failure Memory building failed.");
+      toast.error("Build Failed", err.message || "Could not fit signature centroids.");
     } finally {
       setBuilding(false);
     }
@@ -100,8 +105,10 @@ export default function FailureMemoryPage() {
       const parsedProfile = JSON.parse(queryInput);
       const res = await api.matchFailureMemoryQuery(selectedMemoryId, { query_profile: parsedProfile });
       setMatchResult(res);
+      toast.success("Query Match Complete", res.is_known_pattern ? `Matched Signature #${res.matched_signature_id}` : "Unmatched Pattern");
     } catch (err: any) {
       setMatchError(err.message || "Invalid query profile JSON format or query match error.");
+      toast.error("Query Error", err.message || "Execution failed.");
     } finally {
       setMatching(false);
     }
@@ -115,18 +122,20 @@ export default function FailureMemoryPage() {
       <PageHeader
         title="Failure Memory Engine"
         description="Fits unsupervised reliability signature centroids from aggregated condition profiles and matches incoming query condition profiles."
+        icon={<BrainCircuit className="w-6 h-6 text-purple-400" />}
+        breadcrumbs={[{ label: "Intelligence" }, { label: "Failure Memory" }]}
       />
 
       {/* Model Selector Bar */}
       {models.length > 0 && (
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center justify-between text-xs">
+        <div className="bg-slate-900/90 border border-slate-800/80 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs font-mono shadow-md">
           <div className="flex items-center space-x-3">
-            <Layers className="w-4 h-4 text-indigo-400" />
+            <Layers className="w-4 h-4 text-indigo-400 shrink-0" />
             <span className="font-semibold text-slate-200">Active Model:</span>
             <select
               value={selectedModelId}
               onChange={(e) => setSelectedModelId(e.target.value)}
-              className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-slate-100 font-mono focus:outline-none focus:border-indigo-500"
+              className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-slate-100 font-mono focus:outline-none focus:border-indigo-500 text-xs"
             >
               {models.map((m) => (
                 <option key={m.model_id} value={m.model_id}>
@@ -139,7 +148,7 @@ export default function FailureMemoryPage() {
           <button
             onClick={handleBuildMemory}
             disabled={building || !selectedModelId}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg shadow-md transition-colors disabled:opacity-50 inline-flex items-center space-x-1.5"
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg shadow-md transition-all disabled:opacity-50 inline-flex items-center space-x-1.5 shrink-0 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             <BrainCircuit className="w-4 h-4" />
             <span>{building ? "Fitting Signatures..." : "Build Failure Memory"}</span>
@@ -150,8 +159,8 @@ export default function FailureMemoryPage() {
       {buildError && <ErrorState message={buildError} />}
 
       {/* Concept Note */}
-      <div className="p-4 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-300">
-        <span className="font-bold text-slate-100 block mb-0.5">Non-Causal Pattern Matching</span>
+      <div className="p-4 bg-slate-900/80 border border-slate-800/80 rounded-xl text-xs text-slate-300 shadow-md">
+        <span className="font-mono font-bold text-slate-100 uppercase tracking-wider block mb-0.5 text-[11px]">Non-Causal Pattern Matching</span>
         Failure Memory stores recurring <strong>Reliability Signatures</strong> (Condition Profiles). Matches indicate topological similarity to historical fault condition profiles and are associative, not confirmed root causes.
       </div>
 
@@ -169,18 +178,25 @@ export default function FailureMemoryPage() {
           <SectionCard
             title="Fitted Reliability Signatures"
             subtitle={`Fitted Memory ID: ${selectedMemoryId || buildResult?.memory_id || "N/A"}`}
-            action={<StatusBadge status="FITTED" />}
+            action={
+              <div className="flex items-center space-x-2 font-mono text-xs">
+                {(selectedMemoryId || buildResult?.memory_id) && (
+                  <CopyButton text={selectedMemoryId || buildResult?.memory_id || ""} />
+                )}
+                <StatusBadge status="FITTED" />
+              </div>
+            }
           >
             {buildResult?.signatures ? (
               <div className="space-y-4">
                 {buildResult.signatures.map((sig) => (
-                  <div key={sig.signature_id} className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2 text-xs">
+                  <div key={sig.signature_id} className="p-4 bg-slate-950/80 border border-slate-800/80 rounded-xl space-y-2 text-xs shadow-md">
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-indigo-300 font-mono">Signature #{sig.signature_id}</span>
                       <span className="text-slate-400 font-mono">Samples: {sig.sample_count}</span>
                     </div>
-                    <div className="text-slate-400">Centroid Profile:</div>
-                    <pre className="p-2 bg-slate-900 rounded border border-slate-800 font-mono text-[11px] text-slate-300 overflow-x-auto">
+                    <div className="text-slate-400 font-semibold">Centroid Profile:</div>
+                    <pre className="p-3 bg-slate-900/90 rounded-lg border border-slate-800/80 font-mono text-[11px] text-slate-300 overflow-x-auto">
                       {JSON.stringify(sig.centroid_profile, null, 2)}
                     </pre>
                   </div>
@@ -197,18 +213,18 @@ export default function FailureMemoryPage() {
 
             <form onSubmit={handleMatchQuery} className="space-y-4 text-xs">
               <div>
-                <label className="block font-medium text-slate-300 mb-1">Query Condition Profile (JSON) *</label>
+                <label className="block font-semibold text-slate-300 mb-1">Query Condition Profile (JSON) *</label>
                 <textarea
                   value={queryInput}
                   onChange={(e) => setQueryInput(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-slate-100 font-mono h-24 focus:outline-none focus:border-indigo-500"
+                  className="w-full bg-slate-950 border border-slate-800/80 rounded-lg p-3 text-slate-100 font-mono h-24 focus:outline-none focus:border-indigo-500"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={matching || !selectedMemoryId}
-                className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg shadow-md transition-colors disabled:opacity-50 flex items-center justify-center space-x-2"
+                className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg shadow-md transition-all disabled:opacity-50 flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 <Search className="w-4 h-4" />
                 <span>{matching ? "Matching Query..." : "Match Query Profile"}</span>
@@ -216,20 +232,20 @@ export default function FailureMemoryPage() {
             </form>
 
             {matchResult && (
-              <div className="mt-6 p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3 text-xs">
+              <div className="mt-6 p-4 bg-slate-950/80 border border-slate-800/80 rounded-xl space-y-3 text-xs shadow-md">
                 <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
                   <span className="font-bold text-slate-200">Query Match Result</span>
                   <StatusBadge status={matchResult.is_known_pattern ? "MATCHED_PATTERN" : "UNMATCHED"} />
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-slate-300">
+                <div className="grid grid-cols-2 gap-2 text-slate-300 font-mono">
                   <div>
                     <span className="text-slate-400">Matched Signature ID:</span>{" "}
-                    <span className="font-mono font-bold">{matchResult.matched_signature_id ?? "None"}</span>
+                    <span className="font-bold">{matchResult.matched_signature_id ?? "None"}</span>
                   </div>
                   <div>
                     <span className="text-slate-400">Centroid Distance:</span>{" "}
-                    <span className="font-mono font-bold">
+                    <span className="font-bold">
                       {matchResult.signature_distance != null ? matchResult.signature_distance.toFixed(4) : "N/A"}
                     </span>
                   </div>
@@ -242,3 +258,4 @@ export default function FailureMemoryPage() {
     </div>
   );
 }
+

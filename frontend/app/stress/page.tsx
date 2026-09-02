@@ -3,14 +3,17 @@
 import React, { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { DatasetRecord, ModelRecord, StressTestResponse } from "@/types/api";
+import { CopyButton } from "@/components/ui/CopyButton";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { useToast } from "@/components/providers/ToastProvider";
 import { Layers, Play, Zap } from "lucide-react";
 
 export default function StressLabPage() {
+  const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [models, setModels] = useState<ModelRecord[]>([]);
@@ -81,8 +84,10 @@ export default function StressLabPage() {
         random_state: Number(randomState),
       });
       setStressResult(res);
+      toast.success("Stress Test Executed", `Stressed fused risk: ${res.stressed_risk != null ? (res.stressed_risk * 100).toFixed(1) : 0}%`);
     } catch (err: any) {
       setStressError(err.message || "Stress lab test execution failed.");
+      toast.error("Stress Test Error", err.message || "Execution failed.");
     } finally {
       setExecuting(false);
     }
@@ -93,6 +98,8 @@ export default function StressLabPage() {
       <PageHeader
         title="Stress Lab Engine"
         description="Controlled synthetic stress testing (Gaussian Noise, Feature Dropout, Permutation, Combined Stress) on dataset copies without mutating source data."
+        icon={<Zap className="w-6 h-6 text-amber-400" />}
+        breadcrumbs={[{ label: "Testing" }, { label: "Stress Lab" }]}
       />
 
       {loading ? (
@@ -107,11 +114,11 @@ export default function StressLabPage() {
 
             <form onSubmit={handleRunStressTest} className="grid grid-cols-1 md:grid-cols-5 gap-4 text-xs items-end">
               <div>
-                <label className="block font-medium text-slate-300 mb-1">Target Model *</label>
+                <label className="block font-semibold text-slate-300 mb-1">Target Model *</label>
                 <select
                   value={selectedModelId}
                   onChange={(e) => setSelectedModelId(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
+                  className="w-full bg-slate-950 border border-slate-800/80 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500 font-mono"
                 >
                   {models.map((m) => (
                     <option key={m.model_id} value={m.model_id}>
@@ -122,11 +129,11 @@ export default function StressLabPage() {
               </div>
 
               <div>
-                <label className="block font-medium text-slate-300 mb-1">Evaluation Dataset *</label>
+                <label className="block font-semibold text-slate-300 mb-1">Evaluation Dataset *</label>
                 <select
                   value={selectedDatasetId}
                   onChange={(e) => setSelectedDatasetId(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
+                  className="w-full bg-slate-950 border border-slate-800/80 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500 font-mono"
                 >
                   {datasets.length === 0 ? (
                     <option value="">No EVALUATION datasets available</option>
@@ -141,11 +148,11 @@ export default function StressLabPage() {
               </div>
 
               <div>
-                <label className="block font-medium text-slate-300 mb-1">Stress Family *</label>
+                <label className="block font-semibold text-slate-300 mb-1">Stress Family *</label>
                 <select
                   value={stressType}
                   onChange={(e) => setStressType(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
+                  className="w-full bg-slate-950 border border-slate-800/80 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500 font-mono"
                 >
                   <option value="Gaussian_Noise">Gaussian Noise</option>
                   <option value="Feature_Dropout">Feature Dropout</option>
@@ -155,7 +162,7 @@ export default function StressLabPage() {
               </div>
 
               <div>
-                <label className="block font-medium text-slate-300 mb-1">Severity ({severity}) *</label>
+                <label className="block font-semibold text-slate-300 mb-1 font-mono">Severity ({severity}) *</label>
                 <input
                   type="range"
                   min="0.0"
@@ -163,7 +170,7 @@ export default function StressLabPage() {
                   step="0.05"
                   value={severity}
                   onChange={(e) => setSeverity(parseFloat(e.target.value))}
-                  className="w-full accent-indigo-500 cursor-pointer"
+                  className="w-full accent-amber-500 cursor-pointer"
                 />
               </div>
 
@@ -171,7 +178,7 @@ export default function StressLabPage() {
                 <button
                   type="submit"
                   disabled={executing || !selectedDatasetId}
-                  className="w-full py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-semibold shadow-md transition-colors disabled:opacity-50 flex items-center justify-center space-x-2"
+                  className="w-full py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-semibold shadow-md transition-all disabled:opacity-50 flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-amber-500"
                 >
                   <Zap className="w-4 h-4 fill-current" />
                   <span>{executing ? "Running Stress..." : "Run Stress Test"}</span>
@@ -189,25 +196,30 @@ export default function StressLabPage() {
               <SectionCard
                 title="Stress Impact Results (Original vs Stressed)"
                 subtitle={`Stress Run ID: ${stressResult.stress_test_id} | Family: ${stressResult.stress_type} | Severity: ${stressResult.severity}`}
-                action={<StatusBadge status={stressResult.status} />}
+                action={
+                  <div className="flex items-center space-x-3">
+                    <CopyButton text={stressResult.stress_test_id} label="Copy Run ID" />
+                    <StatusBadge status={stressResult.status} />
+                  </div>
+                }
               >
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                  <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                    <div className="text-slate-400 font-mono uppercase">Original Fused Risk</div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-mono">
+                  <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800/80 shadow-md">
+                    <div className="text-slate-400 font-semibold uppercase text-[11px]">Original Fused Risk</div>
                     <div className="text-xl font-bold text-slate-200 mt-1">
                       {stressResult.original_risk != null ? `${(stressResult.original_risk * 100).toFixed(1)}%` : "N/A"}
                     </div>
                   </div>
 
-                  <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                    <div className="text-slate-400 font-mono uppercase">Stressed Fused Risk</div>
+                  <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800/80 shadow-md">
+                    <div className="text-slate-400 font-semibold uppercase text-[11px]">Stressed Fused Risk</div>
                     <div className="text-xl font-bold text-amber-400 mt-1">
                       {stressResult.stressed_risk != null ? `${(stressResult.stressed_risk * 100).toFixed(1)}%` : "N/A"}
                     </div>
                   </div>
 
-                  <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                    <div className="text-slate-400 font-mono uppercase">Risk Delta (Increase)</div>
+                  <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800/80 shadow-md">
+                    <div className="text-slate-400 font-semibold uppercase text-[11px]">Risk Delta (Increase)</div>
                     <div className="text-xl font-bold text-rose-400 mt-1">
                       {stressResult.risk_delta != null ? `+${(stressResult.risk_delta * 100).toFixed(1)}%` : "N/A"}
                     </div>
@@ -216,18 +228,18 @@ export default function StressLabPage() {
 
                 {/* Additional accuracy comparison if labels existed */}
                 {stressResult.original_accuracy != null && (
-                  <div className="mt-4 p-4 bg-slate-950/60 border border-slate-800 rounded-xl grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                  <div className="mt-4 p-4 bg-slate-950/60 border border-slate-800/80 rounded-xl grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-mono shadow-md">
                     <div>
-                      <span className="text-slate-400 font-mono">Original Accuracy:</span>{" "}
-                      <span className="font-bold text-emerald-400">{(stressResult.original_accuracy * 100).toFixed(1)}%</span>
+                      <span className="text-slate-400 font-semibold">Original Accuracy:</span>{" "}
+                      <span className="font-bold text-emerald-400 font-sans">{(stressResult.original_accuracy * 100).toFixed(1)}%</span>
                     </div>
                     <div>
-                      <span className="text-slate-400 font-mono">Stressed Accuracy:</span>{" "}
-                      <span className="font-bold text-amber-400">{(stressResult.stressed_accuracy! * 100).toFixed(1)}%</span>
+                      <span className="text-slate-400 font-semibold">Stressed Accuracy:</span>{" "}
+                      <span className="font-bold text-amber-400 font-sans">{(stressResult.stressed_accuracy! * 100).toFixed(1)}%</span>
                     </div>
                     <div>
-                      <span className="text-slate-400 font-mono">Accuracy Delta:</span>{" "}
-                      <span className="font-bold text-rose-400">{(stressResult.accuracy_delta! * 100).toFixed(1)}%</span>
+                      <span className="text-slate-400 font-semibold">Accuracy Delta:</span>{" "}
+                      <span className="font-bold text-rose-400 font-sans">{(stressResult.accuracy_delta! * 100).toFixed(1)}%</span>
                     </div>
                   </div>
                 )}
@@ -239,3 +251,4 @@ export default function StressLabPage() {
     </div>
   );
 }
+

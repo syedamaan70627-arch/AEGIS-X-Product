@@ -78,7 +78,7 @@ test("Scenario 4: Token refresh updates API Authorization", async () => {
 
 test("Scenario 5 & 6: HTTP 401 triggers one refresh attempt & succeeds with refreshed token", async () => {
   let callCount = 0;
-  let authHeadersSent: string[] = [];
+  const authHeadersSent: string[] = [];
 
   process.env.NEXT_PUBLIC_SUPABASE_URL = "https://mock.supabase.co";
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "mock-anon-key";

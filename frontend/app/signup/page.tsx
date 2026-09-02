@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { ErrorState } from "@/components/ui/ErrorState";
-import { CheckCircle2, Lock, Mail, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Eye, EyeOff, Lock, Mail, ShieldCheck } from "lucide-react";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -14,6 +14,7 @@ export default function SignUpPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
@@ -50,30 +51,32 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans antialiased text-slate-100">
+    <div className="min-h-screen bg-slate-950 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans antialiased text-slate-100">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-3">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 shadow-xl shadow-indigo-950/60 mb-2">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-tr from-indigo-600 to-cyan-500 shadow-xl shadow-indigo-950/80 ring-1 ring-white/10 mb-2">
           <ShieldCheck className="w-6 h-6 text-white" />
         </div>
         <h2 className="text-2xl font-bold tracking-tight text-slate-100">Create AEGIS-X Account</h2>
-        <p className="text-xs text-slate-400">Register an enterprise account for multi-user reliability telemetry</p>
+        <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
+          Register an enterprise account for multi-user reliability telemetry and failure warning
+        </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-slate-900 border border-slate-800 py-8 px-6 shadow-2xl rounded-2xl sm:px-10 space-y-6">
+        <div className="bg-slate-900/90 border border-slate-800/80 py-8 px-6 shadow-2xl rounded-2xl sm:px-10 space-y-6 backdrop-blur-md">
           {submitted ? (
             <div className="text-center space-y-4 py-4">
-              <div className="p-3 bg-emerald-950/60 border border-emerald-800 rounded-full w-12 h-12 mx-auto flex items-center justify-center text-emerald-400">
+              <div className="p-3 bg-emerald-950/60 border border-emerald-800 rounded-full w-12 h-12 mx-auto flex items-center justify-center text-emerald-400 shadow-lg">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
               <h3 className="text-base font-bold text-slate-100">Verification Email Sent</h3>
-              <p className="text-xs text-slate-400">
-                We sent a confirmation link to <span className="text-slate-200 font-semibold">{email}</span>. Please verify your email to complete registration.
+              <p className="text-xs text-slate-400 leading-relaxed">
+                We sent a confirmation link to <span className="text-slate-200 font-semibold font-mono">{email}</span>. Please check your inbox and verify your email address to complete registration.
               </p>
               <div className="pt-4">
                 <Link
                   href="/login"
-                  className="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-lg transition-colors"
+                  className="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-lg transition-colors shadow-md"
                 >
                   Return to Sign In
                 </Link>
@@ -96,7 +99,7 @@ export default function SignUpPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="analyst@enterprise.io"
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-10 pr-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
+                      className="w-full bg-slate-950 border border-slate-800/80 rounded-lg pl-10 pr-3 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-mono"
                     />
                   </div>
                 </div>
@@ -108,13 +111,21 @@ export default function SignUpPage() {
                       <Lock className="w-4 h-4" />
                     </div>
                     <input
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••••••"
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-10 pr-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
+                      className="w-full bg-slate-950 border border-slate-800/80 rounded-lg pl-10 pr-10 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-mono"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300"
+                      aria-label="Toggle password visibility"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
                   </div>
                 </div>
 
@@ -125,12 +136,12 @@ export default function SignUpPage() {
                       <Lock className="w-4 h-4" />
                     </div>
                     <input
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       required
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="••••••••••••"
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-10 pr-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
+                      className="w-full bg-slate-950 border border-slate-800/80 rounded-lg pl-10 pr-10 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-mono"
                     />
                   </div>
                 </div>
@@ -138,15 +149,15 @@ export default function SignUpPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg shadow-md transition-colors disabled:opacity-50 mt-2"
+                  className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg shadow-md transition-all disabled:opacity-50 mt-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                   {loading ? "Creating Account..." : "Create Enterprise Account"}
                 </button>
               </form>
 
-              <div className="pt-4 border-t border-slate-800 text-center text-xs text-slate-400">
+              <div className="pt-4 border-t border-slate-800/80 text-center text-xs text-slate-400">
                 Already have an account?{" "}
-                <Link href="/login" className="text-indigo-400 font-semibold hover:text-indigo-300">
+                <Link href="/login" className="text-cyan-400 font-semibold hover:text-cyan-300">
                   Sign In
                 </Link>
               </div>
@@ -157,3 +168,4 @@ export default function SignUpPage() {
     </div>
   );
 }
+

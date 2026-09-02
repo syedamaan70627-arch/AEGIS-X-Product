@@ -2,11 +2,9 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { setAuthToken } from "@/lib/api";
-import { getStoredAuthToken, setStoredAuthToken } from "@/lib/auth";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { AuthSession, AuthUser } from "@/lib/supabase/types";
 import { isVercelEnvironment } from "@/lib/config";
-
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -31,14 +29,13 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const configured = isSupabaseConfigured();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [session, setSession] = useState<AuthSession | null>(null);
-  const [loading, setLoading] = useState(true);
-  const configured = isSupabaseConfigured();
+  const [loading, setLoading] = useState(configured);
 
   useEffect(() => {
     if (!configured) {
-      setLoading(false);
       return;
     }
 

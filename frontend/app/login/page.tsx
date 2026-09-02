@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { ErrorState } from "@/components/ui/ErrorState";
-import { Lock, Mail, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, ShieldCheck } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,6 +13,7 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,21 +42,25 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans antialiased text-slate-100">
+    <div className="min-h-screen bg-slate-950 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans antialiased text-slate-100">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-3">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 shadow-xl shadow-indigo-950/60 mb-2">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-tr from-indigo-600 to-cyan-500 shadow-xl shadow-indigo-950/80 ring-1 ring-white/10 mb-2">
           <ShieldCheck className="w-6 h-6 text-white" />
         </div>
-        <h2 className="text-2xl font-bold tracking-tight text-slate-100">AEGIS-X Command Center</h2>
-        <p className="text-xs text-slate-400">Sign in to access AI reliability operational telemetry</p>
+        <h2 className="text-2xl font-bold tracking-tight text-slate-100">AEGIS-X</h2>
+        <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
+          Model-Agnostic Enterprise Framework for AI Reliability Monitoring, Stress Testing & Early Warning
+        </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-slate-900 border border-slate-800 py-8 px-6 shadow-2xl rounded-2xl sm:px-10 space-y-6">
+        <div className="bg-slate-900/90 border border-slate-800/80 py-8 px-6 shadow-2xl rounded-2xl sm:px-10 space-y-6 backdrop-blur-md">
           {!isConfigured && (
-            <div className="p-3 bg-amber-950/40 border border-amber-800/60 rounded-lg text-xs text-amber-300">
-              <span className="font-bold block mb-0.5">Offline Development Mode</span>
-              Supabase Auth is unconfigured. Requests run under local development context. Click sign in to open dashboard.
+            <div className="p-3 bg-amber-950/40 border border-amber-800/60 rounded-xl text-xs text-amber-300 space-y-1">
+              <span className="font-bold font-mono uppercase block text-[11px] text-amber-400">Offline Local Context</span>
+              <p className="text-[11px] text-amber-200/90 leading-normal">
+                Supabase auth credentials are not configured. Click sign in to open local development session.
+              </p>
             </div>
           )}
 
@@ -74,7 +79,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="analyst@enterprise.io"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-10 pr-3 py-2.5 text-slate-100 focus:outline-none focus:border-indigo-500"
+                  className="w-full bg-slate-950 border border-slate-800/80 rounded-lg pl-10 pr-3 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-mono"
                 />
               </div>
             </div>
@@ -86,30 +91,38 @@ export default function LoginPage() {
                   <Lock className="w-4 h-4" />
                 </div>
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-10 pr-3 py-2.5 text-slate-100 focus:outline-none focus:border-indigo-500"
+                  className="w-full bg-slate-950 border border-slate-800/80 rounded-lg pl-10 pr-10 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-mono"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300"
+                  aria-label="Toggle password visibility"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg shadow-md transition-colors disabled:opacity-50"
+              className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg shadow-md transition-all disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
-              {loading ? "Authenticating..." : "Sign In to Command Center"}
+              {loading ? "Authenticating Session..." : "Sign In to Command Center"}
             </button>
           </form>
 
           {isConfigured && (
-            <div className="pt-4 border-t border-slate-800 text-center text-xs text-slate-400">
+            <div className="pt-4 border-t border-slate-800/80 text-center text-xs text-slate-400">
               Need an enterprise account?{" "}
-              <Link href="/signup" className="text-indigo-400 font-semibold hover:text-indigo-300">
-                Sign Up
+              <Link href="/signup" className="text-cyan-400 font-semibold hover:text-cyan-300">
+                Create Account
               </Link>
             </div>
           )}
@@ -118,3 +131,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

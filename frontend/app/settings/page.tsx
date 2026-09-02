@@ -4,12 +4,13 @@ import React, { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { ReadinessResponse, SystemStatus, UserMe } from "@/types/api";
+import { CopyButton } from "@/components/ui/CopyButton";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { Database, KeyRound, Server, Shield, User } from "lucide-react";
+import { Database, KeyRound, Server, Settings as SettingsIcon, Shield, User } from "lucide-react";
 
 import { isVercelEnvironment } from "@/lib/config";
 
@@ -75,23 +76,28 @@ export default function SettingsPage() {
       <PageHeader
         title="Account & System Settings"
         description="Inspect authenticated user identity, active database repositories, storage adapters, and API readiness."
+        icon={<SettingsIcon className="w-6 h-6 text-slate-400" />}
+        breadcrumbs={[{ label: "System" }, { label: "Settings" }]}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* User Account Context */}
         <SectionCard title="User Account Context" subtitle="Identity information acknowledged by FastAPI backend">
           <div className="space-y-4 text-xs">
-            <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl flex items-center space-x-3">
-              <User className="w-5 h-5 text-indigo-400 shrink-0" />
-              <div>
-                <div className="text-slate-400 font-mono">User ID</div>
-                <div className="text-sm font-bold text-slate-100 font-mono mt-0.5">{displayUserId}</div>
+            <div className="p-4 bg-slate-950/80 border border-slate-800/80 rounded-xl flex items-center justify-between shadow-md font-mono">
+              <div className="flex items-center space-x-3">
+                <User className="w-5 h-5 text-indigo-400 shrink-0" />
+                <div>
+                  <div className="text-slate-400 font-semibold text-[11px]">User ID</div>
+                  <div className="text-sm font-bold text-slate-100 mt-0.5">{displayUserId}</div>
+                </div>
               </div>
+              <CopyButton text={displayUserId} label="Copy ID" />
             </div>
 
-            <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
+            <div className="p-4 bg-slate-950/80 border border-slate-800/80 rounded-xl flex items-center justify-between shadow-md">
               <div>
-                <div className="text-slate-400 font-mono">Authenticated State</div>
+                <div className="text-slate-400 font-mono text-[11px]">Authenticated State</div>
                 <div className="text-xs font-semibold text-slate-200 mt-0.5">
                   {authStateLabel}
                 </div>
@@ -104,12 +110,12 @@ export default function SettingsPage() {
         {/* Backend Environment Configuration */}
         <SectionCard title="Backend Operations" subtitle="Operational infrastructure mode configuration">
           <div className="space-y-4 text-xs">
-            <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <Database className="w-5 h-5 text-indigo-400" />
+            <div className="p-4 bg-slate-950/80 border border-slate-800/80 rounded-xl flex items-center justify-between shadow-md">
+              <div className="flex items-center space-x-3 font-mono">
+                <Database className="w-5 h-5 text-indigo-400 shrink-0" />
                 <div>
-                  <div className="text-slate-400 font-mono">Database Backend</div>
-                  <div className="text-sm font-bold text-slate-100 uppercase font-mono mt-0.5">
+                  <div className="text-slate-400 font-semibold text-[11px]">Database Backend</div>
+                  <div className="text-sm font-bold text-slate-100 uppercase mt-0.5">
                     {dbBackendLabel}
                   </div>
                 </div>
@@ -117,12 +123,12 @@ export default function SettingsPage() {
               <StatusBadge status={dbStatusBadge} />
             </div>
 
-            <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <Server className="w-5 h-5 text-emerald-400" />
+            <div className="p-4 bg-slate-950/80 border border-slate-800/80 rounded-xl flex items-center justify-between shadow-md">
+              <div className="flex items-center space-x-3 font-mono">
+                <Server className="w-5 h-5 text-emerald-400 shrink-0" />
                 <div>
-                  <div className="text-slate-400 font-mono">Storage Adapter</div>
-                  <div className="text-sm font-bold text-slate-100 uppercase font-mono mt-0.5">
+                  <div className="text-slate-400 font-semibold text-[11px]">Storage Adapter</div>
+                  <div className="text-sm font-bold text-slate-100 uppercase mt-0.5">
                     {storageAdapterLabel}
                   </div>
                 </div>
@@ -133,26 +139,26 @@ export default function SettingsPage() {
         </SectionCard>
       </div>
 
-
       {/* API Readiness & Capabilities Summary */}
       <SectionCard title="Engine Capabilities & Readiness" subtitle="Exposed API capabilities and readiness check">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-          <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-            <div className="text-slate-400 font-mono uppercase">API Status</div>
-            <div className="text-lg font-bold text-emerald-400 mt-1">{status?.api_status || "operational"}</div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-mono">
+          <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800/80 shadow-md">
+            <div className="text-slate-400 font-semibold uppercase text-[11px]">API Status</div>
+            <div className="text-lg font-bold text-emerald-400 mt-1 font-sans">{status?.api_status || "operational"}</div>
           </div>
 
-          <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-            <div className="text-slate-400 font-mono uppercase">API Version</div>
-            <div className="text-lg font-bold text-slate-200 mt-1">{status?.api_version || "1.0.0"}</div>
+          <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800/80 shadow-md">
+            <div className="text-slate-400 font-semibold uppercase text-[11px]">API Version</div>
+            <div className="text-lg font-bold text-slate-200 mt-1 font-sans">{status?.api_version || "1.0.0"}</div>
           </div>
 
-          <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-            <div className="text-slate-400 font-mono uppercase">Auth Requirement</div>
-            <div className="text-lg font-bold text-indigo-400 uppercase mt-1">{status?.auth_mode || "disabled"}</div>
+          <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800/80 shadow-md">
+            <div className="text-slate-400 font-semibold uppercase text-[11px]">Auth Requirement</div>
+            <div className="text-lg font-bold text-indigo-400 uppercase mt-1 font-sans">{status?.auth_mode || "disabled"}</div>
           </div>
         </div>
       </SectionCard>
     </div>
   );
 }
+

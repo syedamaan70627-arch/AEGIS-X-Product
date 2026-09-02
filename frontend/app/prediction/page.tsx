@@ -3,15 +3,18 @@
 import React, { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { DatasetRecord, ModelCapabilitiesResponse, ModelRecord, PredictionResponse } from "@/types/api";
+import { CopyButton } from "@/components/ui/CopyButton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { useToast } from "@/components/providers/ToastProvider";
 import { AlertCircle, Clock, FileCheck, Layers, Play } from "lucide-react";
 
 export default function FailurePredictionPage() {
+  const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [models, setModels] = useState<ModelRecord[]>([]);
@@ -35,10 +38,12 @@ export default function FailurePredictionPage() {
     try {
       await api.fitFailurePrediction(selectedModelId, { trajectory_dataset_id: selectedTrajectoryId });
       setFitSuccess("Failure prediction model fitted successfully! Capability updated to READY.");
+      toast.success("Prediction Setup Complete", "Predictor model fitted and capability set to READY.");
       const updatedCap = await api.getModelCapabilities(selectedModelId);
       setCapabilities(updatedCap);
     } catch (err: any) {
       setPredictionError(err.message || "Failed to fit failure predictor.");
+      toast.error("Setup Failed", err.message || "Could not fit predictor.");
     } finally {
       setFitting(false);
     }
@@ -106,8 +111,10 @@ export default function FailurePredictionPage() {
         evaluation_dataset_id: selectedDatasetId,
       });
       setPredictionResult(res);
+      toast.success("Prediction Executed", `Mean probability: ${res.mean_predicted_probability != null ? (res.mean_predicted_probability * 100).toFixed(1) : 0}%`);
     } catch (err: any) {
       setPredictionError(err.message || "Failure prediction execution failed.");
+      toast.error("Prediction Failed", err.message || "Execution failed.");
     } finally {
       setExecuting(false);
     }
@@ -120,24 +127,20 @@ export default function FailurePredictionPage() {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-slate-100 flex items-center space-x-3">
-          <FileCheck className="w-7 h-7 text-indigo-400" />
-          <span>Failure Prediction</span>
-        </h1>
-        <p className="text-sm text-slate-400 mt-1">
-          Predict future failure onset probabilities across operational degradation trajectories using temporal reliability features.
-        </p>
-      </div>
+      <PageHeader
+        title="Failure Prediction Engine"
+        description="Predict future failure onset probabilities across operational degradation trajectories using temporal reliability features."
+        icon={<FileCheck className="w-6 h-6 text-indigo-400" />}
+        breadcrumbs={[{ label: "Intelligence" }, { label: "Failure Prediction" }]}
+      />
 
       {error && <ErrorState message={error} />}
 
       {/* Model Selector Card */}
       {models.length > 0 && (
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3 text-xs">
-            <Layers className="w-4 h-4 text-indigo-400" />
+        <div className="bg-slate-900/90 border border-slate-800/80 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs font-mono shadow-md">
+          <div className="flex items-center space-x-3">
+            <Layers className="w-4 h-4 text-indigo-400 shrink-0" />
             <span className="font-semibold text-slate-200">Active Model:</span>
             <select
               value={selectedModelId}
@@ -147,7 +150,7 @@ export default function FailurePredictionPage() {
                 setPredictionError(null);
                 setFitSuccess(null);
               }}
-              className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-slate-100 font-mono focus:outline-none focus:border-indigo-500"
+              className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-slate-100 font-mono focus:outline-none focus:border-indigo-500 text-xs"
             >
               {models.map((m) => (
                 <option key={m.model_id} value={m.model_id}>
@@ -156,24 +159,26 @@ export default function FailurePredictionPage() {
               ))}
             </select>
           </div>
+          {selectedModelId && <CopyButton text={selectedModelId} label="Copy Model ID" />}
         </div>
       )}
 
       {/* Capability State Safeguard */}
       {predCap?.status !== "READY" ? (
         <div className="space-y-4">
-          <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl space-y-4">
+          <div className="p-6 bg-slate-900/90 border border-slate-800/80 rounded-2xl space-y-4 shadow-xl">
             <div className="flex items-center space-x-3 text-amber-400 font-bold text-sm">
-              <AlertCircle className="w-5 h-5" />
+              <AlertCircle className="w-5 h-5 shrink-0" />
               <span>Failure Prediction Requires Setup</span>
             </div>
-            <p className="text-xs text-slate-300">
+            <p className="text-xs text-slate-300 leading-relaxed">
               Failure Prediction fits a model to estimate failure onset probability over temporal degradation trajectories.
-              Ordinary <code className="text-amber-300">REFERENCE</code> or <code className="text-amber-300">EVALUATION</code> raw feature datasets cannot be used for predictor setup.
-              Select an uploaded <code className="text-emerald-400">TEMPORAL_TRAJECTORY</code> dataset containing temporal reliability features and ground-truth failure labels to fit the predictor.
+              Ordinary <code className="text-amber-300 font-mono">REFERENCE</code> or <code className="text-amber-300 font-mono">EVALUATION</code> raw feature datasets cannot be used for predictor setup.
+              Select an uploaded <code className="text-emerald-400 font-mono">TEMPORAL_TRAJECTORY</code> dataset containing temporal reliability features and ground-truth failure labels to fit the predictor.
             </p>
-            <div className="p-3 bg-slate-950 rounded-lg border border-slate-800/80 text-[11px] text-slate-400 font-mono">
-              Status: {predCap?.status || "NOT_AVAILABLE"} | Horizon Unit: controlled_degradation_states
+            <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800/80 text-[11px] text-slate-400 font-mono flex items-center justify-between">
+              <span>Status: {predCap?.status || "NOT_AVAILABLE"}</span>
+              <span className="text-indigo-400">Horizon Unit: controlled_degradation_states</span>
             </div>
 
             <div className="space-y-2">
@@ -183,7 +188,7 @@ export default function FailurePredictionPage() {
               <select
                 value={selectedTrajectoryId}
                 onChange={(e) => setSelectedTrajectoryId(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                className="w-full bg-slate-950 border border-slate-800/80 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 font-mono"
               >
                 <option value="">-- Choose TEMPORAL_TRAJECTORY Dataset --</option>
                 {trajectoryDatasets.map((ds) => (
@@ -194,7 +199,7 @@ export default function FailurePredictionPage() {
               </select>
 
               {trajectoryDatasets.length === 0 && (
-                <p className="text-[11px] text-amber-400/90 italic">
+                <p className="text-[11px] text-amber-400/90 italic font-mono">
                   No TEMPORAL_TRAJECTORY datasets found. Upload a temporal trajectory CSV on the Data page to proceed.
                 </p>
               )}
@@ -202,7 +207,7 @@ export default function FailurePredictionPage() {
 
             {predictionError && <ErrorState message={predictionError} />}
             {fitSuccess && (
-              <div className="p-3 bg-emerald-950/80 border border-emerald-800 rounded-lg text-emerald-300 text-xs font-semibold">
+              <div className="p-3 bg-emerald-950/80 border border-emerald-800 rounded-lg text-emerald-300 text-xs font-semibold font-mono">
                 {fitSuccess}
               </div>
             )}
@@ -210,7 +215,7 @@ export default function FailurePredictionPage() {
             <button
               onClick={handleFitPrediction}
               disabled={fitting || !selectedModelId || !selectedTrajectoryId}
-              className="w-full md:w-auto px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-semibold text-xs shadow-md transition-colors disabled:opacity-50 flex items-center justify-center space-x-2"
+              className="w-full md:w-auto px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-semibold text-xs shadow-md transition-all disabled:opacity-50 flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
               <Play className="w-4 h-4 fill-current" />
               <span>{fitting ? "Fitting Predictor Engine..." : "Setup Failure Prediction"}</span>
@@ -230,11 +235,11 @@ export default function FailurePredictionPage() {
 
             <form onSubmit={handleRunPrediction} className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs items-end">
               <div>
-                <label className="block font-medium text-slate-300 mb-1">Temporal Trajectory Dataset *</label>
+                <label className="block font-semibold text-slate-300 mb-1">Temporal Trajectory Dataset *</label>
                 <select
                   value={selectedDatasetId}
                   onChange={(e) => setSelectedDatasetId(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
+                  className="w-full bg-slate-950 border border-slate-800/80 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500 font-mono"
                 >
                   <option value="">-- Choose TEMPORAL_TRAJECTORY Dataset --</option>
                   {trajectoryDatasets.map((d) => (
@@ -243,14 +248,13 @@ export default function FailurePredictionPage() {
                     </option>
                   ))}
                 </select>
-
               </div>
 
               <div className="md:col-span-2">
                 <button
                   type="submit"
                   disabled={executing || !selectedDatasetId}
-                  className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-semibold shadow-md transition-colors disabled:opacity-50 flex items-center justify-center space-x-2"
+                  className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-semibold shadow-md transition-all disabled:opacity-50 flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                   <Play className="w-4 h-4 fill-current" />
                   <span>{executing ? "Running Prediction..." : "Execute Failure Prediction"}</span>
@@ -262,25 +266,29 @@ export default function FailurePredictionPage() {
           {executing && <LoadingState message="Executing onset-aware failure prediction..." />}
 
           {predictionResult && (
-            <SectionCard title="Prediction Result Payload" subtitle={`Prediction ID: ${predictionResult.prediction_id}`}>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                  <div className="text-slate-400 font-mono uppercase">Status</div>
+            <SectionCard
+              title="Prediction Result Payload"
+              subtitle={`Prediction ID: ${predictionResult.prediction_id}`}
+              action={<CopyButton text={predictionResult.prediction_id} label="Copy Prediction ID" />}
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-mono">
+                <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800/80 shadow-md">
+                  <div className="text-slate-400 uppercase font-semibold text-[11px]">Status</div>
                   <div className="mt-1">
                     <StatusBadge status={predictionResult.status} />
                   </div>
                 </div>
 
-                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                  <div className="text-slate-400 font-mono uppercase">Horizon Steps</div>
-                  <div className="text-xl font-bold text-slate-100 mt-1">
-                    {predictionResult.horizon_steps} ({predictionResult.horizon_unit})
+                <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800/80 shadow-md">
+                  <div className="text-slate-400 uppercase font-semibold text-[11px]">Horizon Steps</div>
+                  <div className="text-xl font-bold text-slate-100 mt-1 font-sans">
+                    {predictionResult.horizon_steps} <span className="text-xs text-indigo-400 font-mono">({predictionResult.horizon_unit})</span>
                   </div>
                 </div>
 
-                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                  <div className="text-slate-400 font-mono uppercase">Mean Predicted Probability</div>
-                  <div className="text-xl font-bold text-indigo-400 mt-1">
+                <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800/80 shadow-md">
+                  <div className="text-slate-400 uppercase font-semibold text-[11px]">Mean Predicted Probability</div>
+                  <div className="text-xl font-bold text-indigo-400 mt-1 font-sans">
                     {predictionResult.mean_predicted_probability != null
                       ? `${(predictionResult.mean_predicted_probability * 100).toFixed(1)}%`
                       : "N/A"}
@@ -294,3 +302,4 @@ export default function FailurePredictionPage() {
     </div>
   );
 }
+

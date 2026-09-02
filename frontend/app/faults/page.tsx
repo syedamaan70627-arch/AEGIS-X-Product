@@ -4,14 +4,17 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { DatasetRecord, FaultTestResponse, ModelRecord } from "@/types/api";
+import { CopyButton } from "@/components/ui/CopyButton";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { useToast } from "@/components/providers/ToastProvider";
 import { AlertOctagon, ArrowRight, Layers, Play } from "lucide-react";
 
 export default function FaultLabPage() {
+  const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [models, setModels] = useState<ModelRecord[]>([]);
@@ -94,8 +97,10 @@ export default function FaultLabPage() {
         feature_pair: faultType === "Channel_Swap" ? pairList : undefined,
       });
       setFaultResult(res);
+      toast.success("Fault Injection Executed", `Injected ${faultType} fault successfully`);
     } catch (err: any) {
       setFaultError(err.message || "Fault injection execution failed.");
+      toast.error("Fault Injection Error", err.message || "Execution failed.");
     } finally {
       setExecuting(false);
     }
@@ -106,6 +111,8 @@ export default function FaultLabPage() {
       <PageHeader
         title="Fault Lab Engine"
         description="Structured sensor bias, gain error, stuck-at, channel swap, and sign inversion fault injection on dataset copies."
+        icon={<AlertOctagon className="w-6 h-6 text-rose-400" />}
+        breadcrumbs={[{ label: "Testing" }, { label: "Fault Lab" }]}
       />
 
       {loading ? (
@@ -121,11 +128,11 @@ export default function FaultLabPage() {
             <form onSubmit={handleRunFaultTest} className="space-y-4 text-xs">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block font-medium text-slate-300 mb-1">Target Model *</label>
+                  <label className="block font-semibold text-slate-300 mb-1">Target Model *</label>
                   <select
                     value={selectedModelId}
                     onChange={(e) => setSelectedModelId(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
+                    className="w-full bg-slate-950 border border-slate-800/80 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500 font-mono"
                   >
                     {models.map((m) => (
                       <option key={m.model_id} value={m.model_id}>
@@ -136,11 +143,11 @@ export default function FaultLabPage() {
                 </div>
 
                 <div>
-                  <label className="block font-medium text-slate-300 mb-1">Evaluation Dataset *</label>
+                  <label className="block font-semibold text-slate-300 mb-1">Evaluation Dataset *</label>
                   <select
                     value={selectedDatasetId}
                     onChange={(e) => setSelectedDatasetId(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
+                    className="w-full bg-slate-950 border border-slate-800/80 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500 font-mono"
                   >
                     {datasets.length === 0 ? (
                       <option value="">No EVALUATION datasets available</option>
@@ -155,11 +162,11 @@ export default function FaultLabPage() {
                 </div>
 
                 <div>
-                  <label className="block font-medium text-slate-300 mb-1">Fault Family *</label>
+                  <label className="block font-semibold text-slate-300 mb-1">Fault Family *</label>
                   <select
                     value={faultType}
                     onChange={(e) => setFaultType(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500"
+                    className="w-full bg-slate-950 border border-slate-800/80 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500 font-mono"
                   >
                     <option value="Sensor_Bias">Sensor Bias</option>
                     <option value="Gain_Error">Gain Error</option>
@@ -173,7 +180,7 @@ export default function FaultLabPage() {
               {/* Dynamic Fault Inputs */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
                 <div>
-                  <label className="block font-medium text-slate-300 mb-1">Severity ({severity}) *</label>
+                  <label className="block font-semibold text-slate-300 mb-1 font-mono">Severity ({severity}) *</label>
                   <input
                     type="range"
                     min="0.0"
@@ -186,38 +193,38 @@ export default function FaultLabPage() {
                 </div>
 
                 <div>
-                  <label className="block font-medium text-slate-300 mb-1">Affected Feature(s) (Comma separated)</label>
+                  <label className="block font-semibold text-slate-300 mb-1">Affected Feature(s) (Comma separated)</label>
                   <input
                     type="text"
                     value={affectedFeatures}
                     onChange={(e) => setAffectedFeatures(e.target.value)}
                     placeholder="e.g. f1, f2 (Leave empty for random)"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500 font-mono"
+                    className="w-full bg-slate-950 border border-slate-800/80 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono"
                   />
                 </div>
 
                 {faultType === "Stuck_At" && (
                   <div>
-                    <label className="block font-medium text-slate-300 mb-1">Stuck Value</label>
+                    <label className="block font-semibold text-slate-300 mb-1">Stuck Value</label>
                     <input
                       type="number"
                       step="any"
                       value={stuckValue}
                       onChange={(e) => setStuckValue(parseFloat(e.target.value))}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500 font-mono"
+                      className="w-full bg-slate-950 border border-slate-800/80 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500 font-mono"
                     />
                   </div>
                 )}
 
                 {faultType === "Channel_Swap" && (
                   <div>
-                    <label className="block font-medium text-slate-300 mb-1">Feature Pair (Comma separated)</label>
+                    <label className="block font-semibold text-slate-300 mb-1">Feature Pair (Comma separated)</label>
                     <input
                       type="text"
                       value={featurePair}
                       onChange={(e) => setFeaturePair(e.target.value)}
                       placeholder="e.g. f1, f2"
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500 font-mono"
+                      className="w-full bg-slate-950 border border-slate-800/80 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500 font-mono"
                     />
                   </div>
                 )}
@@ -227,7 +234,7 @@ export default function FaultLabPage() {
                 <button
                   type="submit"
                   disabled={executing || !selectedDatasetId}
-                  className="w-full py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg font-semibold shadow-md transition-colors disabled:opacity-50 flex items-center justify-center space-x-2"
+                  className="w-full py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg font-semibold shadow-md transition-all disabled:opacity-50 flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-rose-500"
                 >
                   <AlertOctagon className="w-4 h-4" />
                   <span>{executing ? "Injecting Fault..." : "Inject Fault & Evaluate Failure Discovery"}</span>
@@ -245,11 +252,16 @@ export default function FaultLabPage() {
               <SectionCard
                 title="Fault Injection Execution Summary"
                 subtitle={`Run ID: ${faultResult.fault_test_id} | Family: ${faultResult.fault_type} | Severity: ${faultResult.severity}`}
-                action={<StatusBadge status={faultResult.status} />}
+                action={
+                  <div className="flex items-center space-x-3">
+                    <CopyButton text={faultResult.fault_test_id} label="Copy Run ID" />
+                    <StatusBadge status={faultResult.status} />
+                  </div>
+                }
               >
-                <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3 text-xs">
+                <div className="p-4 bg-slate-950/80 border border-slate-800/80 rounded-xl space-y-3 text-xs shadow-md">
                   <div>
-                    <span className="font-mono text-slate-400">Affected Features:</span>{" "}
+                    <span className="font-mono text-slate-400 font-semibold">Affected Features:</span>{" "}
                     <span className="font-bold text-slate-200 font-mono">
                       {faultResult.affected_features.length > 0
                         ? faultResult.affected_features.join(", ")
@@ -257,11 +269,11 @@ export default function FaultLabPage() {
                     </span>
                   </div>
 
-                  <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                  <div className="pt-3 border-t border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <span className="text-slate-400">Explore observation-level failure events & silent failures:</span>
                     <Link
                       href="/failures"
-                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg shadow-sm transition-colors inline-flex items-center space-x-1"
+                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg shadow-md transition-all inline-flex items-center space-x-1 shrink-0"
                     >
                       <span>Open Failure Explorer</span>
                       <ArrowRight className="w-3.5 h-3.5 ml-1" />
@@ -276,3 +288,4 @@ export default function FaultLabPage() {
     </div>
   );
 }
+
