@@ -102,7 +102,9 @@ def run_pipeline() -> Tuple[Dict[str, str], Dict[str, Any]]:
     # TASK 2: GENUINE NASA C-MAPSS FD001 TEMPORAL GOVERNANCE
     # =========================================================================
     # A. Genuine NASA C-MAPSS FD001 Internal 100-Engine Cohort (60/20/20 split)
-    df_cmapss_genuine, stats_cmapss_gen = builder.build_genuine_cmapss_evidence(data_dir="data/cmapss_raw", seed=42)
+    df_cmapss_genuine, stats_cmapss_gen = builder.build_genuine_cmapss_evidence(
+        data_dir="data/cmapss_raw", seed=42, target_semantic="C_MAPSS_RUL30_PROXY_WITHIN_K"
+    )
     
     # Deterministic group split: 60 Research Train (nasa_engine_1..60) / 20 Cal (61..80) / 20 Test (81..100)
     tr_cm, cal_cm, te_cm, man_cm = builder.create_group_aware_split(
@@ -115,21 +117,43 @@ def run_pipeline() -> Tuple[Dict[str, str], Dict[str, Any]]:
     te_cm.to_csv(os.path.join(temp_cmapss_int_dir, "cmapss_fd001_test_split.csv"), index=False)
     pipeline_hashes["cmapss_genuine_internal"] = compute_sha256_hash(df_cmapss_genuine)
 
-    # Compute censoring statistics for K in [1, 2, 3, 5]
-    censoring_counts_by_k = {}
-    for k in DEFAULT_HORIZONS:
-        k_df = df_cmapss_genuine[df_cmapss_genuine["prediction_horizon"] == k]
-        censoring_counts_by_k[f"k_{k}"] = {
-            "total_rows": len(k_df),
-            "censored_rows": int(k_df["is_censored"].sum()),
-            "observed_positive_failures": int((k_df["failure_within_horizon"] == 1).sum()),
-            "observed_negative_nonfailures": int((k_df["failure_within_horizon"] == 0).sum()),
-        }
+    # Compute targets and censoring statistics for K in [1, 2, 3, 5] across all 3 targets
+    target_semantics_list = [
+        "C_MAPSS_RUL30_PROXY_WITHIN_K",
+        "C_MAPSS_RUL50_PROXY_WITHIN_K",
+        "C_MAPSS_TERMINAL_FAILURE_WITHIN_K",
+    ]
+
+    target_breakdowns = {}
+    for sem in target_semantics_list:
+        df_sem, _ = builder.build_genuine_cmapss_evidence(data_dir="data/cmapss_raw", seed=42, target_semantic=sem)
+        tr_s, cal_s, te_s, _ = builder.create_group_aware_split(
+            df_sem, train_ratio=0.6, cal_ratio=0.2, test_ratio=0.2, seed=42,
+            fit_engines_only=[f"nasa_engine_{e}" for e in range(1, 61)], shuffle=False
+        )
+
+        k_counts = {}
+        for k in DEFAULT_HORIZONS:
+            k_df = df_sem[df_sem["prediction_horizon"] == k]
+            k_tr = tr_s[tr_s["prediction_horizon"] == k]
+            k_cal = cal_s[cal_s["prediction_horizon"] == k]
+            k_te = te_s[te_s["prediction_horizon"] == k]
+            k_counts[f"k_{k}"] = {
+                "total_rows": len(k_df),
+                "censored_rows": int(k_df["is_censored"].sum()),
+                "overall_positives": int((k_df["failure_within_horizon"] == 1).sum()),
+                "overall_negatives": int((k_df["failure_within_horizon"] == 0).sum()),
+                "train_positives": int((k_tr["failure_within_horizon"] == 1).sum()),
+                "cal_positives": int((k_cal["failure_within_horizon"] == 1).sum()),
+                "test_positives": int((k_te["failure_within_horizon"] == 1).sum()),
+            }
+        target_breakdowns[sem] = k_counts
 
     reports["cmapss_fd001_internal"] = {
+        "dataset_description": "Official NASA-provided C-MAPSS FD001 simulated run-to-failure dataset",
         "stats": stats_cmapss_gen,
         "manifest": man_cm,
-        "censoring_counts_by_k": censoring_counts_by_k,
+        "target_breakdowns": target_breakdowns,
         "engine_split_counts": {
             "research_training_engines": 60,
             "calibration_engines": 20,
@@ -145,11 +169,28 @@ def run_pipeline() -> Tuple[Dict[str, str], Dict[str, Any]]:
     df_cmapss_ext.to_csv(os.path.join(temp_cmapss_ext_dir, "cmapss_fd001_external_test_evidence.csv"), index=False)
     pipeline_hashes["cmapss_genuine_external"] = compute_sha256_hash(df_cmapss_ext)
 
+    ext_target_breakdowns = {}
+    for sem in target_semantics_list:
+        df_e_sem, _ = builder.build_genuine_cmapss_external_evidence(data_dir="data/cmapss_raw", seed=42, target_semantic=sem)
+        k_counts = {}
+        for k in DEFAULT_HORIZONS:
+            k_df = df_e_sem[df_e_sem["prediction_horizon"] == k]
+            k_counts[f"k_{k}"] = {
+                "total_rows": len(k_df),
+                "censored_rows": int(k_df["is_censored"].sum()),
+                "observed_positives": int((k_df["failure_within_horizon"] == 1).sum()),
+                "observed_negatives": int((k_df["failure_within_horizon"] == 0).sum()),
+            }
+        ext_target_breakdowns[sem] = k_counts
+
     reports["cmapss_fd001_external"] = {
+        "dataset_description": "Official NASA-provided C-MAPSS FD001 external test cohort (100 test engines, 13,096 cycles)",
         "stats": stats_cmapss_ext,
+        "target_breakdowns": ext_target_breakdowns,
         "engine_count": 100,
         "total_rows": len(df_cmapss_ext),
-        "note": "Official NASA FD001 test cohort used strictly for external truncated RUL evaluation.",
+        "censored_rows_total": int(df_cmapss_ext["is_censored"].sum()),
+        "censoring_justification": "Censored rows count is 0 because ground-truth RUL vector (RUL_FD001.txt) fully specifies remaining useful life for all 100 test engines across all 13,096 cycles.",
     }
 
     # C. Controlled Synthetic Degradation Trajectories

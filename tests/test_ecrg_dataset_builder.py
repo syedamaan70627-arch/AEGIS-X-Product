@@ -111,7 +111,7 @@ def test_7_no_silent_synthetic_fallback_on_missing_cmapss():
     builder = ECRGDatasetBuilder()
     with pytest.raises(DatasetValidationError) as exc_info:
         builder.build_genuine_cmapss_evidence(data_dir="non_existent_data_dir")
-    assert "Genuine NASA C-MAPSS FD001 dataset files NOT FOUND" in str(exc_info.value)
+    assert "Official NASA C-MAPSS FD001 dataset files NOT FOUND" in str(exc_info.value)
     assert "NO SILENT FALLBACK PERMITTED" in str(exc_info.value)
 
 
@@ -261,12 +261,12 @@ def test_21_genuine_cmapss_fd001_cohort_validation():
 
 
 def test_22_degradation_onset_is_not_mislabeled_terminal_failure():
-    """Test 22: Degradation onset is explicitly not mislabeled as terminal run-to-failure destruction."""
+    """Test 22: Degradation onset is explicitly mapped to RUL30 proxy and not mislabeled as terminal failure."""
     builder = ECRGDatasetBuilder()
     if os.path.exists("data/cmapss_raw/train_FD001.txt"):
         df_onset, _ = builder.build_genuine_cmapss_evidence(data_dir="data/cmapss_raw", target_semantic="C_MAPSS_DEGRADATION_ONSET_WITHIN_K")
         df_term, _ = builder.build_genuine_cmapss_evidence(data_dir="data/cmapss_raw", target_semantic="C_MAPSS_TERMINAL_FAILURE_WITHIN_K")
-        assert (df_onset["outcome_semantics"] == "C_MAPSS_DEGRADATION_ONSET_WITHIN_K").all()
+        assert (df_onset["outcome_semantics"] == "C_MAPSS_RUL30_PROXY_WITHIN_K").all()
         assert (df_term["outcome_semantics"] == "C_MAPSS_TERMINAL_FAILURE_WITHIN_K").all()
 
 
@@ -287,4 +287,133 @@ def test_24_external_test_cohort_isolated():
         assert stats["total_independent_trajectories"] == 100
         assert stats["total_state_records"] == 13096
         assert (df_ext["task_type"] == "TEMPORAL_GOVERNANCE").all()
+
+
+def test_25_hand_computed_full_run_to_failure_trajectory():
+    """Test 25: Hand-computed full run-to-failure trajectory labels (t_final = 200)."""
+    # Engine runs for 200 cycles (t_final = 200)
+    # At t = 165, RUL(165) = 200 - 165 = 35 cycles.
+    # Target equation: Y(t, K, tau) = 1 if RUL(t) <= tau + K else 0.
+    # For tau = 30, K = 5: RUL(165) = 35 <= 30 + 5 = 35 -> True (1)
+    # For tau = 30, K = 3: RUL(165) = 35 <= 30 + 3 = 33 -> False (0)
+    # For tau = 0 (terminal), K = 5: RUL(165) = 35 <= 0 + 5 = 5 -> False (0)
+    builder = ECRGDatasetBuilder()
+    df_toy = pd.DataFrame([
+        {"trajectory_id": "toy_unit_1", "step": step, "cycle": step, "remaining_useful_life": 200 - step, "is_failure": 1 if (200 - step) <= 30 else 0}
+        for step in range(1, 201)
+    ])
+    c_df, _ = builder.build_temporal_governance_rows(
+        df_toy, "m1", "d1", "dom1", horizons=[3, 5], outcome_semantics="C_MAPSS_RUL30_PROXY_WITHIN_K"
+    )
+    row_t165_k5 = c_df[(c_df["state_index"] == 165) & (c_df["prediction_horizon"] == 5)].iloc[0]
+    row_t165_k3 = c_df[(c_df["state_index"] == 165) & (c_df["prediction_horizon"] == 3)].iloc[0]
+    
+    assert row_t165_k5["failure_within_horizon"] == 1
+    assert row_t165_k3["failure_within_horizon"] == 0
+    assert row_t165_k5["is_censored"] == False
+
+
+def test_26_hand_computed_truncated_trajectory_plus_final_rul():
+    """Test 26: Hand-computed truncated trajectory plus supplied final RUL (test_last_cycle = 125, final_rul = 18)."""
+    # At t = 125, RUL = 18.
+    # For tau = 30, K = 5: RUL(125) = 18 <= 30 + 5 = 35 -> True (1).
+    # For tau = 0 (terminal), K = 5: RUL(125) = 18 <= 0 + 5 = 5 -> False (0).
+    builder = ECRGDatasetBuilder()
+    df_toy = pd.DataFrame([
+        {"trajectory_id": "toy_ext_1", "step": step, "cycle": step, "remaining_useful_life": 18 + (125 - step), "is_failure": 1 if (18 + (125 - step)) <= 30 else 0}
+        for step in range(1, 126)
+    ])
+    c_df_rul30, _ = builder.build_temporal_governance_rows(
+        df_toy, "m1", "d1", "dom1", horizons=[5], outcome_semantics="C_MAPSS_RUL30_PROXY_WITHIN_K"
+    )
+    c_df_term, _ = builder.build_temporal_governance_rows(
+        df_toy, "m1", "d1", "dom1", horizons=[5], outcome_semantics="C_MAPSS_TERMINAL_FAILURE_WITHIN_K"
+    )
+    
+    row_t125_rul30 = c_df_rul30[(c_df_rul30["state_index"] == 125) & (c_df_rul30["prediction_horizon"] == 5)].iloc[0]
+    row_t125_term = c_df_term[(c_df_term["state_index"] == 125) & (c_df_term["prediction_horizon"] == 5)].iloc[0]
+
+    assert row_t125_rul30["failure_within_horizon"] == 1
+    assert row_t125_term["failure_within_horizon"] == 0
+    assert row_t125_rul30["is_censored"] == False
+    assert row_t125_term["is_censored"] == False
+
+
+def test_27_inclusive_prediction_window_boundary_no_off_by_one():
+    """Test 27: Inclusive prediction window boundary and off-by-one check (RUL(t) = tau + K exact boundary)."""
+    # At t = 100, RUL(100) = 35. With tau = 30 and K = 5, tau + K = 35.
+    # RUL(100) = 35 <= 35 -> MUST BE TRUE (1).
+    builder = ECRGDatasetBuilder()
+    df_toy = pd.DataFrame([
+        {"trajectory_id": "toy_boundary", "step": 100, "cycle": 100, "remaining_useful_life": 35, "is_failure": 0}
+    ])
+    c_df, _ = builder.build_temporal_governance_rows(
+        df_toy, "m1", "d1", "dom1", horizons=[5], outcome_semantics="C_MAPSS_RUL30_PROXY_WITHIN_K"
+    )
+    row_exact_boundary = c_df.iloc[0]
+    assert row_exact_boundary["failure_within_horizon"] == 1
+
+
+def test_28_terminal_failure_versus_rul_threshold_proxy_separation():
+    """Test 28: Terminal failure (tau = 0) vs RUL-threshold proxy (tau = 30, 50) separation."""
+    builder = ECRGDatasetBuilder()
+    df_toy = pd.DataFrame([
+        {"trajectory_id": "toy_sep", "step": 50, "cycle": 50, "remaining_useful_life": 25, "is_failure": 1}
+    ])
+    c_df_term, _ = builder.build_temporal_governance_rows(df_toy, "m1", "d1", "dom1", horizons=[5], outcome_semantics="C_MAPSS_TERMINAL_FAILURE_WITHIN_K")
+    c_df_rul30, _ = builder.build_temporal_governance_rows(df_toy, "m1", "d1", "dom1", horizons=[5], outcome_semantics="C_MAPSS_RUL30_PROXY_WITHIN_K")
+    c_df_rul50, _ = builder.build_temporal_governance_rows(df_toy, "m1", "d1", "dom1", horizons=[5], outcome_semantics="C_MAPSS_RUL50_PROXY_WITHIN_K")
+
+    # At RUL = 25:
+    # Terminal (tau = 0): 25 <= 0 + 5 = 5 -> False (0)
+    # RUL30 (tau = 30): 25 <= 30 + 5 = 35 -> True (1)
+    # RUL50 (tau = 50): 25 <= 50 + 5 = 55 -> True (1)
+    assert c_df_term.iloc[0]["failure_within_horizon"] == 0
+    assert c_df_rul30.iloc[0]["failure_within_horizon"] == 1
+    assert c_df_rul50.iloc[0]["failure_within_horizon"] == 1
+
+
+def test_29_external_outcomes_observable_beyond_final_sensor_row():
+    """Test 29: External outcomes remain observable even when t + K exceeds final sensor row."""
+    builder = ECRGDatasetBuilder()
+    if os.path.exists("data/cmapss_raw/test_FD001.txt"):
+        df_ext, stats = builder.build_genuine_cmapss_external_evidence(data_dir="data/cmapss_raw", seed=42)
+        assert stats["censored_row_count"] == 0
+        assert (df_ext["is_censored"] == False).all()
+
+
+def test_30_censoring_applied_only_when_outcome_underived():
+    """Test 30: Censoring applied only when outcome truly cannot be derived (missing RUL vector and incomplete trajectory)."""
+    builder = ECRGDatasetBuilder()
+    df_no_rul = pd.DataFrame([
+        {"trajectory_id": "u_trunc", "step": step, "is_failure": 0} for step in range(5)
+    ])
+    c_df, _ = builder.build_temporal_governance_rows(df_no_rul, "m1", "d1", "dom1", horizons=[5])
+    # At step 4, step + horizon = 4 + 5 = 9 >= n_steps (5) -> censoring MUST apply
+    censored_step4 = c_df[(c_df["state_index"] == 4) & (c_df["prediction_horizon"] == 5)].iloc[0]
+    assert censored_step4["is_censored"] == True
+    assert censored_step4["failure_within_horizon"] is None
+
+
+def test_31_engine_level_split_isolation():
+    """Test 31: Engine-level train/calibration/test split isolation."""
+    builder = ECRGDatasetBuilder()
+    if os.path.exists("data/cmapss_raw/train_FD001.txt"):
+        df_cmapss, _ = builder.build_genuine_cmapss_evidence(data_dir="data/cmapss_raw", seed=42)
+        tr, cal, te, manifest = builder.create_group_aware_split(df_cmapss, train_ratio=0.6, cal_ratio=0.2, test_ratio=0.2, seed=42, shuffle=False)
+        assert set(manifest["train_groups"]) == {f"nasa_engine_{i}" for i in range(1, 61)}
+        assert set(manifest["cal_groups"]) == {f"nasa_engine_{i}" for i in range(61, 81)}
+        assert set(manifest["test_groups"]) == {f"nasa_engine_{i}" for i in range(81, 101)}
+
+
+def test_32_no_cycle_row_independence_claim_for_conformal_calibration():
+    """Test 32: Conformal calibration statistical unit is engine trajectory, not cycle rows."""
+    builder = ECRGDatasetBuilder()
+    if os.path.exists("data/cmapss_raw/train_FD001.txt"):
+        df_cmapss, _ = builder.build_genuine_cmapss_evidence(data_dir="data/cmapss_raw", seed=42)
+        tr, cal, te, manifest = builder.create_group_aware_split(df_cmapss, train_ratio=0.6, cal_ratio=0.2, test_ratio=0.2, seed=42, shuffle=False)
+        # Verify N_cal_independent is 20 engine trajectories (NOT 16,784 cycle rows)
+        assert manifest["n_cal_independent"] == 20
+        assert manifest["conformal_feasibility_audit"]["alpha_0.05"]["actual_n_cal_independent"] == 20
+
 

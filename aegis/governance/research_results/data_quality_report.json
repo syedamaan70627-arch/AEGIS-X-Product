@@ -2500,6 +2500,7 @@
     }
   },
   "cmapss_fd001_internal": {
+    "dataset_description": "Official NASA-provided C-MAPSS FD001 simulated run-to-failure dataset",
     "stats": {
       "task_type": "TEMPORAL_GOVERNANCE",
       "model_id": "nasa_cmapss_fd001_rf_v1",
@@ -2668,30 +2669,120 @@
         }
       }
     },
-    "censoring_counts_by_k": {
-      "k_1": {
-        "total_rows": 20631,
-        "censored_rows": 0,
-        "observed_positive_failures": 3100,
-        "observed_negative_nonfailures": 17531
+    "target_breakdowns": {
+      "C_MAPSS_RUL30_PROXY_WITHIN_K": {
+        "k_1": {
+          "total_rows": 20631,
+          "censored_rows": 0,
+          "overall_positives": 3200,
+          "overall_negatives": 17431,
+          "train_positives": 1920,
+          "cal_positives": 640,
+          "test_positives": 640
+        },
+        "k_2": {
+          "total_rows": 20631,
+          "censored_rows": 0,
+          "overall_positives": 3300,
+          "overall_negatives": 17331,
+          "train_positives": 1980,
+          "cal_positives": 660,
+          "test_positives": 660
+        },
+        "k_3": {
+          "total_rows": 20631,
+          "censored_rows": 0,
+          "overall_positives": 3400,
+          "overall_negatives": 17231,
+          "train_positives": 2040,
+          "cal_positives": 680,
+          "test_positives": 680
+        },
+        "k_5": {
+          "total_rows": 20631,
+          "censored_rows": 0,
+          "overall_positives": 3600,
+          "overall_negatives": 17031,
+          "train_positives": 2160,
+          "cal_positives": 720,
+          "test_positives": 720
+        }
       },
-      "k_2": {
-        "total_rows": 20631,
-        "censored_rows": 0,
-        "observed_positive_failures": 3200,
-        "observed_negative_nonfailures": 17431
+      "C_MAPSS_RUL50_PROXY_WITHIN_K": {
+        "k_1": {
+          "total_rows": 20631,
+          "censored_rows": 0,
+          "overall_positives": 5200,
+          "overall_negatives": 15431,
+          "train_positives": 3120,
+          "cal_positives": 1040,
+          "test_positives": 1040
+        },
+        "k_2": {
+          "total_rows": 20631,
+          "censored_rows": 0,
+          "overall_positives": 5300,
+          "overall_negatives": 15331,
+          "train_positives": 3180,
+          "cal_positives": 1060,
+          "test_positives": 1060
+        },
+        "k_3": {
+          "total_rows": 20631,
+          "censored_rows": 0,
+          "overall_positives": 5400,
+          "overall_negatives": 15231,
+          "train_positives": 3240,
+          "cal_positives": 1080,
+          "test_positives": 1080
+        },
+        "k_5": {
+          "total_rows": 20631,
+          "censored_rows": 0,
+          "overall_positives": 5600,
+          "overall_negatives": 15031,
+          "train_positives": 3360,
+          "cal_positives": 1120,
+          "test_positives": 1120
+        }
       },
-      "k_3": {
-        "total_rows": 20631,
-        "censored_rows": 0,
-        "observed_positive_failures": 3300,
-        "observed_negative_nonfailures": 17331
-      },
-      "k_5": {
-        "total_rows": 20631,
-        "censored_rows": 0,
-        "observed_positive_failures": 3500,
-        "observed_negative_nonfailures": 17131
+      "C_MAPSS_TERMINAL_FAILURE_WITHIN_K": {
+        "k_1": {
+          "total_rows": 20631,
+          "censored_rows": 0,
+          "overall_positives": 200,
+          "overall_negatives": 20431,
+          "train_positives": 120,
+          "cal_positives": 40,
+          "test_positives": 40
+        },
+        "k_2": {
+          "total_rows": 20631,
+          "censored_rows": 0,
+          "overall_positives": 300,
+          "overall_negatives": 20331,
+          "train_positives": 180,
+          "cal_positives": 60,
+          "test_positives": 60
+        },
+        "k_3": {
+          "total_rows": 20631,
+          "censored_rows": 0,
+          "overall_positives": 400,
+          "overall_negatives": 20231,
+          "train_positives": 240,
+          "cal_positives": 80,
+          "test_positives": 80
+        },
+        "k_5": {
+          "total_rows": 20631,
+          "censored_rows": 0,
+          "overall_positives": 600,
+          "overall_negatives": 20031,
+          "train_positives": 360,
+          "cal_positives": 120,
+          "test_positives": 120
+        }
       }
     },
     "engine_split_counts": {
@@ -2704,6 +2795,7 @@
     }
   },
   "cmapss_fd001_external": {
+    "dataset_description": "Official NASA-provided C-MAPSS FD001 external test cohort (100 test engines, 13,096 cycles)",
     "stats": {
       "task_type": "TEMPORAL_GOVERNANCE",
       "model_id": "nasa_cmapss_fd001_rf_v1",
@@ -2714,7 +2806,7 @@
       "total_independent_trajectories": 100,
       "total_state_records": 13096,
       "total_canonical_rows": 52384,
-      "censored_row_count": 825,
+      "censored_row_count": 0,
       "duplicate_row_count": 0,
       "availability": {
         "ood": true,
@@ -2727,9 +2819,90 @@
         "ground_truth": true
       }
     },
+    "target_breakdowns": {
+      "C_MAPSS_RUL30_PROXY_WITHIN_K": {
+        "k_1": {
+          "total_rows": 13096,
+          "censored_rows": 0,
+          "observed_positives": 357,
+          "observed_negatives": 12739
+        },
+        "k_2": {
+          "total_rows": 13096,
+          "censored_rows": 0,
+          "observed_positives": 382,
+          "observed_negatives": 12714
+        },
+        "k_3": {
+          "total_rows": 13096,
+          "censored_rows": 0,
+          "observed_positives": 407,
+          "observed_negatives": 12689
+        },
+        "k_5": {
+          "total_rows": 13096,
+          "censored_rows": 0,
+          "observed_positives": 459,
+          "observed_negatives": 12637
+        }
+      },
+      "C_MAPSS_RUL50_PROXY_WITHIN_K": {
+        "k_1": {
+          "total_rows": 13096,
+          "censored_rows": 0,
+          "observed_positives": 919,
+          "observed_negatives": 12177
+        },
+        "k_2": {
+          "total_rows": 13096,
+          "censored_rows": 0,
+          "observed_positives": 952,
+          "observed_negatives": 12144
+        },
+        "k_3": {
+          "total_rows": 13096,
+          "censored_rows": 0,
+          "observed_positives": 985,
+          "observed_negatives": 12111
+        },
+        "k_5": {
+          "total_rows": 13096,
+          "censored_rows": 0,
+          "observed_positives": 1054,
+          "observed_negatives": 12042
+        }
+      },
+      "C_MAPSS_TERMINAL_FAILURE_WITHIN_K": {
+        "k_1": {
+          "total_rows": 13096,
+          "censored_rows": 0,
+          "observed_positives": 0,
+          "observed_negatives": 13096
+        },
+        "k_2": {
+          "total_rows": 13096,
+          "censored_rows": 0,
+          "observed_positives": 0,
+          "observed_negatives": 13096
+        },
+        "k_3": {
+          "total_rows": 13096,
+          "censored_rows": 0,
+          "observed_positives": 0,
+          "observed_negatives": 13096
+        },
+        "k_5": {
+          "total_rows": 13096,
+          "censored_rows": 0,
+          "observed_positives": 0,
+          "observed_negatives": 13096
+        }
+      }
+    },
     "engine_count": 100,
     "total_rows": 52384,
-    "note": "Official NASA FD001 test cohort used strictly for external truncated RUL evaluation."
+    "censored_rows_total": 0,
+    "censoring_justification": "Censored rows count is 0 because ground-truth RUL vector (RUL_FD001.txt) fully specifies remaining useful life for all 100 test engines across all 13,096 cycles."
   },
   "controlled_synthetic": {
     "stats": {

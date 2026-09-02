@@ -269,13 +269,24 @@ class ECRGDatasetBuilder:
                     # Strict Censoring Check:
                     censored = False
                     if has_gt:
-                        raw_target_k = int(horizon_targets[k][i])
-                        if (i + k >= n_steps) and (eventual_fail == 0):
-                            censored = True
-                            target_k = None  # Do NOT zero-fill censored horizon
-                            censored_count += 1
+                        # If RUL vector is directly available, binary target is fully observable
+                        if "remaining_useful_life" in group.columns:
+                            rul_val = float(group.loc[i, "remaining_useful_life"])
+                            tau_val = 30
+                            if "RUL50" in outcome_semantics:
+                                tau_val = 50
+                            elif "TERMINAL" in outcome_semantics:
+                                tau_val = 0
+                            target_k = int(rul_val <= (tau_val + k))
+                            censored = False
                         else:
-                            target_k = raw_target_k
+                            raw_target_k = int(horizon_targets[k][i])
+                            if (i + k >= n_steps) and (eventual_fail == 0):
+                                censored = True
+                                target_k = None  # Do NOT zero-fill censored horizon
+                                censored_count += 1
+                            else:
+                                target_k = raw_target_k
                     else:
                         target_k = None
 
@@ -558,13 +569,17 @@ class ECRGDatasetBuilder:
         self,
         data_dir: str = "data/cmapss_raw",
         seed: int = 42,
-        target_semantic: str = "C_MAPSS_DEGRADATION_ONSET_WITHIN_K",
+        target_semantic: str = "C_MAPSS_RUL30_PROXY_WITHIN_K",
     ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         """
-        Builds canonical ECRG evidence dataset from GENUINE NASA C-MAPSS FD001 dataset files.
+        Builds canonical ECRG evidence dataset from official NASA-provided C-MAPSS FD001 simulated run-to-failure dataset.
         Requires train_FD001.txt, test_FD001.txt, and RUL_FD001.txt in data_dir (or fallback data/cmapss).
         If files are missing, raises explicit DatasetValidationError (NO SILENT FALLBACK).
         """
+        # Alias legacy target semantic to Phase 2D terminology
+        if target_semantic == "C_MAPSS_DEGRADATION_ONSET_WITHIN_K":
+            target_semantic = "C_MAPSS_RUL30_PROXY_WITHIN_K"
+
         if not os.path.exists(os.path.join(data_dir, "train_FD001.txt")) and os.path.exists("data/cmapss/train_FD001.txt"):
             data_dir = "data/cmapss"
 
@@ -574,7 +589,7 @@ class ECRGDatasetBuilder:
 
         if not (os.path.exists(train_path) and os.path.exists(test_path) and os.path.exists(rul_path)):
             raise DatasetValidationError(
-                f"Genuine NASA C-MAPSS FD001 dataset files NOT FOUND in '{data_dir}'.\n"
+                f"Official NASA C-MAPSS FD001 dataset files NOT FOUND in '{data_dir}'.\n"
                 f"Missing required files:\n"
                 f"  - {train_path}\n  - {test_path}\n  - {rul_path}\n"
                 f"Official Source URL: https://data.nasa.gov/docs/legacy/CMAPSSData.zip\n"
@@ -582,19 +597,17 @@ class ECRGDatasetBuilder:
                 f"NO SILENT FALLBACK PERMITTED. Download official NASA C-MAPSS files before running genuine full-cohort evaluation."
             )
 
-        # Parse genuine NASA FD001 (100 training engines, 20,631 cycles)
+        # Parse official NASA FD001 (100 training engines, 20,631 cycles)
         cols = ["engine_id", "cycle", "op_setting_1", "op_setting_2", "op_setting_3"] + [f"sensor_{i}" for i in range(1, 22)]
         df_raw = pd.read_csv(train_path, sep=r"\s+", header=None, names=cols)
         
-        # Calculate RUL and degradation target
+        # Calculate current-cycle RUL and binary target
         max_cycles = df_raw.groupby("engine_id")["cycle"].transform("max")
         df_raw["remaining_useful_life"] = max_cycles - df_raw["cycle"]
         
-        if target_semantic == "C_MAPSS_DEGRADATION_ONSET_WITHIN_K":
-            df_raw["is_failure"] = (df_raw["remaining_useful_life"] <= 30).astype(int)
-        elif target_semantic == "C_MAPSS_TERMINAL_FAILURE_WITHIN_K":
+        if target_semantic == "C_MAPSS_TERMINAL_FAILURE_WITHIN_K":
             df_raw["is_failure"] = (df_raw["remaining_useful_life"] <= 0).astype(int)
-        elif target_semantic == "C_MAPSS_RUL_THRESHOLD_WITHIN_K":
+        elif target_semantic == "C_MAPSS_RUL50_PROXY_WITHIN_K":
             df_raw["is_failure"] = (df_raw["remaining_useful_life"] <= 50).astype(int)
         else:
             df_raw["is_failure"] = (df_raw["remaining_useful_life"] <= 30).astype(int)
@@ -636,12 +649,16 @@ class ECRGDatasetBuilder:
         self,
         data_dir: str = "data/cmapss_raw",
         seed: int = 42,
+        target_semantic: str = "C_MAPSS_RUL30_PROXY_WITHIN_K",
     ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         """
         Builds canonical ECRG evidence dataset from the official NASA C-MAPSS FD001 External Test Cohort
         (test_FD001.txt + RUL_FD001.txt, 100 test engines, 13,096 cycles).
         Never used for reference fitting, threshold tuning, or training.
         """
+        if target_semantic == "C_MAPSS_DEGRADATION_ONSET_WITHIN_K":
+            target_semantic = "C_MAPSS_RUL30_PROXY_WITHIN_K"
+
         if not os.path.exists(os.path.join(data_dir, "test_FD001.txt")) and os.path.exists("data/cmapss/test_FD001.txt"):
             data_dir = "data/cmapss"
 
@@ -650,23 +667,30 @@ class ECRGDatasetBuilder:
         rul_path = os.path.join(data_dir, "RUL_FD001.txt")
 
         if not (os.path.exists(train_path) and os.path.exists(test_path) and os.path.exists(rul_path)):
-            raise DatasetValidationError(f"Genuine NASA external test files not found in '{data_dir}'.")
+            raise DatasetValidationError(f"Official NASA external test files not found in '{data_dir}'.")
 
         cols = ["engine_id", "cycle", "op_setting_1", "op_setting_2", "op_setting_3"] + [f"sensor_{i}" for i in range(1, 22)]
         df_tr = pd.read_csv(train_path, sep=r"\s+", header=None, names=cols)
         df_te = pd.read_csv(test_path, sep=r"\s+", header=None, names=cols)
         df_rul = pd.read_csv(rul_path, sep=r"\s+", header=None, names=["final_rul"])
 
-        # Compute ground-truth RUL for truncated test sequences
-        # final_rul[engine_id] + (max_test_cycle - current_cycle)
+        # Compute ground-truth RUL for truncated test sequences:
+        # current_rul = official_final_rul + (last_observed_cycle - current_cycle)
         max_test_cycles = df_te.groupby("engine_id")["cycle"].transform("max")
         df_te["final_rul_target"] = df_te["engine_id"].apply(lambda e: df_rul.loc[e - 1, "final_rul"])
         df_te["remaining_useful_life"] = df_te["final_rul_target"] + (max_test_cycles - df_te["cycle"])
-        df_te["is_failure"] = (df_te["remaining_useful_life"] <= 30).astype(int)
+        
+        if target_semantic == "C_MAPSS_TERMINAL_FAILURE_WITHIN_K":
+            df_te["is_failure"] = (df_te["remaining_useful_life"] <= 0).astype(int)
+        elif target_semantic == "C_MAPSS_RUL50_PROXY_WITHIN_K":
+            df_te["is_failure"] = (df_te["remaining_useful_life"] <= 50).astype(int)
+        else:
+            df_te["is_failure"] = (df_te["remaining_useful_life"] <= 30).astype(int)
+
         df_te["trajectory_id"] = df_te["engine_id"].apply(lambda e: f"nasa_ext_engine_{e}")
         df_te["step"] = df_te["cycle"]
 
-        # Fit model and analyzer STRICTLY on training dataset
+        # Fit model and analyzer STRICTLY on training dataset (engines 1..60)
         df_tr_max = df_tr.groupby("engine_id")["cycle"].transform("max")
         df_tr["remaining_useful_life"] = df_tr_max - df_tr["cycle"]
         df_tr["is_failure"] = (df_tr["remaining_useful_life"] <= 30).astype(int)
@@ -698,5 +722,5 @@ class ECRGDatasetBuilder:
             source_module="Genuine_NASA_CMAPSS_FD001_External",
             source_artifact_path=test_path,
             task_type="TEMPORAL_GOVERNANCE",
-            outcome_semantics="C_MAPSS_DEGRADATION_ONSET_WITHIN_K",
+            outcome_semantics=target_semantic,
         )
