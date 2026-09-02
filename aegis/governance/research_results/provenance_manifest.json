@@ -1,19 +1,9 @@
 {
-  "provenance": {
-    "synthetic_degradation_trajectory": {
-      "csv_filename": "synthetic_degradation_trajectory_evidence.csv",
-      "row_count": 240,
-      "sha256_hash": "fd958b5050e8d05b61e176b4f7953dc4d729d6e44603dd96571fca22addcc06b"
-    },
-    "classification_breast_cancer": {
-      "csv_filename": "classification_breast_cancer_evidence.csv",
-      "row_count": 2276,
-      "sha256_hash": "c7e1096adce89f91ce9214ae05c25c646d3f6eb0cf1d7f8801ccd1ffd6ee0520"
-    },
-    "digits_parity": {
-      "csv_filename": "digits_parity_evidence.csv",
-      "row_count": 7188,
-      "sha256_hash": "8c0f38274475d8c2358eab86793b3fcebbdbf16dd8b6b9d73670f0f5fd131aaf"
-    }
+  "scientific_hashes": {
+    "bc_static": "5b76bbb61b1383541d41c3cfbedceb56cdf48f66a876569bef5c3852fb1148e3",
+    "dig_static": "739ea5fba6c52324c189baf1d5121efb55c81de6955e6fd3608ed32835716aca",
+    "cmapss_temporal": "0266af7217073529ba7d565f08647e948ce0c8cecb922db6ad4301b895be5686",
+    "synth_temporal": "f7d5e2510308305ee1a7460e806db827449eac7e4373f5531832020f83cd1bd9",
+    "auxiliary_simulated": "4f71335a536c107882b15fda42e308f6f0d147c8dfc9d3edf6742d711f60e806"
   }
 }

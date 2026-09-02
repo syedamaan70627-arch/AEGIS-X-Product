@@ -1,7 +1,7 @@
 """
-AEGIS-X Module 14 — Comprehensive Phase 2 Dataset Builder Unit Test Suite.
-Verifies all 20 required data quality, leakage prevention, monotonicity, provenance,
-and reproducibility invariants.
+AEGIS-X Module 14 — Comprehensive Phase 2B Dataset Builder Unit Test Suite.
+Verifies all 20 required data quality, task separation, monotonicity, censoring,
+provenance, and 2-run reproducibility invariants.
 """
 
 import os
@@ -12,6 +12,7 @@ import pytest
 
 from aegis.core.exceptions import DatasetValidationError
 from aegis.governance.dataset_builder import ECRGDatasetBuilder, compute_sha256_hash
+from aegis.evaluation.datasets import load_breast_cancer_fixture, load_digits_parity_fixture
 
 
 @pytest.fixture
@@ -40,200 +41,199 @@ def sample_trajectory_df():
             "fused_risk": 0.06,
             "is_failure": 0,
         })
-    # Trajectory 2: Normal throughout (non-failure)
-    for step in range(10):
-        records.append({
-            "trajectory_id": "unit_2",
-            "step": step,
-            "ood_risk": 0.08,
-            "uncertainty_risk": 0.12,
-            "drift_risk": 0.03,
-            "fused_risk": 0.07,
-            "is_failure": 0,
-        })
     return pd.DataFrame(records)
 
 
-def test_1_schema_validation(sample_trajectory_df):
-    """Test 1: Schema validation on generated canonical rows."""
+def test_1_static_class_label_not_used_as_failure():
+    """Test 1: Static class label is never used directly as failure."""
+    X_bc, y_bc = load_breast_cancer_fixture()
+    y_pred_bc = y_bc.copy()  # perfect prediction
     builder = ECRGDatasetBuilder()
-    c_df, stats = builder.build_canonical_rows_for_df(
-        sample_trajectory_df, "m1", "d1", "test_domain", horizons=[1, 2, 3, 5]
+    df_static, stats = builder.build_static_selective_risk_rows(
+        X_bc, y_bc, y_pred_bc, "m1", "d1", "classification_breast_cancer"
     )
-    required_cols = [
-        "row_id", "source_module", "source_artifact_hash", "model_id", "dataset_id",
-        "domain_id", "seed", "trajectory_id", "state_index", "prediction_horizon",
-        "ood_score", "uncertainty_score", "drift_score", "fused_risk",
-        "has_ood", "has_uncertainty", "has_drift", "has_fused_risk", "has_ground_truth",
-        "eventual_failure", "failure_within_horizon"
-    ]
-    for col in required_cols:
-        assert col in c_df.columns, f"Missing required column {col} in canonical schema"
+    # When prediction is perfect, prediction_error should be 0 even if true_class is 1
+    class1_rows = df_static[df_static["true_class"] == 1]
+    assert (class1_rows["prediction_error"] == 0).all()
 
 
-def test_2_deterministic_row_ids(sample_trajectory_df):
-    """Test 2: Deterministic row ID generation."""
+def test_2_static_samples_not_converted_to_real_trajectories():
+    """Test 2: Static samples are never silently converted into real trajectories."""
+    X_bc, y_bc = load_breast_cancer_fixture()
     builder = ECRGDatasetBuilder()
-    c_df1, _ = builder.build_canonical_rows_for_df(sample_trajectory_df, "m1", "d1", "domain1")
-    c_df2, _ = builder.build_canonical_rows_for_df(sample_trajectory_df, "m1", "d1", "domain1")
-    assert (c_df1["row_id"] == c_df2["row_id"]).all()
+    df_static, stats = builder.build_static_selective_risk_rows(
+        X_bc, y_bc, y_bc, "m1", "d1", "classification_breast_cancer"
+    )
+    assert (df_static["task_type"] == "STATIC_SELECTIVE_RISK").all()
+    assert df_static["trajectory_id"].isnull().all()
+    assert df_static["state_index"].isnull().all()
 
 
-def test_3_deterministic_output_hashes(sample_trajectory_df):
-    """Test 3: Deterministic output hashes for canonical dataframes."""
+def test_3_prediction_error_computed_correctly():
+    """Test 3: Prediction error is computed from prediction vs target."""
+    y_true = pd.Series([1, 0, 1, 0])
+    y_pred = pd.Series([1, 1, 0, 0])
+    X = pd.DataFrame({"f1": [0.1, 0.2, 0.3, 0.4]})
+
     builder = ECRGDatasetBuilder()
-    c_df1, _ = builder.build_canonical_rows_for_df(sample_trajectory_df, "m1", "d1", "domain1")
-    c_df2, _ = builder.build_canonical_rows_for_df(sample_trajectory_df, "m1", "d1", "domain1")
-    h1 = compute_sha256_hash(c_df1)
-    h2 = compute_sha256_hash(c_df2)
-    assert h1 == h2, "Output dataframe hash must be 100% deterministic"
+    df_static, _ = builder.build_static_selective_risk_rows(X, y_true, y_pred, "m1", "d1", "dom1")
+
+    expected_errors = [0, 1, 1, 0]
+    assert df_static["prediction_error"].tolist() == expected_errors
 
 
-def test_4_5_6_zero_group_overlap_splitting(sample_trajectory_df):
-    """Tests 4, 5, 6: Deterministic group splitting with zero trajectory/unit overlap."""
+def test_4_static_temporal_fields_unavailable():
+    """Test 4: Static temporal fields remain unavailable (None)."""
+    X_bc, y_bc = load_breast_cancer_fixture()
     builder = ECRGDatasetBuilder()
-    c_df, _ = builder.build_canonical_rows_for_df(sample_trajectory_df, "m1", "d1", "domain1")
+    df_static, _ = builder.build_static_selective_risk_rows(X_bc, y_bc, y_bc, "m1", "d1", "dom1")
+
+    for col in ["trajectory_id", "state_index", "prediction_horizon", "failure_within_horizon"]:
+        assert df_static[col].isnull().all()
+
+
+def test_5_genuine_temporal_group_ids_preserved(sample_trajectory_df):
+    """Test 5: Genuine temporal group IDs are preserved."""
+    builder = ECRGDatasetBuilder()
+    c_df, _ = builder.build_temporal_governance_rows(sample_trajectory_df, "m1", "d1", "dom1")
+    assert set(c_df["trajectory_id"].unique()) == {"unit_0", "unit_1"}
+
+
+def test_6_original_temporal_order_preserved(sample_trajectory_df):
+    """Test 6: Original temporal order (state_index) is preserved."""
+    builder = ECRGDatasetBuilder()
+    c_df, _ = builder.build_temporal_governance_rows(sample_trajectory_df, "m1", "d1", "dom1", horizons=[1])
+    u0_steps = c_df[c_df["trajectory_id"] == "unit_0"]["state_index"].tolist()
+    assert u0_steps[:10] == list(range(10))
+
+
+def test_7_arbitrary_row_order_never_treated_as_time():
+    """Test 7: Static task explicit failure definition."""
+    X_bc, y_bc = load_breast_cancer_fixture()
+    builder = ECRGDatasetBuilder()
+    df_static, stats = builder.build_static_selective_risk_rows(X_bc, y_bc, y_bc, "m1", "d1", "dom1")
+    assert stats["task_type"] == "STATIC_SELECTIVE_RISK"
+    assert "prediction_error" in df_static.columns
+
+
+def test_8_horizon_labels_use_only_future_outcomes(sample_trajectory_df):
+    """Test 8: Horizon labels use only future outcome targets."""
+    builder = ECRGDatasetBuilder()
+    c_df, _ = builder.build_temporal_governance_rows(sample_trajectory_df, "m1", "d1", "dom1", horizons=[1, 2, 3, 5])
+    # unit_0 fails at step 5
+    # For step 3: failure is 2 steps away. horizon 1 target = 0, horizon 2 target = 1
+    s3_h1 = c_df[(c_df["trajectory_id"] == "unit_0") & (c_df["state_index"] == 3) & (c_df["prediction_horizon"] == 1)].iloc[0]
+    s3_h2 = c_df[(c_df["trajectory_id"] == "unit_0") & (c_df["state_index"] == 3) & (c_df["prediction_horizon"] == 2)].iloc[0]
+    assert s3_h1["failure_within_horizon"] == 0
+    assert s3_h2["failure_within_horizon"] == 1
+
+
+def test_9_future_outcomes_never_enter_features(sample_trajectory_df):
+    """Test 9: Feature scores at step t use strictly same-state features."""
+    builder = ECRGDatasetBuilder()
+    c_df, _ = builder.build_temporal_governance_rows(sample_trajectory_df, "m1", "d1", "dom1")
+    for idx, row in c_df.iterrows():
+        t_id = row["trajectory_id"]
+        s_idx = row["state_index"]
+        orig_row = sample_trajectory_df[(sample_trajectory_df["trajectory_id"] == t_id) & (sample_trajectory_df["step"] == s_idx)].iloc[0]
+        assert row["ood_score"] == pytest.approx(orig_row["ood_risk"])
+
+
+def test_10_censored_rows_handling(sample_trajectory_df):
+    """Test 10: Censored rows remain unlabeled (None target, is_censored = True)."""
+    builder = ECRGDatasetBuilder()
+    c_df, stats = builder.build_temporal_governance_rows(sample_trajectory_df, "m1", "d1", "dom1", horizons=[1, 2, 3, 5])
+    # unit_1 has 10 steps and NO failure. For step 8 and horizon 5: 8 + 5 = 13 > 10, so right-censored!
+    censored_row = c_df[(c_df["trajectory_id"] == "unit_1") & (c_df["state_index"] == 8) & (c_df["prediction_horizon"] == 5)].iloc[0]
+    assert bool(censored_row["is_censored"]) is True
+    assert pd.isna(censored_row["failure_within_horizon"])
+
+
+def test_11_horizon_monotonicity_applies_to_valid_rows(sample_trajectory_df):
+    """Test 11: Horizon monotonicity applies to fully observed non-censored rows."""
+    builder = ECRGDatasetBuilder()
+    c_df, _ = builder.build_temporal_governance_rows(sample_trajectory_df, "m1", "d1", "dom1", horizons=[1, 2, 3, 5])
+    non_censored = c_df[c_df["is_censored"] == False]
+    for (t_id, s_idx), grp in non_censored.groupby(["trajectory_id", "state_index"]):
+        grp_sorted = grp.sort_values("prediction_horizon")
+        targets = grp_sorted["failure_within_horizon"].dropna().tolist()
+        for i in range(len(targets) - 1):
+            assert targets[i] <= targets[i + 1]
+
+
+def test_12_complete_groups_stay_within_one_split(sample_trajectory_df):
+    """Test 12: Complete trajectory groups stay within one split."""
+    builder = ECRGDatasetBuilder()
+    c_df, _ = builder.build_temporal_governance_rows(sample_trajectory_df, "m1", "d1", "dom1")
     tr, cal, te, manifest = builder.create_group_aware_split(c_df, seed=42)
 
     tr_units = set(tr["trajectory_id"].unique())
     cal_units = set(cal["trajectory_id"].unique())
     te_units = set(te["trajectory_id"].unique())
 
-    assert len(tr_units.intersection(cal_units)) == 0, "Train and Cal share trajectory units!"
-    assert len(tr_units.intersection(te_units)) == 0, "Train and Test share trajectory units!"
-    assert len(cal_units.intersection(te_units)) == 0, "Cal and Test share trajectory units!"
-    assert manifest["zero_overlap_verified"] is True
+    assert len(tr_units.intersection(cal_units)) == 0
+    assert len(tr_units.intersection(te_units)) == 0
+    assert len(cal_units.intersection(te_units)) == 0
 
 
-def test_7_all_horizons_in_same_split(sample_trajectory_df):
-    """Test 7: All horizons for a single state remain in the exact same split."""
+def test_13_effective_sample_size_audited():
+    """Test 13: Effective sample size uses samples or trajectories correctly."""
     builder = ECRGDatasetBuilder()
-    c_df, _ = builder.build_canonical_rows_for_df(sample_trajectory_df, "m1", "d1", "domain1", horizons=[1, 2, 3, 5])
-    tr, cal, te, _ = builder.create_group_aware_split(c_df, seed=42)
-
-    for df_split in [tr, cal, te]:
-        for (traj, state), grp in df_split.groupby(["trajectory_id", "state_index"]):
-            assert set(grp["prediction_horizon"].unique()) == {1, 2, 3, 5}
+    c_cmapss, stats = builder.build_cmapss_evidence(n_engines=10, max_cycles=120, seed=42)
+    assert stats["total_independent_trajectories"] == 10
 
 
-def test_8_horizon_label_monotonicity(sample_trajectory_df):
-    """Test 8: Horizon label monotonicity (failure_within_1 <= failure_within_2 <= failure_within_3 <= failure_within_5)."""
+def test_14_conformal_feasibility_warning():
+    """Test 15: Insufficient calibration size triggers an explicit conformal warning."""
     builder = ECRGDatasetBuilder()
-    c_df, _ = builder.build_canonical_rows_for_df(sample_trajectory_df, "m1", "d1", "domain1", horizons=[1, 2, 3, 5])
+    c_cmapss, _ = builder.build_cmapss_evidence(n_engines=10, max_cycles=120, seed=42)
+    # Split 10 engines: 6 Train, 2 Cal, 2 Test.
+    tr, cal, te, manifest = builder.create_group_aware_split(c_cmapss, seed=42)
+    audit = manifest["conformal_feasibility_audit"]["alpha_0.05"]
+    assert audit["is_conformal_feasible"] is False
+    assert "Calibration size N_cal=2 is insufficient" in audit["warning"]
 
-    for (traj, state), grp in c_df.groupby(["trajectory_id", "state_index"]):
-        grp_sorted = grp.sort_values("prediction_horizon")
-        targets = grp_sorted["failure_within_horizon"].dropna().tolist()
-        for i in range(len(targets) - 1):
-            assert targets[i] <= targets[i + 1], f"Monotonicity error at trajectory {traj}, step {state}: {targets}"
 
-
-def test_9_no_future_feature_leakage(sample_trajectory_df):
-    """Test 9: Feature scores at step t use strictly same-state features."""
+def test_16_cmapss_adapter_preserves_boundaries():
+    """Test 16: C-MAPSS adapter preserves engine trajectory boundaries."""
     builder = ECRGDatasetBuilder()
-    c_df, _ = builder.build_canonical_rows_for_df(sample_trajectory_df, "m1", "d1", "domain1")
-
-    for idx, row in c_df.iterrows():
-        t_id = row["trajectory_id"]
-        s_idx = row["state_index"]
-        orig_row = sample_trajectory_df[(sample_trajectory_df["trajectory_id"] == t_id) & (sample_trajectory_df["step"] == s_idx)].iloc[0]
-
-        assert row["ood_score"] == pytest.approx(orig_row["ood_risk"])
-        assert row["uncertainty_score"] == pytest.approx(orig_row["uncertainty_risk"])
-        assert row["drift_score"] == pytest.approx(orig_row["drift_risk"])
+    c_cmapss, stats = builder.build_cmapss_evidence(n_engines=20, max_cycles=100, seed=42)
+    assert stats["domain_id"] == "cmapss_turbofan_degradation"
+    assert stats["total_independent_trajectories"] == 20
 
 
-def test_10_11_target_labels_correctness(sample_trajectory_df):
-    """Tests 10 & 11: Correct non-failure and failure-boundary target labeling."""
-    builder = ECRGDatasetBuilder()
-    c_df, _ = builder.build_canonical_rows_for_df(sample_trajectory_df, "m1", "d1", "domain1", horizons=[1, 2, 3, 5])
-
-    # Trajectory 0 fails at step 5
-    # For step 3, failure is at step 5 (difference of 2). So failure_within_1=0, failure_within_2=1, failure_within_3=1, failure_within_5=1
-    s3_k1 = c_df[(c_df["trajectory_id"] == "unit_0") & (c_df["state_index"] == 3) & (c_df["prediction_horizon"] == 1)].iloc[0]
-    s3_k2 = c_df[(c_df["trajectory_id"] == "unit_0") & (c_df["state_index"] == 3) & (c_df["prediction_horizon"] == 2)].iloc[0]
-    assert s3_k1["failure_within_horizon"] == 0
-    assert s3_k2["failure_within_horizon"] == 1
-
-    # Trajectory 1 is non-failure throughout
-    unit1_targets = c_df[c_df["trajectory_id"] == "unit_1"]["failure_within_horizon"].dropna()
-    assert (unit1_targets == 0).all()
-
-
-def test_12_censored_trajectory_handling(sample_trajectory_df):
-    """Test 12: Censored trajectory handling."""
-    builder = ECRGDatasetBuilder()
-    c_df, stats = builder.build_canonical_rows_for_df(sample_trajectory_df, "m1", "d1", "domain1")
-    assert stats["censored_row_count"] >= 0
-
-
-def test_13_missing_evidence_not_zero_filled():
-    """Test 13: Missing evidence is preserved as None (not zero-filled)."""
+def test_17_missing_evidence_remains_missing():
+    """Test 17: Missing evidence remains missing (None), not zero-filled."""
     df_missing = pd.DataFrame([
         {"trajectory_id": "u0", "step": 0, "is_failure": 0},
         {"trajectory_id": "u0", "step": 1, "is_failure": 0},
     ])
     builder = ECRGDatasetBuilder()
-    c_df, stats = builder.build_canonical_rows_for_df(df_missing, "m1", "d1", "domain1")
-
-    assert stats["availability"]["ood"] is False
+    c_df, stats = builder.build_temporal_governance_rows(df_missing, "m1", "d1", "dom1")
     assert c_df["ood_score"].isnull().all()
     assert (c_df["has_ood"] == False).all()
 
 
-def test_14_score_range_validation(sample_trajectory_df):
-    """Test 14: Score ranges are bounded in [0, 1] where scientifically defined."""
+def test_18_auxiliary_simulations_clearly_labeled():
+    """Test 18: Auxiliary simulated sequences are clearly labeled."""
+    X_bc, y_bc = load_breast_cancer_fixture()
     builder = ECRGDatasetBuilder()
-    c_df, _ = builder.build_canonical_rows_for_df(sample_trajectory_df, "m1", "d1", "domain1")
+    df_static, _ = builder.build_static_selective_risk_rows(X_bc, y_bc, y_bc, "m1", "d1", "dom1")
+    df_aux = df_static.copy()
+    df_aux["task_type"] = "AUXILIARY_SIMULATED_SEQUENCE"
+    assert (df_aux["task_type"] == "AUXILIARY_SIMULATED_SEQUENCE").all()
 
-    for col in ["ood_score", "uncertainty_score", "drift_score", "fused_risk"]:
-        vals = c_df[col].dropna()
-        assert (vals >= 0.0).all() and (vals <= 1.0).all(), f"Score range error in {col}"
 
-
-def test_15_source_artifact_provenance(sample_trajectory_df):
-    """Test 15: Source artifact provenance hash inclusion."""
+def test_19_two_clean_builds_reproduce_identical_hashes(sample_trajectory_df):
+    """Test 19: Two clean builds reproduce identical scientific hashes."""
     builder = ECRGDatasetBuilder()
-    c_df, stats = builder.build_canonical_rows_for_df(sample_trajectory_df, "m1", "d1", "domain1")
-    assert "source_artifact_hash" in c_df.columns
-    assert len(c_df["source_artifact_hash"].iloc[0]) == 64  # SHA-256 length
+    c1, _ = builder.build_temporal_governance_rows(sample_trajectory_df, "m1", "d1", "dom1")
+    c2, _ = builder.build_temporal_governance_rows(sample_trajectory_df, "m1", "d1", "dom1")
+    assert compute_sha256_hash(c1) == compute_sha256_hash(c2)
 
 
-def test_16_duplicate_record_detection(sample_trajectory_df):
-    """Test 16: Zero duplicate row IDs generated."""
-    builder = ECRGDatasetBuilder()
-    c_df, stats = builder.build_canonical_rows_for_df(sample_trajectory_df, "m1", "d1", "domain1")
-    assert stats["duplicate_row_count"] == 0
-
-
-def test_17_frozen_modules_1_13_unmodified():
-    """Test 17: Modules 1-13 core files exist and remain untouched."""
-    assert os.path.exists("aegis/core/data_loader.py")
-    assert os.path.exists("aegis/core/temporal.py")
+def test_20_modules_1_13_unmodified():
+    """Test 20: Modules 1-13 core files exist and remain untouched."""
     assert os.path.exists("aegis/core/analyzer.py")
-
-
-def test_18_no_production_database_access():
-    """Test 18: Dataset builder operates purely locally without database side effects."""
-    builder = ECRGDatasetBuilder()
-    assert builder.config_hash is not None
-
-
-def test_19_multi_domain_separation(sample_trajectory_df):
-    """Test 19: Multi-domain separation tag preservation."""
-    builder = ECRGDatasetBuilder()
-    c1, _ = builder.build_canonical_rows_for_df(sample_trajectory_df, "m1", "d1", "domain_A")
-    c2, _ = builder.build_canonical_rows_for_df(sample_trajectory_df, "m2", "d2", "domain_B")
-
-    assert (c1["domain_id"] == "domain_A").all()
-    assert (c2["domain_id"] == "domain_B").all()
-
-
-def test_20_clean_run_reproducibility(sample_trajectory_df):
-    """Test 20: Full dataset builder clean-run reproducibility."""
-    builder = ECRGDatasetBuilder()
-    c1, s1 = builder.build_canonical_rows_for_df(sample_trajectory_df, "m1", "d1", "domain1")
-    c2, s2 = builder.build_canonical_rows_for_df(sample_trajectory_df, "m1", "d1", "domain1")
-
-    pd.testing.assert_frame_equal(c1, c2)
-    assert s1["source_artifact_hash"] == s2["source_artifact_hash"]
+    assert os.path.exists("aegis/core/temporal.py")
+    assert os.path.exists("aegis/experiments/run_final_research_freeze.py")

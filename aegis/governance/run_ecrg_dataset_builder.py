@@ -1,178 +1,175 @@
 """
-AEGIS-X Module 14 — Deterministic Dataset Builder Runner & Reproducibility CLI.
-Generates canonical evidence datasets, per-domain split manifests, data-quality reports,
-provenance manifests, and dataset cards.
+AEGIS-X Module 14 — Deterministic Dataset Builder Runner & Reproducibility CLI (Phase 2B Repaired).
+
+Outputs:
+1. static_selective/ (Breast Cancer Wisconsin, Digits Parity)
+2. temporal_governance/ (NASA C-MAPSS Turbofan, Synthetic Degradation Trajectories)
+3. auxiliary_simulated/ (Auxiliary simulated sequences)
+
+Verifies two-run clean reproducibility by asserting byte-identical scientific hashes.
 """
 
 import json
 import os
 import sys
 import hashlib
-import pandas as pd
 import numpy as np
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
 
-from aegis.governance.dataset_builder import ECRGDatasetBuilder, compute_sha256_hash, DEFAULT_HORIZONS
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, BASE_DIR)
+
+from aegis.governance.dataset_builder import ECRGDatasetBuilder, compute_sha256_hash, DEFAULT_HORIZONS, TARGET_ALPHAS
 from aegis.evaluation.datasets import load_breast_cancer_fixture, load_digits_parity_fixture
 
 
 RESULTS_DIR = os.path.join(os.path.dirname(__file__), "research_results")
 
 
-def run_builder():
-    print("=" * 80)
-    print("AEGIS-X Module 14 — Evidence Dataset Builder")
-    print("=" * 80)
-
-    os.makedirs(RESULTS_DIR, exist_ok=True)
+def run_pipeline() -> Tuple[Dict[str, str], Dict[str, Any]]:
+    """Runs full ECRG dataset builder pipeline across static, temporal, and auxiliary tasks."""
     builder = ECRGDatasetBuilder()
 
-    domain_datasets = {}
-    domain_stats = {}
-    domain_manifests = {}
+    static_dir = os.path.join(RESULTS_DIR, "static_selective")
+    temporal_dir = os.path.join(RESULTS_DIR, "temporal_governance")
+    auxiliary_dir = os.path.join(RESULTS_DIR, "auxiliary_simulated")
 
-    # 1. Temporal Trajectory Domain (sample_temporal_trajectory.csv)
+    os.makedirs(static_dir, exist_ok=True)
+    os.makedirs(temporal_dir, exist_ok=True)
+    os.makedirs(auxiliary_dir, exist_ok=True)
+
+    pipeline_hashes = {}
+    reports = {}
+
+    # =========================================================================
+    # TASK 1: STATIC SELECTIVE RISK (Breast Cancer & Digits Parity)
+    # =========================================================================
+    # A. Breast Cancer Wisconsin
+    X_bc, y_bc = load_breast_cancer_fixture()
+    clf_bc = RandomForestClassifier(n_estimators=10, random_state=42)
+    clf_bc.fit(X_bc, y_bc)
+    y_pred_bc = pd.Series(clf_bc.predict(X_bc))
+
+    # Synthetic reliability scores for static demonstration
+    ood_bc = np.clip(np.abs(X_bc.iloc[:, 0] - X_bc.iloc[:, 0].mean()) / (X_bc.iloc[:, 0].std() + 1e-5), 0, 1).to_numpy()
+    unc_bc = np.full(len(X_bc), 0.15)
+    drift_bc = np.full(len(X_bc), 0.08)
+    fused_bc = ood_bc * 0.5 + unc_bc * 0.5
+
+    df_bc_static, stats_bc = builder.build_static_selective_risk_rows(
+        X=X_bc, y_true=y_bc, y_pred=y_pred_bc,
+        model_id="rf_breast_cancer_v1", dataset_id="breast_cancer_wisconsin", domain_id="classification_breast_cancer",
+        ood_scores=ood_bc, uncertainty_scores=unc_bc, drift_scores=drift_bc, fused_risks=fused_bc, seed=42,
+    )
+    tr_bc, cal_bc, te_bc, man_bc = builder.create_group_aware_split(df_bc_static, seed=42)
+    df_bc_static.to_csv(os.path.join(static_dir, "classification_breast_cancer_evidence.csv"), index=False)
+    pipeline_hashes["bc_static"] = compute_sha256_hash(df_bc_static)
+
+    # B. Digits Parity
+    X_dig, y_dig = load_digits_parity_fixture()
+    clf_dig = RandomForestClassifier(n_estimators=10, random_state=42)
+    clf_dig.fit(X_dig, y_dig)
+    y_pred_dig = pd.Series(clf_dig.predict(X_dig))
+
+    ood_dig = np.full(len(X_dig), 0.12)
+    unc_dig = np.full(len(X_dig), 0.20)
+    drift_dig = np.full(len(X_dig), 0.05)
+    fused_dig = np.full(len(X_dig), 0.15)
+
+    df_dig_static, stats_dig = builder.build_static_selective_risk_rows(
+        X=X_dig, y_true=y_dig, y_pred=y_pred_dig,
+        model_id="rf_digits_parity_v1", dataset_id="digits_parity", domain_id="digits_parity",
+        ood_scores=ood_dig, uncertainty_scores=unc_dig, drift_scores=drift_dig, fused_risks=fused_dig, seed=42,
+    )
+    tr_dig, cal_dig, te_dig, man_dig = builder.create_group_aware_split(df_dig_static, seed=42)
+    df_dig_static.to_csv(os.path.join(static_dir, "digits_parity_evidence.csv"), index=False)
+    pipeline_hashes["dig_static"] = compute_sha256_hash(df_dig_static)
+
+    reports["static_selective"] = {
+        "classification_breast_cancer": {"stats": stats_bc, "manifest": man_bc},
+        "digits_parity": {"stats": stats_dig, "manifest": man_dig},
+    }
+
+    # =========================================================================
+    # TASK 2: TEMPORAL GOVERNANCE (NASA C-MAPSS & Synthetic Trajectories)
+    # =========================================================================
+    # A. NASA C-MAPSS Turbofan Degradation (Principal Temporal Source)
+    df_cmapss_temp, stats_cmapss = builder.build_cmapss_evidence(n_engines=20, max_cycles=150, seed=42)
+    tr_cm, cal_cm, te_cm, man_cm = builder.create_group_aware_split(df_cmapss_temp, seed=42)
+    df_cmapss_temp.to_csv(os.path.join(temporal_dir, "cmapss_turbofan_evidence.csv"), index=False)
+    pipeline_hashes["cmapss_temporal"] = compute_sha256_hash(df_cmapss_temp)
+
+    # B. Synthetic Degradation Trajectories
     sample_traj_path = "examples/sample_temporal_trajectory.csv"
     if os.path.exists(sample_traj_path):
-        print(f"\n[Domain 1/3] Loading sample temporal trajectory from {sample_traj_path}...")
         sample_df = pd.read_csv(sample_traj_path)
-        c_df1, stats1 = builder.build_canonical_rows_for_df(
-            df=sample_df,
-            model_id="013245af-9a9a-4e59-9648-0bb135f604d7",
-            dataset_id="sample_temporal_trajectory",
-            domain_id="synthetic_degradation_trajectory",
-            seed=42,
-            source_module="Module_12_13_EarlyWarning",
-            source_artifact_path=sample_traj_path,
+        df_synth_temp, stats_synth = builder.build_temporal_governance_rows(
+            df=sample_df, model_id="synthetic_degradation_v1", dataset_id="sample_temporal_trajectory",
+            domain_id="synthetic_degradation_trajectory", seed=42, source_artifact_path=sample_traj_path,
         )
-        tr1, cal1, te1, man1 = builder.create_group_aware_split(c_df1, seed=42)
-        domain_datasets["synthetic_degradation_trajectory"] = c_df1
-        domain_stats["synthetic_degradation_trajectory"] = stats1
-        domain_manifests["synthetic_degradation_trajectory"] = man1
-        print(f"  -> Generated {len(c_df1)} canonical rows across {stats1['total_trajectories']} trajectories.")
-    else:
-        print(f"\n[Domain 1/3] Sample trajectory not found at {sample_traj_path}.")
-
-    # 2. Tabular Domain: Breast Cancer Wisconsin Fixture
-    print("\n[Domain 2/3] Loading Breast Cancer Wisconsin research fixture...")
-    X_bc, y_bc = load_breast_cancer_fixture()
-    df_bc = pd.concat([X_bc, y_bc.rename("is_failure")], axis=1)
-    # Add dummy synthetic signals for tabular demonstration
-    df_bc["ood_risk"] = np.clip(np.abs(df_bc["feature_mean radius"] - df_bc["feature_mean radius"].mean()) / df_bc["feature_mean radius"].std() / 5.0, 0, 1)
-    df_bc["uncertainty_risk"] = 0.2
-    df_bc["drift_risk"] = 0.1
-    df_bc["fused_risk"] = 0.2
-    df_bc["trajectory_id"] = [f"unit_{i//20}" for i in range(len(df_bc))]
-    df_bc["step"] = [i % 20 for i in range(len(df_bc))]
-
-    c_df2, stats2 = builder.build_canonical_rows_for_df(
-        df=df_bc,
-        model_id="bc_classifier_v1",
-        dataset_id="breast_cancer_wisconsin",
-        domain_id="classification_breast_cancer",
-        seed=42,
-        source_module="Module_12_CrossDomain",
-        source_artifact_path="sklearn.datasets.load_breast_cancer",
-    )
-    tr2, cal2, te2, man2 = builder.create_group_aware_split(c_df2, seed=42)
-    domain_datasets["classification_breast_cancer"] = c_df2
-    domain_stats["classification_breast_cancer"] = stats2
-    domain_manifests["classification_breast_cancer"] = man2
-    print(f"  -> Generated {len(c_df2)} canonical rows across {stats2['total_trajectories']} unit trajectories.")
-
-    # 3. Tabular Domain: Digits Parity Fixture
-    print("\n[Domain 3/3] Loading Digits Parity research fixture...")
-    X_dig, y_dig = load_digits_parity_fixture()
-    df_dig = pd.concat([X_dig, y_dig.rename("is_failure")], axis=1)
-    df_dig["ood_risk"] = 0.15
-    df_dig["uncertainty_risk"] = 0.25
-    df_dig["drift_risk"] = 0.10
-    df_dig["fused_risk"] = 0.18
-    df_dig["trajectory_id"] = [f"unit_{i//25}" for i in range(len(df_dig))]
-    df_dig["step"] = [i % 25 for i in range(len(df_dig))]
-
-    c_df3, stats3 = builder.build_canonical_rows_for_df(
-        df=df_dig,
-        model_id="digits_parity_v1",
-        dataset_id="digits_parity",
-        domain_id="digits_parity",
-        seed=42,
-        source_module="Module_12_CrossDomain",
-        source_artifact_path="sklearn.datasets.load_digits",
-    )
-    tr3, cal3, te3, man3 = builder.create_group_aware_split(c_df3, seed=42)
-    domain_datasets["digits_parity"] = c_df3
-    domain_stats["digits_parity"] = stats3
-    domain_manifests["digits_parity"] = man3
-    print(f"  -> Generated {len(c_df3)} canonical rows across {stats3['total_trajectories']} unit trajectories.")
-
-    # Save Output Manifests & Data Reports
-    print("\n" + "=" * 80)
-    print("Writing Research Results, Manifests & Data Quality Reports...")
-    print("=" * 80)
-
-    # 1. Builder Config
-    builder_config = {
-        "builder_version": "1.0.0",
-        "config_hash": builder.config_hash,
-        "horizons": DEFAULT_HORIZONS,
-        "split_ratios": {"train": 0.6, "calibration": 0.2, "test": 0.2},
-        "seed": 42,
-    }
-    with open(os.path.join(RESULTS_DIR, "builder_config.json"), "w") as f:
-        json.dump(builder_config, f, indent=2)
-
-    # 2. Data Quality & Availability Report
-    quality_report = {
-        "summary": "Deterministic data quality and signal availability audit for Module 14 Phase 2.",
-        "builder_version": "1.0.0",
-        "domains": domain_stats,
-    }
-    with open(os.path.join(RESULTS_DIR, "data_quality_report.json"), "w") as f:
-        json.dump(quality_report, f, indent=2)
-
-    # 3. Split Manifests
-    with open(os.path.join(RESULTS_DIR, "split_manifests.json"), "w") as f:
-        json.dump(domain_manifests, f, indent=2)
-
-    # 4. Provenance Manifest
-    provenance_hashes = {}
-    for dname, ddf in domain_datasets.items():
-        csv_path = os.path.join(RESULTS_DIR, f"{dname}_evidence.csv")
-        ddf.to_csv(csv_path, index=False)
-        provenance_hashes[dname] = {
-            "csv_filename": f"{dname}_evidence.csv",
-            "row_count": len(ddf),
-            "sha256_hash": compute_sha256_hash(ddf),
+        tr_sy, cal_sy, te_sy, man_sy = builder.create_group_aware_split(df_synth_temp, seed=42)
+        df_synth_temp.to_csv(os.path.join(temporal_dir, "synthetic_degradation_evidence.csv"), index=False)
+        pipeline_hashes["synth_temporal"] = compute_sha256_hash(df_synth_temp)
+        reports["temporal_governance"] = {
+            "cmapss_turbofan": {"stats": stats_cmapss, "manifest": man_cm},
+            "synthetic_degradation": {"stats": stats_synth, "manifest": man_sy},
         }
 
+    # =========================================================================
+    # TASK 3: AUXILIARY SIMULATED SEQUENCES (For Builder Sanity Testing Only)
+    # =========================================================================
+    # Retain chunked Breast Cancer sequence tagged strictly as AUXILIARY_SIMULATED_SEQUENCE
+    df_bc_aux = df_bc_static.copy()
+    df_bc_aux["task_type"] = "AUXILIARY_SIMULATED_SEQUENCE"
+    df_bc_aux["trajectory_id"] = [f"sim_unit_{i//20}" for i in range(len(df_bc_aux))]
+    df_bc_aux["state_index"] = [i % 20 for i in range(len(df_bc_aux))]
+    df_bc_aux["prediction_horizon"] = 5
+    df_bc_aux.to_csv(os.path.join(auxiliary_dir, "simulated_chunked_sequence.csv"), index=False)
+    pipeline_hashes["auxiliary_simulated"] = compute_sha256_hash(df_bc_aux)
+
+    # Save Provenance & Quality Reports
+    with open(os.path.join(RESULTS_DIR, "data_quality_report.json"), "w") as f:
+        json.dump(reports, f, indent=2)
+
     with open(os.path.join(RESULTS_DIR, "provenance_manifest.json"), "w") as f:
-        json.dump({"provenance": provenance_hashes}, f, indent=2)
+        json.dump({"scientific_hashes": pipeline_hashes}, f, indent=2)
 
-    # 5. Dataset Card
-    dataset_card_content = f"""# AEGIS-X Module 14 Canonical Evidence Dataset Card
+    return pipeline_hashes, reports
 
-**Dataset Version**: 1.0.0  
-**Builder Config Hash**: `{builder.config_hash}`  
-**Domains Included**: {list(domain_datasets.keys())}  
-**Horizons**: K = [1, 2, 3, 5] controlled_degradation_states  
 
-## Overview
-This canonical evidence dataset combines reliability signals, detector diagnostics, and forward-looking ground-truth targets across synthetic degradation trajectories and tabular cross-domain validation fixtures.
+def main():
+    print("=" * 80)
+    print("AEGIS-X Module 14 — Phase 2B Scientific Dataset Builder Execution")
+    print("=" * 80)
 
-## Domain Breakdown
-- **synthetic_degradation_trajectory**: {len(domain_datasets.get('synthetic_degradation_trajectory', []))} rows
-- **classification_breast_cancer**: {len(domain_datasets.get('classification_breast_cancer', []))} rows
-- **digits_parity**: {len(domain_datasets.get('digits_parity', []))} rows
+    # Run 1
+    print("\n--- Execution Run 1 ---")
+    hashes_run1, _ = run_pipeline()
+    print("  Run 1 Hashes:")
+    for k, v in hashes_run1.items():
+        print(f"    {k}: {v[:16]}...")
 
-## Split Protocol
-Group-aware 60/20/20 partitioning by trajectory ID with 100% zero-overlap verification.
-"""
-    with open(os.path.join(RESULTS_DIR, "dataset_card.md"), "w") as f:
-        f.write(dataset_card_content)
+    # Run 2 (Clean Rebuild)
+    print("\n--- Execution Run 2 (Clean Reproducibility Check) ---")
+    hashes_run2, _ = run_pipeline()
+    print("  Run 2 Hashes:")
+    for k, v in hashes_run2.items():
+        print(f"    {k}: {v[:16]}...")
 
-    print("\n[SUCCESS] Builder completed successfully! Artifacts written to:")
-    print(f"  {RESULTS_DIR}")
+    # Assert 100% Byte-Identical Reproducibility
+    reproducible = True
+    for key in hashes_run1:
+        if hashes_run1[key] != hashes_run2[key]:
+            reproducible = False
+            print(f"  [ERROR] Hash mismatch for {key}!")
+
+    if reproducible:
+        print("\n[SUCCESS] 100% Deterministic Reproducibility Confirmed Across Runs!")
+    else:
+        print("\n[FAILURE] Reproducibility Hash Mismatch Detected!")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
-    run_builder()
+    main()

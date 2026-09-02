@@ -1,74 +1,249 @@
 {
-  "summary": "Deterministic data quality and signal availability audit for Module 14 Phase 2.",
-  "builder_version": "1.0.0",
-  "domains": {
-    "synthetic_degradation_trajectory": {
-      "model_id": "013245af-9a9a-4e59-9648-0bb135f604d7",
-      "dataset_id": "sample_temporal_trajectory",
-      "domain_id": "synthetic_degradation_trajectory",
-      "seed": 42,
-      "source_artifact_hash": "7120aaaf6df305220183e04d8365ce38dddbf592cd3b523a8e49b9386625bf8b",
-      "total_trajectories": 6,
-      "total_state_records": 60,
-      "total_canonical_rows": 240,
-      "censored_row_count": 0,
-      "invalid_row_count": 0,
-      "duplicate_row_count": 0,
-      "availability": {
-        "ood": true,
-        "uncertainty": true,
-        "drift": true,
-        "fused_risk": true,
-        "memory": false,
-        "temporal": false,
-        "early_warning": false,
-        "ground_truth": true
-      }
-    },
+  "static_selective": {
     "classification_breast_cancer": {
-      "model_id": "bc_classifier_v1",
-      "dataset_id": "breast_cancer_wisconsin",
-      "domain_id": "classification_breast_cancer",
-      "seed": 42,
-      "source_artifact_hash": "71aa3180a9c8c9abf1e45ef91d8c1dac2592948b3fa58a7da1cc3e16bef8c2df",
-      "total_trajectories": 29,
-      "total_state_records": 569,
-      "total_canonical_rows": 2276,
-      "censored_row_count": 0,
-      "invalid_row_count": 0,
-      "duplicate_row_count": 0,
-      "availability": {
-        "ood": true,
-        "uncertainty": true,
-        "drift": true,
-        "fused_risk": true,
-        "memory": false,
-        "temporal": false,
-        "early_warning": false,
-        "ground_truth": true
+      "stats": {
+        "task_type": "STATIC_SELECTIVE_RISK",
+        "model_id": "rf_breast_cancer_v1",
+        "dataset_id": "breast_cancer_wisconsin",
+        "domain_id": "classification_breast_cancer",
+        "seed": 42,
+        "source_artifact_hash": "a8f87e9c543290360692566b136efc8d5d1d5ec80dab71bf0b939a065c4ac0ec",
+        "total_independent_samples": 569,
+        "total_canonical_rows": 569,
+        "total_prediction_errors": 0,
+        "overall_error_rate": 0.0,
+        "availability": {
+          "ood": true,
+          "uncertainty": true,
+          "drift": true,
+          "fused_risk": true,
+          "ground_truth": true
+        }
+      },
+      "manifest": {
+        "task_type": "STATIC_SELECTIVE_RISK",
+        "seed": 42,
+        "group_column": "sample_id",
+        "n_train_independent": 341,
+        "n_cal_independent": 114,
+        "n_test_independent": 114,
+        "train_row_count": 341,
+        "cal_row_count": 114,
+        "test_row_count": 114,
+        "zero_overlap_verified": true,
+        "conformal_feasibility_audit": {
+          "alpha_0.05": {
+            "target_alpha": 0.05,
+            "min_required_n_cal": 19,
+            "actual_n_cal_independent": 114,
+            "finite_sample_resolution": 0.0087,
+            "is_conformal_feasible": true,
+            "warning": "FEASIBLE"
+          },
+          "alpha_0.1": {
+            "target_alpha": 0.1,
+            "min_required_n_cal": 9,
+            "actual_n_cal_independent": 114,
+            "finite_sample_resolution": 0.0087,
+            "is_conformal_feasible": true,
+            "warning": "FEASIBLE"
+          },
+          "alpha_0.2": {
+            "target_alpha": 0.2,
+            "min_required_n_cal": 4,
+            "actual_n_cal_independent": 114,
+            "finite_sample_resolution": 0.0087,
+            "is_conformal_feasible": true,
+            "warning": "FEASIBLE"
+          }
+        }
       }
     },
     "digits_parity": {
-      "model_id": "digits_parity_v1",
-      "dataset_id": "digits_parity",
-      "domain_id": "digits_parity",
-      "seed": 42,
-      "source_artifact_hash": "06e860124090122424c83ba75907295dfefdbe79a18e0eef61afe41e29744f7a",
-      "total_trajectories": 72,
-      "total_state_records": 1797,
-      "total_canonical_rows": 7188,
-      "censored_row_count": 0,
-      "invalid_row_count": 0,
-      "duplicate_row_count": 0,
-      "availability": {
-        "ood": true,
-        "uncertainty": true,
-        "drift": true,
-        "fused_risk": true,
-        "memory": false,
-        "temporal": false,
-        "early_warning": false,
-        "ground_truth": true
+      "stats": {
+        "task_type": "STATIC_SELECTIVE_RISK",
+        "model_id": "rf_digits_parity_v1",
+        "dataset_id": "digits_parity",
+        "domain_id": "digits_parity",
+        "seed": 42,
+        "source_artifact_hash": "29993fa5a07111060fb234185b682f6717de16a4d2e1350bc14293597f01621f",
+        "total_independent_samples": 1797,
+        "total_canonical_rows": 1797,
+        "total_prediction_errors": 2,
+        "overall_error_rate": 0.0011129660545353367,
+        "availability": {
+          "ood": true,
+          "uncertainty": true,
+          "drift": true,
+          "fused_risk": true,
+          "ground_truth": true
+        }
+      },
+      "manifest": {
+        "task_type": "STATIC_SELECTIVE_RISK",
+        "seed": 42,
+        "group_column": "sample_id",
+        "n_train_independent": 1078,
+        "n_cal_independent": 359,
+        "n_test_independent": 360,
+        "train_row_count": 1078,
+        "cal_row_count": 359,
+        "test_row_count": 360,
+        "zero_overlap_verified": true,
+        "conformal_feasibility_audit": {
+          "alpha_0.05": {
+            "target_alpha": 0.05,
+            "min_required_n_cal": 19,
+            "actual_n_cal_independent": 359,
+            "finite_sample_resolution": 0.0028,
+            "is_conformal_feasible": true,
+            "warning": "FEASIBLE"
+          },
+          "alpha_0.1": {
+            "target_alpha": 0.1,
+            "min_required_n_cal": 9,
+            "actual_n_cal_independent": 359,
+            "finite_sample_resolution": 0.0028,
+            "is_conformal_feasible": true,
+            "warning": "FEASIBLE"
+          },
+          "alpha_0.2": {
+            "target_alpha": 0.2,
+            "min_required_n_cal": 4,
+            "actual_n_cal_independent": 359,
+            "finite_sample_resolution": 0.0028,
+            "is_conformal_feasible": true,
+            "warning": "FEASIBLE"
+          }
+        }
+      }
+    }
+  },
+  "temporal_governance": {
+    "cmapss_turbofan": {
+      "stats": {
+        "task_type": "TEMPORAL_GOVERNANCE",
+        "model_id": "cmapss_random_forest_v1",
+        "dataset_id": "nasa_cmapss_fd001",
+        "domain_id": "cmapss_turbofan_degradation",
+        "seed": 42,
+        "source_artifact_hash": "1900eab150197c89829cff0d893b5fe8582effa11edbb55b3422de71bd5b8470",
+        "total_independent_trajectories": 20,
+        "total_state_records": 2302,
+        "total_canonical_rows": 9208,
+        "censored_row_count": 0,
+        "duplicate_row_count": 0,
+        "availability": {
+          "ood": true,
+          "uncertainty": true,
+          "drift": true,
+          "fused_risk": true,
+          "memory": false,
+          "temporal": false,
+          "early_warning": false,
+          "ground_truth": true
+        }
+      },
+      "manifest": {
+        "task_type": "TEMPORAL_GOVERNANCE",
+        "seed": 42,
+        "group_column": "trajectory_id",
+        "n_train_independent": 12,
+        "n_cal_independent": 4,
+        "n_test_independent": 4,
+        "train_row_count": 5440,
+        "cal_row_count": 1948,
+        "test_row_count": 1820,
+        "zero_overlap_verified": true,
+        "conformal_feasibility_audit": {
+          "alpha_0.05": {
+            "target_alpha": 0.05,
+            "min_required_n_cal": 19,
+            "actual_n_cal_independent": 4,
+            "finite_sample_resolution": 0.2,
+            "is_conformal_feasible": false,
+            "warning": "Calibration size N_cal=4 is insufficient to support target alpha=0.05 (requires N_cal >= 19). Conformal guarantees are EXPLORATORY."
+          },
+          "alpha_0.1": {
+            "target_alpha": 0.1,
+            "min_required_n_cal": 9,
+            "actual_n_cal_independent": 4,
+            "finite_sample_resolution": 0.2,
+            "is_conformal_feasible": false,
+            "warning": "Calibration size N_cal=4 is insufficient to support target alpha=0.1 (requires N_cal >= 9). Conformal guarantees are EXPLORATORY."
+          },
+          "alpha_0.2": {
+            "target_alpha": 0.2,
+            "min_required_n_cal": 4,
+            "actual_n_cal_independent": 4,
+            "finite_sample_resolution": 0.2,
+            "is_conformal_feasible": true,
+            "warning": "FEASIBLE"
+          }
+        }
+      }
+    },
+    "synthetic_degradation": {
+      "stats": {
+        "task_type": "TEMPORAL_GOVERNANCE",
+        "model_id": "synthetic_degradation_v1",
+        "dataset_id": "sample_temporal_trajectory",
+        "domain_id": "synthetic_degradation_trajectory",
+        "seed": 42,
+        "source_artifact_hash": "7120aaaf6df305220183e04d8365ce38dddbf592cd3b523a8e49b9386625bf8b",
+        "total_independent_trajectories": 6,
+        "total_state_records": 60,
+        "total_canonical_rows": 240,
+        "censored_row_count": 0,
+        "duplicate_row_count": 0,
+        "availability": {
+          "ood": true,
+          "uncertainty": true,
+          "drift": true,
+          "fused_risk": true,
+          "memory": false,
+          "temporal": false,
+          "early_warning": false,
+          "ground_truth": true
+        }
+      },
+      "manifest": {
+        "task_type": "TEMPORAL_GOVERNANCE",
+        "seed": 42,
+        "group_column": "trajectory_id",
+        "n_train_independent": 4,
+        "n_cal_independent": 1,
+        "n_test_independent": 1,
+        "train_row_count": 160,
+        "cal_row_count": 40,
+        "test_row_count": 40,
+        "zero_overlap_verified": true,
+        "conformal_feasibility_audit": {
+          "alpha_0.05": {
+            "target_alpha": 0.05,
+            "min_required_n_cal": 19,
+            "actual_n_cal_independent": 1,
+            "finite_sample_resolution": 0.5,
+            "is_conformal_feasible": false,
+            "warning": "Calibration size N_cal=1 is insufficient to support target alpha=0.05 (requires N_cal >= 19). Conformal guarantees are EXPLORATORY."
+          },
+          "alpha_0.1": {
+            "target_alpha": 0.1,
+            "min_required_n_cal": 9,
+            "actual_n_cal_independent": 1,
+            "finite_sample_resolution": 0.5,
+            "is_conformal_feasible": false,
+            "warning": "Calibration size N_cal=1 is insufficient to support target alpha=0.1 (requires N_cal >= 9). Conformal guarantees are EXPLORATORY."
+          },
+          "alpha_0.2": {
+            "target_alpha": 0.2,
+            "min_required_n_cal": 4,
+            "actual_n_cal_independent": 1,
+            "finite_sample_resolution": 0.5,
+            "is_conformal_feasible": false,
+            "warning": "Calibration size N_cal=1 is insufficient to support target alpha=0.2 (requires N_cal >= 4). Conformal guarantees are EXPLORATORY."
+          }
+        }
       }
     }
   }
