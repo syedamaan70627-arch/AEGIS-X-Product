@@ -1,10 +1,11 @@
 """
-AEGIS-X Module 14 — Deterministic Dataset Builder Runner & Reproducibility CLI (Phase 2B Repaired).
+AEGIS-X Module 14 — Deterministic Dataset Builder Runner & Reproducibility CLI (Phase 2C Finalized).
 
 Outputs:
 1. static_selective/ (Breast Cancer Wisconsin, Digits Parity)
-2. temporal_governance/ (NASA C-MAPSS Turbofan, Synthetic Degradation Trajectories)
-3. auxiliary_simulated/ (Auxiliary simulated sequences)
+2. temporal_governance/cmapss_fd001_internal/ (Genuine C-MAPSS if available)
+3. temporal_governance/controlled_synthetic/ (Controlled synthetic degradation trajectories)
+4. auxiliary_simulated/ (Synthetic C-MAPSS simulation & chunked simulated sequences)
 
 Verifies two-run clean reproducibility by asserting byte-identical scientific hashes.
 """
@@ -15,6 +16,7 @@ import sys
 import hashlib
 import numpy as np
 import pandas as pd
+from typing import Tuple, Dict, Any
 from sklearn.ensemble import RandomForestClassifier
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -22,6 +24,7 @@ sys.path.insert(0, BASE_DIR)
 
 from aegis.governance.dataset_builder import ECRGDatasetBuilder, compute_sha256_hash, DEFAULT_HORIZONS, TARGET_ALPHAS
 from aegis.evaluation.datasets import load_breast_cancer_fixture, load_digits_parity_fixture
+from aegis.core.exceptions import DatasetValidationError
 
 
 RESULTS_DIR = os.path.join(os.path.dirname(__file__), "research_results")
@@ -32,11 +35,13 @@ def run_pipeline() -> Tuple[Dict[str, str], Dict[str, Any]]:
     builder = ECRGDatasetBuilder()
 
     static_dir = os.path.join(RESULTS_DIR, "static_selective")
-    temporal_dir = os.path.join(RESULTS_DIR, "temporal_governance")
+    temp_cmapss_int_dir = os.path.join(RESULTS_DIR, "temporal_governance", "cmapss_fd001_internal")
+    temp_synthetic_dir = os.path.join(RESULTS_DIR, "temporal_governance", "controlled_synthetic")
     auxiliary_dir = os.path.join(RESULTS_DIR, "auxiliary_simulated")
 
     os.makedirs(static_dir, exist_ok=True)
-    os.makedirs(temporal_dir, exist_ok=True)
+    os.makedirs(temp_cmapss_int_dir, exist_ok=True)
+    os.makedirs(temp_synthetic_dir, exist_ok=True)
     os.makedirs(auxiliary_dir, exist_ok=True)
 
     pipeline_hashes = {}
@@ -51,7 +56,6 @@ def run_pipeline() -> Tuple[Dict[str, str], Dict[str, Any]]:
     clf_bc.fit(X_bc, y_bc)
     y_pred_bc = pd.Series(clf_bc.predict(X_bc))
 
-    # Synthetic reliability scores for static demonstration
     ood_bc = np.clip(np.abs(X_bc.iloc[:, 0] - X_bc.iloc[:, 0].mean()) / (X_bc.iloc[:, 0].std() + 1e-5), 0, 1).to_numpy()
     unc_bc = np.full(len(X_bc), 0.15)
     drift_bc = np.full(len(X_bc), 0.08)
@@ -92,15 +96,27 @@ def run_pipeline() -> Tuple[Dict[str, str], Dict[str, Any]]:
     }
 
     # =========================================================================
-    # TASK 2: TEMPORAL GOVERNANCE (NASA C-MAPSS & Synthetic Trajectories)
+    # TASK 2: TEMPORAL GOVERNANCE
     # =========================================================================
-    # A. NASA C-MAPSS Turbofan Degradation (Principal Temporal Source)
-    df_cmapss_temp, stats_cmapss = builder.build_cmapss_evidence(n_engines=20, max_cycles=150, seed=42)
-    tr_cm, cal_cm, te_cm, man_cm = builder.create_group_aware_split(df_cmapss_temp, seed=42)
-    df_cmapss_temp.to_csv(os.path.join(temporal_dir, "cmapss_turbofan_evidence.csv"), index=False)
-    pipeline_hashes["cmapss_temporal"] = compute_sha256_hash(df_cmapss_temp)
+    # A. Genuine C-MAPSS FD001 (If files present)
+    try:
+        df_cmapss_genuine, stats_cmapss_gen = builder.build_genuine_cmapss_evidence(data_dir="data/cmapss", seed=42)
+        # Train engines 1..60 passed to verify fit isolation
+        tr_cm, cal_cm, te_cm, man_cm = builder.create_group_aware_split(
+            df_cmapss_genuine, train_ratio=0.6, cal_ratio=0.2, test_ratio=0.2, seed=42,
+            fit_engines_only=[f"nasa_engine_{e}" for e in range(1, 61)]
+        )
+        df_cmapss_genuine.to_csv(os.path.join(temp_cmapss_int_dir, "cmapss_fd001_genuine_evidence.csv"), index=False)
+        pipeline_hashes["cmapss_genuine"] = compute_sha256_hash(df_cmapss_genuine)
+        cmapss_report_entry = {"stats": stats_cmapss_gen, "manifest": man_cm, "status": "GENUINE_NASA_DATA"}
+    except DatasetValidationError as err:
+        cmapss_report_entry = {
+            "status": "MISSING_GENUINE_FILE",
+            "error": str(err),
+            "official_source": "https://ti.arc.nasa.gov/tech/dash/groups/pcoe/prognostic-data-repository/",
+        }
 
-    # B. Synthetic Degradation Trajectories
+    # B. Controlled Synthetic Degradation Trajectories
     sample_traj_path = "examples/sample_temporal_trajectory.csv"
     if os.path.exists(sample_traj_path):
         sample_df = pd.read_csv(sample_traj_path)
@@ -109,24 +125,39 @@ def run_pipeline() -> Tuple[Dict[str, str], Dict[str, Any]]:
             domain_id="synthetic_degradation_trajectory", seed=42, source_artifact_path=sample_traj_path,
         )
         tr_sy, cal_sy, te_sy, man_sy = builder.create_group_aware_split(df_synth_temp, seed=42)
-        df_synth_temp.to_csv(os.path.join(temporal_dir, "synthetic_degradation_evidence.csv"), index=False)
+        df_synth_temp.to_csv(os.path.join(temp_synthetic_dir, "synthetic_degradation_evidence.csv"), index=False)
         pipeline_hashes["synth_temporal"] = compute_sha256_hash(df_synth_temp)
-        reports["temporal_governance"] = {
-            "cmapss_turbofan": {"stats": stats_cmapss, "manifest": man_cm},
-            "synthetic_degradation": {"stats": stats_synth, "manifest": man_sy},
-        }
+    else:
+        stats_synth = {}
+        man_sy = {}
+
+    reports["temporal_governance"] = {
+        "cmapss_fd001_genuine": cmapss_report_entry,
+        "controlled_synthetic": {"stats": stats_synth, "manifest": man_sy},
+    }
 
     # =========================================================================
-    # TASK 3: AUXILIARY SIMULATED SEQUENCES (For Builder Sanity Testing Only)
+    # TASK 3: AUXILIARY SIMULATED SEQUENCES (Tagged EXPLICITLY as Simulation)
     # =========================================================================
-    # Retain chunked Breast Cancer sequence tagged strictly as AUXILIARY_SIMULATED_SEQUENCE
+    # A. Synthetic C-MAPSS Simulation
+    df_sim_cmapss, stats_sim = builder.build_synthetic_cmapss_simulation(n_engines=20, max_cycles=150, seed=42)
+    tr_sim, cal_sim, te_sim, man_sim = builder.create_group_aware_split(df_sim_cmapss, seed=42)
+    df_sim_cmapss.to_csv(os.path.join(auxiliary_dir, "synthetic_cmapss_simulation_evidence.csv"), index=False)
+    pipeline_hashes["cmapss_synthetic_simulation"] = compute_sha256_hash(df_sim_cmapss)
+
+    # B. Chunked Static Simulation
     df_bc_aux = df_bc_static.copy()
     df_bc_aux["task_type"] = "AUXILIARY_SIMULATED_SEQUENCE"
     df_bc_aux["trajectory_id"] = [f"sim_unit_{i//20}" for i in range(len(df_bc_aux))]
     df_bc_aux["state_index"] = [i % 20 for i in range(len(df_bc_aux))]
     df_bc_aux["prediction_horizon"] = 5
     df_bc_aux.to_csv(os.path.join(auxiliary_dir, "simulated_chunked_sequence.csv"), index=False)
-    pipeline_hashes["auxiliary_simulated"] = compute_sha256_hash(df_bc_aux)
+    pipeline_hashes["auxiliary_simulated_chunked"] = compute_sha256_hash(df_bc_aux)
+
+    reports["auxiliary_simulated"] = {
+        "synthetic_cmapss_simulation": {"stats": stats_sim, "manifest": man_sim},
+        "simulated_chunked_sequence": {"note": "Static Breast Cancer chunked into simulated units for builder testing"},
+    }
 
     # Save Provenance & Quality Reports
     with open(os.path.join(RESULTS_DIR, "data_quality_report.json"), "w") as f:
@@ -140,7 +171,7 @@ def run_pipeline() -> Tuple[Dict[str, str], Dict[str, Any]]:
 
 def main():
     print("=" * 80)
-    print("AEGIS-X Module 14 — Phase 2B Scientific Dataset Builder Execution")
+    print("AEGIS-X Module 14 — Phase 2C Finalized Dataset Builder Execution")
     print("=" * 80)
 
     # Run 1
@@ -157,7 +188,6 @@ def main():
     for k, v in hashes_run2.items():
         print(f"    {k}: {v[:16]}...")
 
-    # Assert 100% Byte-Identical Reproducibility
     reproducible = True
     for key in hashes_run1:
         if hashes_run1[key] != hashes_run2[key]:

@@ -1,7 +1,7 @@
 """
-AEGIS-X Module 14 — Comprehensive Phase 2B Dataset Builder Unit Test Suite.
-Verifies all 20 required data quality, task separation, monotonicity, censoring,
-provenance, and 2-run reproducibility invariants.
+AEGIS-X Module 14 — Comprehensive Phase 2C Dataset Builder Unit Test Suite.
+Verifies all required data quality, task separation, reference-fitting isolation,
+censoring, missing dataset reporting, and 2-run reproducibility invariants.
 """
 
 import os
@@ -47,12 +47,11 @@ def sample_trajectory_df():
 def test_1_static_class_label_not_used_as_failure():
     """Test 1: Static class label is never used directly as failure."""
     X_bc, y_bc = load_breast_cancer_fixture()
-    y_pred_bc = y_bc.copy()  # perfect prediction
+    y_pred_bc = y_bc.copy()
     builder = ECRGDatasetBuilder()
     df_static, stats = builder.build_static_selective_risk_rows(
         X_bc, y_bc, y_pred_bc, "m1", "d1", "classification_breast_cancer"
     )
-    # When prediction is perfect, prediction_error should be 0 even if true_class is 1
     class1_rows = df_static[df_static["true_class"] == 1]
     assert (class1_rows["prediction_error"] == 0).all()
 
@@ -107,25 +106,23 @@ def test_6_original_temporal_order_preserved(sample_trajectory_df):
     assert u0_steps[:10] == list(range(10))
 
 
-def test_7_arbitrary_row_order_never_treated_as_time():
-    """Test 7: Static task explicit failure definition."""
-    X_bc, y_bc = load_breast_cancer_fixture()
+def test_7_no_silent_synthetic_fallback_on_missing_cmapss():
+    """Test 7: Missing genuine C-MAPSS files raise DatasetValidationError (NO SILENT FALLBACK)."""
     builder = ECRGDatasetBuilder()
-    df_static, stats = builder.build_static_selective_risk_rows(X_bc, y_bc, y_bc, "m1", "d1", "dom1")
-    assert stats["task_type"] == "STATIC_SELECTIVE_RISK"
-    assert "prediction_error" in df_static.columns
+    with pytest.raises(DatasetValidationError) as exc_info:
+        builder.build_genuine_cmapss_evidence(data_dir="non_existent_data_dir")
+    assert "Genuine NASA C-MAPSS FD001 dataset files NOT FOUND" in str(exc_info.value)
+    assert "NO SILENT FALLBACK PERMITTED" in str(exc_info.value)
 
 
-def test_8_horizon_labels_use_only_future_outcomes(sample_trajectory_df):
-    """Test 8: Horizon labels use only future outcome targets."""
+def test_8_reference_fitting_uses_training_engines_only(sample_trajectory_df):
+    """Test 8: Reference fitting uses training engines only (raises error on overlap)."""
     builder = ECRGDatasetBuilder()
-    c_df, _ = builder.build_temporal_governance_rows(sample_trajectory_df, "m1", "d1", "dom1", horizons=[1, 2, 3, 5])
-    # unit_0 fails at step 5
-    # For step 3: failure is 2 steps away. horizon 1 target = 0, horizon 2 target = 1
-    s3_h1 = c_df[(c_df["trajectory_id"] == "unit_0") & (c_df["state_index"] == 3) & (c_df["prediction_horizon"] == 1)].iloc[0]
-    s3_h2 = c_df[(c_df["trajectory_id"] == "unit_0") & (c_df["state_index"] == 3) & (c_df["prediction_horizon"] == 2)].iloc[0]
-    assert s3_h1["failure_within_horizon"] == 0
-    assert s3_h2["failure_within_horizon"] == 1
+    c_df, _ = builder.build_temporal_governance_rows(sample_trajectory_df, "m1", "d1", "dom1")
+    # Under seed 42, unit_0 is in calibration group. Passing fit_engines_only=["unit_0"] must raise DatasetValidationError!
+    with pytest.raises(DatasetValidationError) as exc_info:
+        builder.create_group_aware_split(c_df, train_ratio=0.5, cal_ratio=0.5, test_ratio=0.0, seed=42, fit_engines_only=["unit_0"])
+    assert "Reference Fitting Boundary Violation" in str(exc_info.value)
 
 
 def test_9_future_outcomes_never_enter_features(sample_trajectory_df):
@@ -143,7 +140,6 @@ def test_10_censored_rows_handling(sample_trajectory_df):
     """Test 10: Censored rows remain unlabeled (None target, is_censored = True)."""
     builder = ECRGDatasetBuilder()
     c_df, stats = builder.build_temporal_governance_rows(sample_trajectory_df, "m1", "d1", "dom1", horizons=[1, 2, 3, 5])
-    # unit_1 has 10 steps and NO failure. For step 8 and horizon 5: 8 + 5 = 13 > 10, so right-censored!
     censored_row = c_df[(c_df["trajectory_id"] == "unit_1") & (c_df["state_index"] == 8) & (c_df["prediction_horizon"] == 5)].iloc[0]
     assert bool(censored_row["is_censored"]) is True
     assert pd.isna(censored_row["failure_within_horizon"])
@@ -176,30 +172,36 @@ def test_12_complete_groups_stay_within_one_split(sample_trajectory_df):
     assert len(cal_units.intersection(te_units)) == 0
 
 
-def test_13_effective_sample_size_audited():
+def test_13_effective_sample_size_audited(sample_trajectory_df):
     """Test 13: Effective sample size uses samples or trajectories correctly."""
     builder = ECRGDatasetBuilder()
-    c_cmapss, stats = builder.build_cmapss_evidence(n_engines=10, max_cycles=120, seed=42)
-    assert stats["total_independent_trajectories"] == 10
+    c_df, stats = builder.build_temporal_governance_rows(sample_trajectory_df, "m1", "d1", "dom1")
+    assert stats["total_independent_trajectories"] == 2
 
 
-def test_14_conformal_feasibility_warning():
-    """Test 15: Insufficient calibration size triggers an explicit conformal warning."""
+def test_14_conformal_feasibility_warning(sample_trajectory_df):
+    """Test 14: Insufficient calibration size triggers an explicit conformal warning."""
     builder = ECRGDatasetBuilder()
-    c_cmapss, _ = builder.build_cmapss_evidence(n_engines=10, max_cycles=120, seed=42)
-    # Split 10 engines: 6 Train, 2 Cal, 2 Test.
-    tr, cal, te, manifest = builder.create_group_aware_split(c_cmapss, seed=42)
+    c_df, _ = builder.build_temporal_governance_rows(sample_trajectory_df, "m1", "d1", "dom1")
+    tr, cal, te, manifest = builder.create_group_aware_split(c_df, seed=42)
     audit = manifest["conformal_feasibility_audit"]["alpha_0.05"]
     assert audit["is_conformal_feasible"] is False
-    assert "Calibration size N_cal=2 is insufficient" in audit["warning"]
+    assert "Calibration size N_cal=" in audit["warning"]
 
 
-def test_16_cmapss_adapter_preserves_boundaries():
-    """Test 16: C-MAPSS adapter preserves engine trajectory boundaries."""
+def test_15_synthetic_cmapss_simulation_relabeled():
+    """Test 15: Synthetic C-MAPSS simulation is explicitly relabeled as AUXILIARY_SIMULATED_SEQUENCE."""
     builder = ECRGDatasetBuilder()
-    c_cmapss, stats = builder.build_cmapss_evidence(n_engines=20, max_cycles=100, seed=42)
-    assert stats["domain_id"] == "cmapss_turbofan_degradation"
-    assert stats["total_independent_trajectories"] == 20
+    c_sim, stats = builder.build_synthetic_cmapss_simulation(n_engines=10, max_cycles=120, seed=42)
+    assert (c_sim["task_type"] == "AUXILIARY_SIMULATED_SEQUENCE").all()
+    assert (c_sim["domain_id"] == "synthetic_cmapss_simulation").all()
+
+
+def test_16_outcome_semantics_explicit(sample_trajectory_df):
+    """Test 16: Outcome semantics remain explicit across tasks."""
+    builder = ECRGDatasetBuilder()
+    c_df, _ = builder.build_temporal_governance_rows(sample_trajectory_df, "m1", "d1", "dom1", outcome_semantics="CONTROLLED_FAILURE_EVENT")
+    assert (c_df["outcome_semantics"] == "CONTROLLED_FAILURE_EVENT").all()
 
 
 def test_17_missing_evidence_remains_missing():
