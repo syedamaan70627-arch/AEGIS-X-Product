@@ -126,18 +126,32 @@ CONTINUE | WATCH | DEFER | ESCALATE
 
 ---
 
-## E. Formal Risk Boundary Specification
+## E. Formal Risk Boundary Specification & Risk-Language Clarification
 
-The conformal control objective is formulated around the risk of **unsafe automatic acceptance**:
+To prevent mathematical ambiguity, ECRG explicitly distinguishes between **Population Unsafe-Acceptance Risk** and **Conditional Selective Risk**.
 
-$$\text{unsafe\_accept} = \begin{cases} 1 & \text{if } \text{action} == \text{CONTINUE} \text{ and } y_{H} == 1 \\ 0 & \text{otherwise} \end{cases}$$
+### 1. Population Unsafe-Acceptance Risk
+The unconditional expected frequency of accepting a prediction that subsequently fails within horizon $H = K$:
 
-where $y_{H}$ indicates a true failure occurring within the prediction horizon $H = K$ `controlled_degradation_states`.
+$$R_{\text{population}}(\hat{q}) = \mathbb{E}\left[ \mathbb{I}(\text{action} == \text{CONTINUE}) \cdot y_{H} \right] = \mathbb{E}\left[ \mathbb{I}(S(x) \le \hat{q}) \cdot y_{H} \right]$$
 
-### Mathematical Risk Bound
-Given target risk $\alpha \in (0, 1)$ and calibration set $D_{cal} = \{(x_i, y_{i, H})\}_{i=1}^{N_{cal}}$:
+### 2. Conditional Selective Risk
+The conditional probability of failure given that automatic execution (`CONTINUE`) was authorized:
 
-$$R_{\text{unsafe}}(\hat{q}) = \mathbb{E}\left[ \mathbb{I}(S(x) \le \hat{q}) \cdot y_{H} \right] \le \alpha$$
+$$R_{\text{selective}}(\hat{q}) = P(y_{H} = 1 \mid \text{action} == \text{CONTINUE}) = \frac{\mathbb{E}\left[ \mathbb{I}(\text{action} == \text{CONTINUE}) \cdot y_{H} \right]}{P(\text{action} == \text{CONTINUE})}$$
+
+### 3. Coverage
+The overall automatic acceptance rate of predictions:
+
+$$\text{Coverage}(\hat{q}) = P(\text{action} == \text{CONTINUE}) = \mathbb{E}\left[ \mathbb{I}(S(x) \le \hat{q}) \right]$$
+
+### Conformal Risk Control Objective
+Standard split-conformal risk control bounds the **Population Unsafe-Acceptance Risk** $R_{\text{population}}(\hat{q}) \le \alpha$, where $\alpha \in (0, 1)$ is a configurable experiment parameter (e.g. $\alpha = 0.05, 0.10, 0.20$).
+
+> [!IMPORTANT]
+> **Risk Control Constraint**: ECRG methods and evaluation reports must explicitly state whether they control $R_{\text{population}}$ or $R_{\text{selective}}$.
+> To prevent the trivial "abstain on everything" solution (where $R_{\text{population}} = 0$ by setting Coverage $= 0$), **Risk ($R_{\text{population}}$ and $R_{\text{selective}}$) and Coverage must ALWAYS be reported together**.
+> $R_{\text{selective}}$ is controlled only if the underlying method genuinely guarantees conditional coverage.
 
 Evaluated independently for degradation lead step horizons:
 

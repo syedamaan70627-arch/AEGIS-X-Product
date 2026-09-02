@@ -1,0 +1,19 @@
+{
+  "provenance": {
+    "synthetic_degradation_trajectory": {
+      "csv_filename": "synthetic_degradation_trajectory_evidence.csv",
+      "row_count": 240,
+      "sha256_hash": "fd958b5050e8d05b61e176b4f7953dc4d729d6e44603dd96571fca22addcc06b"
+    },
+    "classification_breast_cancer": {
+      "csv_filename": "classification_breast_cancer_evidence.csv",
+      "row_count": 2276,
+      "sha256_hash": "c7e1096adce89f91ce9214ae05c25c646d3f6eb0cf1d7f8801ccd1ffd6ee0520"
+    },
+    "digits_parity": {
+      "csv_filename": "digits_parity_evidence.csv",
+      "row_count": 7188,
+      "sha256_hash": "8c0f38274475d8c2358eab86793b3fcebbdbf16dd8b6b9d73670f0f5fd131aaf"
+    }
+  }
+}

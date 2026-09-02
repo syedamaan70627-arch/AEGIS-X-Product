@@ -60,10 +60,11 @@ class ECRGEvidenceContract(BaseModel):
 
 class ECRGCalibrationConfig(BaseModel):
     """Conformal Risk Control Configuration for CALIBRATED_GOVERNANCE mode."""
-    target_risk_alpha: float = Field(0.05, gt=0.0, lt=1.0, description="Target upper bound on unsafe automatic acceptance risk alpha")
+    target_risk_alpha: float = Field(..., gt=0.0, lt=1.0, description="Target upper bound on unsafe automatic acceptance risk alpha")
     calibration_set_size: int = Field(0, ge=0, description="Number of trajectories/units in calibration split")
     calibrated_quantile_threshold: Optional[float] = Field(None, description="Computed q_hat quantile threshold")
     calibration_method: str = Field("Split_Conformal_Risk_Control", description="Conformal calibration algorithm")
+    risk_quantity_controlled: str = Field("Population_Unsafe_Acceptance_Risk", description="Controlled risk metric (Population vs Selective)")
     stated_assumptions: List[str] = Field(
         default_factory=lambda: [
             "Exchangeable/i.i.d. trajectory sampling between calibration and test sets",
@@ -87,8 +88,9 @@ class ECRGDecisionResponse(BaseModel):
     
     # Calibration Telemetry (populated in CALIBRATED_GOVERNANCE mode)
     calibration_config: Optional[ECRGCalibrationConfig] = Field(None, description="Conformal calibration details")
-    empirical_risk: Optional[float] = Field(None, description="Empirical risk evaluated on calibration set")
-    empirical_coverage: Optional[float] = Field(None, description="Empirical coverage evaluated on calibration set")
+    population_risk: Optional[float] = Field(None, description="E[1(action==CONTINUE) * failure_within_horizon]")
+    selective_risk: Optional[float] = Field(None, description="P(failure_within_horizon=1 | action==CONTINUE)")
+    coverage: Optional[float] = Field(None, description="P(action==CONTINUE)")
 
     # Non-Causal Evidence Attribution
     primary_supporting_signal: str = Field(..., description="Main reliability detector driving decision")

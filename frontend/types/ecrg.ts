@@ -35,6 +35,7 @@ export interface ECRGCalibrationConfig {
   calibration_set_size: number;
   calibrated_quantile_threshold?: number | null;
   calibration_method: string;
+  risk_quantity_controlled: string;
   stated_assumptions: string[];
 }
 
@@ -46,8 +47,9 @@ export interface ECRGDecisionResponse {
   certification_banner: string;
   calibrated: boolean;
   calibration_config?: ECRGCalibrationConfig | null;
-  empirical_risk?: number | null;
-  empirical_coverage?: number | null;
+  population_risk?: number | null;
+  selective_risk?: number | null;
+  coverage?: number | null;
   primary_supporting_signal: string;
   supporting_evidence: string[];
   contradictory_evidence: string[];

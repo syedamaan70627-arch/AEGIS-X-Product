@@ -1,0 +1,75 @@
+{
+  "summary": "Deterministic data quality and signal availability audit for Module 14 Phase 2.",
+  "builder_version": "1.0.0",
+  "domains": {
+    "synthetic_degradation_trajectory": {
+      "model_id": "013245af-9a9a-4e59-9648-0bb135f604d7",
+      "dataset_id": "sample_temporal_trajectory",
+      "domain_id": "synthetic_degradation_trajectory",
+      "seed": 42,
+      "source_artifact_hash": "7120aaaf6df305220183e04d8365ce38dddbf592cd3b523a8e49b9386625bf8b",
+      "total_trajectories": 6,
+      "total_state_records": 60,
+      "total_canonical_rows": 240,
+      "censored_row_count": 0,
+      "invalid_row_count": 0,
+      "duplicate_row_count": 0,
+      "availability": {
+        "ood": true,
+        "uncertainty": true,
+        "drift": true,
+        "fused_risk": true,
+        "memory": false,
+        "temporal": false,
+        "early_warning": false,
+        "ground_truth": true
+      }
+    },
+    "classification_breast_cancer": {
+      "model_id": "bc_classifier_v1",
+      "dataset_id": "breast_cancer_wisconsin",
+      "domain_id": "classification_breast_cancer",
+      "seed": 42,
+      "source_artifact_hash": "71aa3180a9c8c9abf1e45ef91d8c1dac2592948b3fa58a7da1cc3e16bef8c2df",
+      "total_trajectories": 29,
+      "total_state_records": 569,
+      "total_canonical_rows": 2276,
+      "censored_row_count": 0,
+      "invalid_row_count": 0,
+      "duplicate_row_count": 0,
+      "availability": {
+        "ood": true,
+        "uncertainty": true,
+        "drift": true,
+        "fused_risk": true,
+        "memory": false,
+        "temporal": false,
+        "early_warning": false,
+        "ground_truth": true
+      }
+    },
+    "digits_parity": {
+      "model_id": "digits_parity_v1",
+      "dataset_id": "digits_parity",
+      "domain_id": "digits_parity",
+      "seed": 42,
+      "source_artifact_hash": "06e860124090122424c83ba75907295dfefdbe79a18e0eef61afe41e29744f7a",
+      "total_trajectories": 72,
+      "total_state_records": 1797,
+      "total_canonical_rows": 7188,
+      "censored_row_count": 0,
+      "invalid_row_count": 0,
+      "duplicate_row_count": 0,
+      "availability": {
+        "ood": true,
+        "uncertainty": true,
+        "drift": true,
+        "fused_risk": true,
+        "memory": false,
+        "temporal": false,
+        "early_warning": false,
+        "ground_truth": true
+      }
+    }
+  }
+}
