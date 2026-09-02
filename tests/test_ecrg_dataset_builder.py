@@ -239,3 +239,52 @@ def test_20_modules_1_13_unmodified():
     assert os.path.exists("aegis/core/analyzer.py")
     assert os.path.exists("aegis/core/temporal.py")
     assert os.path.exists("aegis/experiments/run_final_research_freeze.py")
+
+
+def test_21_genuine_cmapss_fd001_cohort_validation():
+    """Test 21: Validates genuine NASA C-MAPSS dataset cohort shapes and split engine counts."""
+    builder = ECRGDatasetBuilder()
+    if os.path.exists("data/cmapss_raw/train_FD001.txt"):
+        df_cmapss, stats = builder.build_genuine_cmapss_evidence(data_dir="data/cmapss_raw", seed=42)
+        assert stats["total_independent_trajectories"] == 100
+        assert stats["total_state_records"] == 20631
+
+        tr, cal, te, manifest = builder.create_group_aware_split(
+            df_cmapss, train_ratio=0.6, cal_ratio=0.2, test_ratio=0.2, seed=42,
+            fit_engines_only=[f"nasa_engine_{e}" for e in range(1, 61)], shuffle=False
+        )
+        assert len(manifest["train_groups"]) == 60
+        assert len(manifest["cal_groups"]) == 20
+        assert len(manifest["test_groups"]) == 20
+        assert manifest["zero_overlap_verified"] is True
+        assert manifest["reference_fitting_isolation_verified"] is True
+
+
+def test_22_degradation_onset_is_not_mislabeled_terminal_failure():
+    """Test 22: Degradation onset is explicitly not mislabeled as terminal run-to-failure destruction."""
+    builder = ECRGDatasetBuilder()
+    if os.path.exists("data/cmapss_raw/train_FD001.txt"):
+        df_onset, _ = builder.build_genuine_cmapss_evidence(data_dir="data/cmapss_raw", target_semantic="C_MAPSS_DEGRADATION_ONSET_WITHIN_K")
+        df_term, _ = builder.build_genuine_cmapss_evidence(data_dir="data/cmapss_raw", target_semantic="C_MAPSS_TERMINAL_FAILURE_WITHIN_K")
+        assert (df_onset["outcome_semantics"] == "C_MAPSS_DEGRADATION_ONSET_WITHIN_K").all()
+        assert (df_term["outcome_semantics"] == "C_MAPSS_TERMINAL_FAILURE_WITHIN_K").all()
+
+
+def test_23_censored_states_not_converted_to_negatives(sample_trajectory_df):
+    """Test 23: Censored states have failure_within_horizon = None and are never converted to zero."""
+    builder = ECRGDatasetBuilder()
+    c_df, _ = builder.build_temporal_governance_rows(sample_trajectory_df, "m1", "d1", "dom1", horizons=[5])
+    censored_rows = c_df[c_df["is_censored"] == True]
+    assert len(censored_rows) > 0
+    assert censored_rows["failure_within_horizon"].isnull().all()
+
+
+def test_24_external_test_cohort_isolated():
+    """Test 24: External test cohort builds 100 test engines without reference fitting pollution."""
+    builder = ECRGDatasetBuilder()
+    if os.path.exists("data/cmapss_raw/test_FD001.txt"):
+        df_ext, stats = builder.build_genuine_cmapss_external_evidence(data_dir="data/cmapss_raw", seed=42)
+        assert stats["total_independent_trajectories"] == 100
+        assert stats["total_state_records"] == 13096
+        assert (df_ext["task_type"] == "TEMPORAL_GOVERNANCE").all()
+

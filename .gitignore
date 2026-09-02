@@ -31,6 +31,12 @@ storage/users/*
 !storage/datasets/.gitkeep
 !storage/results/.gitkeep
 
+# Raw Research Data & ZIP archives (Ignore local dataset downloads)
+data/cmapss_raw/
+data/cmapss/
+CMAPSSData.zip
+*.zip
+
 # IDEs & Editors
 .vscode/
 .idea/

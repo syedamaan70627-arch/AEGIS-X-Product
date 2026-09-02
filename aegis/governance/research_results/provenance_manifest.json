@@ -2,6 +2,8 @@
   "scientific_hashes": {
     "bc_static": "5757923812c637806b414ba222d4fa73afe04aa8d319a519bbafd0ac9f891b59",
     "dig_static": "223efea906359533def0c4442a74b20214b27dc561ce9b10b35806c874d23535",
+    "cmapss_genuine_internal": "fab1669738295c1b571fb64a13c002fa00152a92b4b643c7c27e477fed396e17",
+    "cmapss_genuine_external": "e07f2b5ae2ac93349a6bf58168637ddf1ba1f0267e7b3c2d006e10b90b3d1602",
     "synth_temporal": "e774c8253e88f5e3768cb51acf0607fe1b9b9f17bc1ce520815954db864e83e4",
     "cmapss_synthetic_simulation": "f0eeb6469dca5a3d149c3371114c05dac1a798d2c6c2a6daf96b10bfd9f035b5",
     "auxiliary_simulated_chunked": "604f76c7577d71f9d944c5c60ed807d8ea7fed36898e424db3d5bdf5496392db"

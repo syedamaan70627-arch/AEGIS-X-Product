@@ -386,6 +386,7 @@ class ECRGDatasetBuilder:
         seed: int = 42,
         target_alphas: List[float] = TARGET_ALPHAS,
         fit_engines_only: Optional[List[str]] = None,
+        shuffle: bool = True,
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, Dict[str, Any]]:
         """
         Enforces deterministic group-aware splitting and audits finite-sample conformal feasibility.
@@ -396,7 +397,7 @@ class ECRGDatasetBuilder:
         if task_type == "STATIC_SELECTIVE_RISK":
             n_samples = len(df_canonical)
             np.random.seed(seed)
-            shuffled_idx = np.random.permutation(n_samples)
+            shuffled_idx = np.random.permutation(n_samples) if shuffle else np.arange(n_samples)
 
             n_train = int(np.round(n_samples * train_ratio))
             n_cal = int(np.round(n_samples * cal_ratio))
@@ -411,11 +412,21 @@ class ECRGDatasetBuilder:
             cal_groups_list = list(range(n_train, n_train + n_cal))
             test_groups_list = list(range(n_train + n_cal, n_samples))
         else:
-            unique_groups = sorted(df_canonical["trajectory_id"].unique())
+            # Sort engine IDs numerically if they follow pattern (e.g. nasa_engine_1..100)
+            def parse_engine_num(gid):
+                try:
+                    return int(gid.split("_")[-1])
+                except Exception:
+                    return gid
+
+            unique_groups = sorted(df_canonical["trajectory_id"].unique(), key=parse_engine_num)
             n_groups = len(unique_groups)
 
-            np.random.seed(seed)
-            shuffled_groups = np.random.permutation(unique_groups)
+            if shuffle:
+                np.random.seed(seed)
+                shuffled_groups = np.random.permutation(unique_groups).tolist()
+            else:
+                shuffled_groups = list(unique_groups)
 
             n_train_g = max(1, int(np.round(n_groups * train_ratio)))
             n_cal_g = max(1, int(np.round(n_groups * cal_ratio)))
@@ -423,9 +434,9 @@ class ECRGDatasetBuilder:
                 n_train_g = max(1, n_groups - 2)
                 n_cal_g = 1
 
-            train_groups = shuffled_groups[:n_train_g].tolist()
-            cal_groups = shuffled_groups[n_train_g : n_train_g + n_cal_g].tolist()
-            test_groups = shuffled_groups[n_train_g + n_cal_g :].tolist()
+            train_groups = shuffled_groups[:n_train_g]
+            cal_groups = shuffled_groups[n_train_g : n_train_g + n_cal_g]
+            test_groups = shuffled_groups[n_train_g + n_cal_g :]
 
             train_groups_list = train_groups
             cal_groups_list = cal_groups
@@ -545,14 +556,18 @@ class ECRGDatasetBuilder:
 
     def build_genuine_cmapss_evidence(
         self,
-        data_dir: str = "data/cmapss",
+        data_dir: str = "data/cmapss_raw",
         seed: int = 42,
+        target_semantic: str = "C_MAPSS_DEGRADATION_ONSET_WITHIN_K",
     ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
         """
         Builds canonical ECRG evidence dataset from GENUINE NASA C-MAPSS FD001 dataset files.
-        Requires train_FD001.txt, test_FD001.txt, and RUL_FD001.txt in data_dir.
+        Requires train_FD001.txt, test_FD001.txt, and RUL_FD001.txt in data_dir (or fallback data/cmapss).
         If files are missing, raises explicit DatasetValidationError (NO SILENT FALLBACK).
         """
+        if not os.path.exists(os.path.join(data_dir, "train_FD001.txt")) and os.path.exists("data/cmapss/train_FD001.txt"):
+            data_dir = "data/cmapss"
+
         train_path = os.path.join(data_dir, "train_FD001.txt")
         test_path = os.path.join(data_dir, "test_FD001.txt")
         rul_path = os.path.join(data_dir, "RUL_FD001.txt")
@@ -562,23 +577,32 @@ class ECRGDatasetBuilder:
                 f"Genuine NASA C-MAPSS FD001 dataset files NOT FOUND in '{data_dir}'.\n"
                 f"Missing required files:\n"
                 f"  - {train_path}\n  - {test_path}\n  - {rul_path}\n"
-                f"Official Source URL: https://ti.arc.nasa.gov/tech/dash/groups/pcoe/prognostic-data-repository/\n"
+                f"Official Source URL: https://data.nasa.gov/docs/legacy/CMAPSSData.zip\n"
                 f"Citation: Saxena et al., PHM 2008.\n"
                 f"NO SILENT FALLBACK PERMITTED. Download official NASA C-MAPSS files before running genuine full-cohort evaluation."
             )
 
-        # Parse genuine NASA FD001 (100 training engines, ~20,631 cycles)
+        # Parse genuine NASA FD001 (100 training engines, 20,631 cycles)
         cols = ["engine_id", "cycle", "op_setting_1", "op_setting_2", "op_setting_3"] + [f"sensor_{i}" for i in range(1, 22)]
         df_raw = pd.read_csv(train_path, sep=r"\s+", header=None, names=cols)
         
-        # Calculate RUL and degradation onset knee per engine
+        # Calculate RUL and degradation target
         max_cycles = df_raw.groupby("engine_id")["cycle"].transform("max")
         df_raw["remaining_useful_life"] = max_cycles - df_raw["cycle"]
-        df_raw["is_failure"] = (df_raw["remaining_useful_life"] <= 30).astype(int)
+        
+        if target_semantic == "C_MAPSS_DEGRADATION_ONSET_WITHIN_K":
+            df_raw["is_failure"] = (df_raw["remaining_useful_life"] <= 30).astype(int)
+        elif target_semantic == "C_MAPSS_TERMINAL_FAILURE_WITHIN_K":
+            df_raw["is_failure"] = (df_raw["remaining_useful_life"] <= 0).astype(int)
+        elif target_semantic == "C_MAPSS_RUL_THRESHOLD_WITHIN_K":
+            df_raw["is_failure"] = (df_raw["remaining_useful_life"] <= 50).astype(int)
+        else:
+            df_raw["is_failure"] = (df_raw["remaining_useful_life"] <= 30).astype(int)
+
         df_raw["trajectory_id"] = df_raw["engine_id"].apply(lambda e: f"nasa_engine_{e}")
         df_raw["step"] = df_raw["cycle"]
 
-        # 60 Train engines / 20 Cal engines / 20 Test engines
+        # Fit reference statistics ONLY on 60 Research Training engines (nasa_engine_1..60)
         train_engines = [f"nasa_engine_{e}" for e in range(1, 61)]
         df_tr_engines = df_raw[df_raw["trajectory_id"].isin(train_engines)]
 
@@ -604,6 +628,75 @@ class ECRGDatasetBuilder:
             seed=seed,
             source_module="Genuine_NASA_CMAPSS_FD001",
             source_artifact_path=train_path,
+            task_type="TEMPORAL_GOVERNANCE",
+            outcome_semantics=target_semantic,
+        )
+
+    def build_genuine_cmapss_external_evidence(
+        self,
+        data_dir: str = "data/cmapss_raw",
+        seed: int = 42,
+    ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
+        """
+        Builds canonical ECRG evidence dataset from the official NASA C-MAPSS FD001 External Test Cohort
+        (test_FD001.txt + RUL_FD001.txt, 100 test engines, 13,096 cycles).
+        Never used for reference fitting, threshold tuning, or training.
+        """
+        if not os.path.exists(os.path.join(data_dir, "test_FD001.txt")) and os.path.exists("data/cmapss/test_FD001.txt"):
+            data_dir = "data/cmapss"
+
+        train_path = os.path.join(data_dir, "train_FD001.txt")
+        test_path = os.path.join(data_dir, "test_FD001.txt")
+        rul_path = os.path.join(data_dir, "RUL_FD001.txt")
+
+        if not (os.path.exists(train_path) and os.path.exists(test_path) and os.path.exists(rul_path)):
+            raise DatasetValidationError(f"Genuine NASA external test files not found in '{data_dir}'.")
+
+        cols = ["engine_id", "cycle", "op_setting_1", "op_setting_2", "op_setting_3"] + [f"sensor_{i}" for i in range(1, 22)]
+        df_tr = pd.read_csv(train_path, sep=r"\s+", header=None, names=cols)
+        df_te = pd.read_csv(test_path, sep=r"\s+", header=None, names=cols)
+        df_rul = pd.read_csv(rul_path, sep=r"\s+", header=None, names=["final_rul"])
+
+        # Compute ground-truth RUL for truncated test sequences
+        # final_rul[engine_id] + (max_test_cycle - current_cycle)
+        max_test_cycles = df_te.groupby("engine_id")["cycle"].transform("max")
+        df_te["final_rul_target"] = df_te["engine_id"].apply(lambda e: df_rul.loc[e - 1, "final_rul"])
+        df_te["remaining_useful_life"] = df_te["final_rul_target"] + (max_test_cycles - df_te["cycle"])
+        df_te["is_failure"] = (df_te["remaining_useful_life"] <= 30).astype(int)
+        df_te["trajectory_id"] = df_te["engine_id"].apply(lambda e: f"nasa_ext_engine_{e}")
+        df_te["step"] = df_te["cycle"]
+
+        # Fit model and analyzer STRICTLY on training dataset
+        df_tr_max = df_tr.groupby("engine_id")["cycle"].transform("max")
+        df_tr["remaining_useful_life"] = df_tr_max - df_tr["cycle"]
+        df_tr["is_failure"] = (df_tr["remaining_useful_life"] <= 30).astype(int)
+        df_tr["trajectory_id"] = df_tr["engine_id"].apply(lambda e: f"nasa_engine_{e}")
+
+        train_engines = [f"nasa_engine_{e}" for e in range(1, 61)]
+        df_tr_engines = df_tr[df_tr["trajectory_id"].isin(train_engines)]
+
+        feat_names = [f"sensor_{i}" for i in [2, 3, 4, 7, 8, 9, 11, 12, 13, 14, 15, 17, 20, 21]]
+        rf = RandomForestClassifier(n_estimators=50, random_state=seed)
+        rf.fit(df_tr_engines[feat_names], df_tr_engines["is_failure"])
+        adapter = SklearnModelAdapter(rf)
+
+        analyzer = CoreReliabilityAnalyzer()
+        analyzer.fit_reference(df_tr_engines[feat_names], feat_names, df_tr_engines[feat_names], df_tr_engines["is_failure"], adapter)
+
+        analysis_res = analyzer.analyze(df_te[feat_names], adapter)
+        df_te["ood_risk"] = analysis_res.ood.risk_scores if (analysis_res.ood and analysis_res.ood.risk_scores is not None) else 0.15
+        df_te["uncertainty_risk"] = analysis_res.uncertainty.uncertainty_scores if (analysis_res.uncertainty and analysis_res.uncertainty.uncertainty_scores is not None) else 0.15
+        df_te["drift_risk"] = analysis_res.drift.aggregate_drift_score if analysis_res.drift else 0.10
+        df_te["fused_risk"] = df_te["ood_risk"] * 0.5 + df_te["uncertainty_risk"] * 0.5
+
+        return self.build_temporal_governance_rows(
+            df=df_te,
+            model_id="nasa_cmapss_fd001_rf_v1",
+            dataset_id="nasa_cmapss_fd001_external_test",
+            domain_id="cmapss_turbofan_degradation_external",
+            seed=seed,
+            source_module="Genuine_NASA_CMAPSS_FD001_External",
+            source_artifact_path=test_path,
             task_type="TEMPORAL_GOVERNANCE",
             outcome_semantics="C_MAPSS_DEGRADATION_ONSET_WITHIN_K",
         )

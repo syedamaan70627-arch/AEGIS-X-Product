@@ -1,11 +1,12 @@
 """
-AEGIS-X Module 14 — Deterministic Dataset Builder Runner & Reproducibility CLI (Phase 2C Finalized).
+AEGIS-X Module 14 — Deterministic Dataset Builder Runner & Reproducibility CLI (Phase 2C Genuine NASA Finalized).
 
 Outputs:
 1. static_selective/ (Breast Cancer Wisconsin, Digits Parity)
-2. temporal_governance/cmapss_fd001_internal/ (Genuine C-MAPSS if available)
-3. temporal_governance/controlled_synthetic/ (Controlled synthetic degradation trajectories)
-4. auxiliary_simulated/ (Synthetic C-MAPSS simulation & chunked simulated sequences)
+2. temporal_governance/cmapss_fd001_internal/ (Genuine NASA C-MAPSS FD001 100 Train Engines, 60/20/20 split)
+3. temporal_governance/cmapss_fd001_external/ (Genuine NASA C-MAPSS FD001 100 Test Engines, truncated RUL evaluation)
+4. temporal_governance/controlled_synthetic/ (Controlled synthetic degradation trajectories)
+5. auxiliary_simulated/ (Synthetic C-MAPSS simulation & chunked simulated sequences)
 
 Verifies two-run clean reproducibility by asserting byte-identical scientific hashes.
 """
@@ -31,16 +32,18 @@ RESULTS_DIR = os.path.join(os.path.dirname(__file__), "research_results")
 
 
 def run_pipeline() -> Tuple[Dict[str, str], Dict[str, Any]]:
-    """Runs full ECRG dataset builder pipeline across static, temporal, and auxiliary tasks."""
+    """Runs full ECRG dataset builder pipeline across genuine NASA temporal tasks, static tasks, and auxiliary simulations."""
     builder = ECRGDatasetBuilder()
 
     static_dir = os.path.join(RESULTS_DIR, "static_selective")
     temp_cmapss_int_dir = os.path.join(RESULTS_DIR, "temporal_governance", "cmapss_fd001_internal")
+    temp_cmapss_ext_dir = os.path.join(RESULTS_DIR, "temporal_governance", "cmapss_fd001_external")
     temp_synthetic_dir = os.path.join(RESULTS_DIR, "temporal_governance", "controlled_synthetic")
     auxiliary_dir = os.path.join(RESULTS_DIR, "auxiliary_simulated")
 
     os.makedirs(static_dir, exist_ok=True)
     os.makedirs(temp_cmapss_int_dir, exist_ok=True)
+    os.makedirs(temp_cmapss_ext_dir, exist_ok=True)
     os.makedirs(temp_synthetic_dir, exist_ok=True)
     os.makedirs(auxiliary_dir, exist_ok=True)
 
@@ -96,27 +99,60 @@ def run_pipeline() -> Tuple[Dict[str, str], Dict[str, Any]]:
     }
 
     # =========================================================================
-    # TASK 2: TEMPORAL GOVERNANCE
+    # TASK 2: GENUINE NASA C-MAPSS FD001 TEMPORAL GOVERNANCE
     # =========================================================================
-    # A. Genuine C-MAPSS FD001 (If files present)
-    try:
-        df_cmapss_genuine, stats_cmapss_gen = builder.build_genuine_cmapss_evidence(data_dir="data/cmapss", seed=42)
-        # Train engines 1..60 passed to verify fit isolation
-        tr_cm, cal_cm, te_cm, man_cm = builder.create_group_aware_split(
-            df_cmapss_genuine, train_ratio=0.6, cal_ratio=0.2, test_ratio=0.2, seed=42,
-            fit_engines_only=[f"nasa_engine_{e}" for e in range(1, 61)]
-        )
-        df_cmapss_genuine.to_csv(os.path.join(temp_cmapss_int_dir, "cmapss_fd001_genuine_evidence.csv"), index=False)
-        pipeline_hashes["cmapss_genuine"] = compute_sha256_hash(df_cmapss_genuine)
-        cmapss_report_entry = {"stats": stats_cmapss_gen, "manifest": man_cm, "status": "GENUINE_NASA_DATA"}
-    except DatasetValidationError as err:
-        cmapss_report_entry = {
-            "status": "MISSING_GENUINE_FILE",
-            "error": str(err),
-            "official_source": "https://ti.arc.nasa.gov/tech/dash/groups/pcoe/prognostic-data-repository/",
+    # A. Genuine NASA C-MAPSS FD001 Internal 100-Engine Cohort (60/20/20 split)
+    df_cmapss_genuine, stats_cmapss_gen = builder.build_genuine_cmapss_evidence(data_dir="data/cmapss_raw", seed=42)
+    
+    # Deterministic group split: 60 Research Train (nasa_engine_1..60) / 20 Cal (61..80) / 20 Test (81..100)
+    tr_cm, cal_cm, te_cm, man_cm = builder.create_group_aware_split(
+        df_cmapss_genuine, train_ratio=0.6, cal_ratio=0.2, test_ratio=0.2, seed=42,
+        fit_engines_only=[f"nasa_engine_{e}" for e in range(1, 61)], shuffle=False
+    )
+    df_cmapss_genuine.to_csv(os.path.join(temp_cmapss_int_dir, "cmapss_fd001_genuine_evidence.csv"), index=False)
+    tr_cm.to_csv(os.path.join(temp_cmapss_int_dir, "cmapss_fd001_train_split.csv"), index=False)
+    cal_cm.to_csv(os.path.join(temp_cmapss_int_dir, "cmapss_fd001_cal_split.csv"), index=False)
+    te_cm.to_csv(os.path.join(temp_cmapss_int_dir, "cmapss_fd001_test_split.csv"), index=False)
+    pipeline_hashes["cmapss_genuine_internal"] = compute_sha256_hash(df_cmapss_genuine)
+
+    # Compute censoring statistics for K in [1, 2, 3, 5]
+    censoring_counts_by_k = {}
+    for k in DEFAULT_HORIZONS:
+        k_df = df_cmapss_genuine[df_cmapss_genuine["prediction_horizon"] == k]
+        censoring_counts_by_k[f"k_{k}"] = {
+            "total_rows": len(k_df),
+            "censored_rows": int(k_df["is_censored"].sum()),
+            "observed_positive_failures": int((k_df["failure_within_horizon"] == 1).sum()),
+            "observed_negative_nonfailures": int((k_df["failure_within_horizon"] == 0).sum()),
         }
 
-    # B. Controlled Synthetic Degradation Trajectories
+    reports["cmapss_fd001_internal"] = {
+        "stats": stats_cmapss_gen,
+        "manifest": man_cm,
+        "censoring_counts_by_k": censoring_counts_by_k,
+        "engine_split_counts": {
+            "research_training_engines": 60,
+            "calibration_engines": 20,
+            "final_test_engines": 20,
+            "training_rows": len(tr_cm),
+            "calibration_rows": len(cal_cm),
+            "test_rows": len(te_cm),
+        },
+    }
+
+    # B. Genuine NASA C-MAPSS FD001 External Test Cohort (100 Test Engines)
+    df_cmapss_ext, stats_cmapss_ext = builder.build_genuine_cmapss_external_evidence(data_dir="data/cmapss_raw", seed=42)
+    df_cmapss_ext.to_csv(os.path.join(temp_cmapss_ext_dir, "cmapss_fd001_external_test_evidence.csv"), index=False)
+    pipeline_hashes["cmapss_genuine_external"] = compute_sha256_hash(df_cmapss_ext)
+
+    reports["cmapss_fd001_external"] = {
+        "stats": stats_cmapss_ext,
+        "engine_count": 100,
+        "total_rows": len(df_cmapss_ext),
+        "note": "Official NASA FD001 test cohort used strictly for external truncated RUL evaluation.",
+    }
+
+    # C. Controlled Synthetic Degradation Trajectories
     sample_traj_path = "examples/sample_temporal_trajectory.csv"
     if os.path.exists(sample_traj_path):
         sample_df = pd.read_csv(sample_traj_path)
@@ -131,10 +167,7 @@ def run_pipeline() -> Tuple[Dict[str, str], Dict[str, Any]]:
         stats_synth = {}
         man_sy = {}
 
-    reports["temporal_governance"] = {
-        "cmapss_fd001_genuine": cmapss_report_entry,
-        "controlled_synthetic": {"stats": stats_synth, "manifest": man_sy},
-    }
+    reports["controlled_synthetic"] = {"stats": stats_synth, "manifest": man_sy}
 
     # =========================================================================
     # TASK 3: AUXILIARY SIMULATED SEQUENCES (Tagged EXPLICITLY as Simulation)
@@ -171,7 +204,7 @@ def run_pipeline() -> Tuple[Dict[str, str], Dict[str, Any]]:
 
 def main():
     print("=" * 80)
-    print("AEGIS-X Module 14 — Phase 2C Finalized Dataset Builder Execution")
+    print("AEGIS-X Module 14 — Genuine NASA C-MAPSS Finalized Dataset Builder Execution")
     print("=" * 80)
 
     # Run 1
