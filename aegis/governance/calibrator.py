@@ -169,6 +169,8 @@ class TrajectorySplitConformalCalibrator:
         - If y_true == 1: s = 1 - p_adverse = p_safe
         - If y_true == 0: s = 1 - (1 - p_adverse) = p_adverse
         """
+        if p_adverse is None or math.isnan(float(p_adverse)) or math.isinf(float(p_adverse)):
+            raise ValueError(f"p_adverse score cannot be NaN, Infinity, or None, got {p_adverse}.")
         if y_true == 1:
             return float(1.0 - p_adverse)
         elif y_true == 0:
