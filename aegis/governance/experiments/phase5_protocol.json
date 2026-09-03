@@ -1,0 +1,88 @@
+{
+  "protocol_version": "1.0.0",
+  "phase": "Phase 5 — Pre-Registered Final Experiments, Baselines & Ablation Study",
+  "preregistration_timestamp": "2026-09-03T10:15:00Z",
+  "research_questions": {
+    "RQ1": "Conformal validity and efficiency: Does ECRG achieve empirical marginal trajectory coverage >= 1-alpha while maintaining compact prediction sets?",
+    "RQ2": "Selective governance utility: Does calibrated ECRG reduce unsafe automated continuation while maintaining useful automation coverage?",
+    "RQ3": "Temporal warning usefulness: Does ECRG produce early warning lead without excessive state action instability or flapping?",
+    "RQ4": "Component contribution: What are the individual contributions of conformal calibration, separate evidence signals, fused risk, and the state machine?"
+  },
+  "datasets": {
+    "temporal_primary": {
+      "name": "NASA C-MAPSS FD001 Internal Final-Test Cohort",
+      "engines": "nasa_engine_81 to nasa_engine_100",
+      "n_trajectories": 20,
+      "unopened_until_preregistration_pushed": true
+    },
+    "temporal_external": {
+      "name": "Official NASA-provided simulated external truncated-RUL cohort",
+      "source": "test_FD001.txt + RUL_FD001.txt",
+      "n_trajectories": 100,
+      "unopened_until_preregistration_pushed": true
+    },
+    "static_primary": [
+      {
+        "name": "Breast Cancer Wisconsin Final-Test Split",
+        "ground_truth": "predicted_class != true_class"
+      },
+      {
+        "name": "Digits Parity Final-Test Split",
+        "ground_truth": "predicted_class != true_class"
+      }
+    ]
+  },
+  "targets_and_horizons": {
+    "temporal_target_semantics": [
+      "C_MAPSS_RUL30_PROXY_WITHIN_K",
+      "C_MAPSS_RUL50_PROXY_WITHIN_K",
+      "C_MAPSS_TERMINAL_FAILURE_WITHIN_K"
+    ],
+    "horizons": [1, 2, 3, 5],
+    "primary_target_alpha": 0.05,
+    "sensitivity_alphas": [0.10, 0.20]
+  },
+  "methods_and_baselines": [
+    "ECRG_CALIBRATED_FULL",
+    "ECRG_EVIDENCE_ONLY",
+    "UNCALIBRATED_RISK_LEARNER",
+    "FROZEN_STRESS_ROBUST_FUSION",
+    "UNCERTAINTY_ONLY"
+  ],
+  "ablations": [
+    {
+      "id": "A1_NO_CONFORMAL",
+      "name": "No conformal calibration (raw score thresholding)"
+    },
+    {
+      "id": "A2_FUSED_EVIDENCE_ONLY",
+      "name": "Fused evidence only (excluding separate OOD/Uncertainty/Drift)"
+    },
+    {
+      "id": "A3_SEPARATE_SIGNALS_NO_FUSED",
+      "name": "Separate signals without fused risk score"
+    },
+    {
+      "id": "A4_NO_STATE_MACHINE",
+      "name": "No governance state machine (instantaneous action mapping)"
+    }
+  ],
+  "state_machine_config": {
+    "defer_persistence_threshold": 3,
+    "recovery_consecutive_states": 3,
+    "cooldown_steps": 2,
+    "latch_escalate": true
+  },
+  "statistical_analysis": {
+    "unit_of_resampling": "engine_trajectory_cluster",
+    "bootstrap_replicates": 2000,
+    "bootstrap_seed": 42,
+    "exact_coverage_interval": "Clopper-Pearson binomial",
+    "multiple_comparison_correction": "Holm-Bonferroni",
+    "confidence_level": 0.95
+  },
+  "undefined_metric_handling": {
+    "zero_denominator": "NA — undefined",
+    "zero_positive_outcomes": "NA — no positive outcomes"
+  }
+}
