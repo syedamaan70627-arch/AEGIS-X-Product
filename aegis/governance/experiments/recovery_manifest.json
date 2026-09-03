@@ -1,0 +1,21 @@
+{
+  "recovery_timestamp": "2026-09-03T10:28:00Z",
+  "detected_recovery_state": "State C — Preregistration commit exists",
+  "current_head_sha": "1f688831a05771649b5ffd801224a71446b8bad9",
+  "verified_phase4_head_sha": "e98980c1d5c84e209676342b6dc7ba45ca98f903",
+  "existing_phase5_commits": [
+    {
+      "sha": "1f688831a05771649b5ffd801224a71446b8bad9",
+      "subject": "chore(ecrg): preregister phase 5 evaluation protocol"
+    }
+  ],
+  "dirty_or_untracked_files": [],
+  "partial_output_paths": [],
+  "partial_file_hashes": {},
+  "last_completed_step": "Warning triage & pre-registration commit/push (1f68883)",
+  "test_data_accessed_before_preregistration": false,
+  "preregistration_pushed": true,
+  "chosen_resume_action": "State C continuation — Execute Phase 5 pre-registered evaluation protocol on final-test cohorts without scientific setting alteration",
+  "scientific_settings_changed": false,
+  "warning_triage_verdict": "PASSED — 137 benign third-party warnings triaged; 0 ECRG convergence/overflow/NaN/leakage/artifact warnings"
+}

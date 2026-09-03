@@ -1,0 +1,1552 @@
+{
+  "protocol_sha256": "d3a3b48b7828d90f8bdc4ee39c167fb7539c700cbd58416140d9767c963bcf0e",
+  "preregistration_commit": "1f688831a05771649b5ffd801224a71446b8bad9",
+  "method_comparison": {
+    "ECRG_CALIBRATED_FULL": {
+      "method_name": "ECRG_CALIBRATED_FULL",
+      "n_total": 4493,
+      "n_positives": 680,
+      "empirical_coverage": 1.0,
+      "trajectory_simultaneous_coverage": 1.0,
+      "clopper_pearson_ci_lower": 0.8315665290169146,
+      "clopper_pearson_ci_upper": 1.0,
+      "calibration_gap": 0.050000000000000044,
+      "avg_set_size": 1.9906521255286,
+      "singleton_rate": 0.009347874471399956,
+      "ambiguous_rate": 0.9906521255286,
+      "empty_rate": 0.0,
+      "automation_coverage": 0.0,
+      "selective_risk": null,
+      "selective_risk_str": "NA \u2014 undefined",
+      "unsafe_continuation_rate": 0.0,
+      "review_burden": 1.0,
+      "engine_results": {
+        "nasa_engine_81": {
+          "trajectory_id": "nasa_engine_81",
+          "n_steps": 240,
+          "simultaneous_coverage": 1,
+          "step_coverage_rate": 1.0,
+          "first_watch_lead": 206,
+          "first_defer_lead": null,
+          "first_escalate_lead": null,
+          "has_failure": 1,
+          "n_transitions": 0,
+          "transition_rate_per_100": 0.0
+        },
+        "nasa_engine_82": {
+          "trajectory_id": "nasa_engine_82",
+          "n_steps": 214,
+          "simultaneous_coverage": 1,
+          "step_coverage_rate": 1.0,
+          "first_watch_lead": 180,
+          "first_defer_lead": null,
+          "first_escalate_lead": null,
+          "has_failure": 1,
+          "n_transitions": 0,
+          "transition_rate_per_100": 0.0
+        },
+        "nasa_engine_83": {
+          "trajectory_id": "nasa_engine_83",
+          "n_steps": 293,
+          "simultaneous_coverage": 1,
+          "step_coverage_rate": 1.0,
+          "first_watch_lead": 259,
+          "first_defer_lead": null,
+          "first_escalate_lead": null,
+          "has_failure": 1,
+          "n_transitions": 0,
+          "transition_rate_per_100": 0.0
+        },
+        "nasa_engine_84": {
+          "trajectory_id": "nasa_engine_84",
+          "n_steps": 267,
+          "simultaneous_coverage": 1,
+          "step_coverage_rate": 1.0,
+          "first_watch_lead": 233,
+          "first_defer_lead": null,
+          "first_escalate_lead": null,
+          "has_failure": 1,
+          "n_transitions": 0,
+          "transition_rate_per_100": 0.0
+        },
+        "nasa_engine_85": {
+          "trajectory_id": "nasa_engine_85",
+          "n_steps": 188,
+          "simultaneous_coverage": 1,
+          "step_coverage_rate": 1.0,
+          "first_watch_lead": 154,
+          "first_defer_lead": null,
+          "first_escalate_lead": null,
+          "has_failure": 1,
+          "n_transitions": 0,
+          "transition_rate_per_100": 0.0
+        },
+        "nasa_engine_86": {
+          "trajectory_id": "nasa_engine_86",
+          "n_steps": 278,
+          "simultaneous_coverage": 1,
+          "step_coverage_rate": 1.0,
+          "first_watch_lead": 244,
+          "first_defer_lead": null,
+          "first_escalate_lead": null,
+          "has_failure": 1,
+          "n_transitions": 0,
+          "transition_rate_per_100": 0.0
+        },
+        "nasa_engine_87": {
+          "trajectory_id": "nasa_engine_87",
+          "n_steps": 178,
+          "simultaneous_coverage": 1,
+          "step_coverage_rate": 1.0,
+          "first_watch_lead": 144,
+          "first_defer_lead": null,
+          "first_escalate_lead": null,
+          "has_failure": 1,
+          "n_transitions": 0,
+          "transition_rate_per_100": 0.0
+        },
+        "nasa_engine_88": {
+          "trajectory_id": "nasa_engine_88",
+          "n_steps": 213,
+          "simultaneous_coverage": 1,
+          "step_coverage_rate": 1.0,
+          "first_watch_lead": 179,
+          "first_defer_lead": null,
+          "first_escalate_lead": null,
+          "has_failure": 1,
+          "n_transitions": 0,
+          "transition_rate_per_100": 0.0
+        },
+        "nasa_engine_89": {
+          "trajectory_id": "nasa_engine_89",
+          "n_steps": 217,
+          "simultaneous_coverage": 1,
+          "step_coverage_rate": 1.0,
+          "first_watch_lead": 183,
+          "first_defer_lead": null,
+          "first_escalate_lead": null,
+          "has_failure": 1,
+          "n_transitions": 0,
+          "transition_rate_per_100": 0.0
+        },
+        "nasa_engine_90": {
+          "trajectory_id": "nasa_engine_90",
+          "n_steps": 154,
+          "simultaneous_coverage": 1,
+          "step_coverage_rate": 1.0,
+          "first_watch_lead": 120,
+          "first_defer_lead": null,
+          "first_escalate_lead": null,
+          "has_failure": 1,
+          "n_transitions": 0,
+          "transition_rate_per_100": 0.0
+        },
+        "nasa_engine_91": {
+          "trajectory_id": "nasa_engine_91",
+          "n_steps": 135,
+          "simultaneous_coverage": 1,
+          "step_coverage_rate": 1.0,
+          "first_watch_lead": 101,
+          "first_defer_lead": null,
+          "first_escalate_lead": null,
+          "has_failure": 1,
+          "n_transitions": 0,
+          "transition_rate_per_100": 0.0
+        },
+        "nasa_engine_92": {
+          "trajectory_id": "nasa_engine_92",
+          "n_steps": 341,
+          "simultaneous_coverage": 1,
+          "step_coverage_rate": 1.0,
+          "first_watch_lead": 307,
+          "first_defer_lead": null,
+          "first_escalate_lead": null,
+          "has_failure": 1,
+          "n_transitions": 0,
+          "transition_rate_per_100": 0.0
+        },
+        "nasa_engine_93": {
+          "trajectory_id": "nasa_engine_93",
+          "n_steps": 155,
+          "simultaneous_coverage": 1,
+          "step_coverage_rate": 1.0,
+          "first_watch_lead": 121,
+          "first_defer_lead": null,
+          "first_escalate_lead": null,
+          "has_failure": 1,
+          "n_transitions": 0,
+          "transition_rate_per_100": 0.0
+        },
+        "nasa_engine_94": {
+          "trajectory_id": "nasa_engine_94",
+          "n_steps": 258,
+          "simultaneous_coverage": 1,
+          "step_coverage_rate": 1.0,
+          "first_watch_lead": 224,
+          "first_defer_lead": null,
+          "first_escalate_lead": null,
+          "has_failure": 1,
+          "n_transitions": 0,
+          "transition_rate_per_100": 0.0
+        },
+        "nasa_engine_95": {
+          "trajectory_id": "nasa_engine_95",
+          "n_steps": 283,
+          "simultaneous_coverage": 1,
+          "step_coverage_rate": 1.0,
+          "first_watch_lead": 249,
+          "first_defer_lead": null,
+          "first_escalate_lead": null,
+          "has_failure": 1,
+          "n_transitions": 0,
+          "transition_rate_per_100": 0.0
+        },
+        "nasa_engine_96": {
+          "trajectory_id": "nasa_engine_96",
+          "n_steps": 336,
+          "simultaneous_coverage": 1,
+          "step_coverage_rate": 1.0,
+          "first_watch_lead": 302,
+          "first_defer_lead": null,
+          "first_escalate_lead": null,
+          "has_failure": 1,
+          "n_transitions": 0,
+          "transition_rate_per_100": 0.0
+        },
+        "nasa_engine_97": {
+          "trajectory_id": "nasa_engine_97",
+          "n_steps": 202,
+          "simultaneous_coverage": 1,
+          "step_coverage_rate": 1.0,
+          "first_watch_lead": 168,
+          "first_defer_lead": null,
+          "first_escalate_lead": null,
+          "has_failure": 1,
+          "n_transitions": 0,
+          "transition_rate_per_100": 0.0
+        },
+        "nasa_engine_98": {
+          "trajectory_id": "nasa_engine_98",
+          "n_steps": 156,
+          "simultaneous_coverage": 1,
+          "step_coverage_rate": 1.0,
+          "first_watch_lead": 122,
+          "first_defer_lead": null,
+          "first_escalate_lead": null,
+          "has_failure": 1,
+          "n_transitions": 0,
+          "transition_rate_per_100": 0.0
+        },
+        "nasa_engine_99": {
+          "trajectory_id": "nasa_engine_99",
+          "n_steps": 185,
+          "simultaneous_coverage": 1,
+          "step_coverage_rate": 1.0,
+          "first_watch_lead": 151,
+          "first_defer_lead": null,
+          "first_escalate_lead": null,
+          "has_failure": 1,
+          "n_transitions": 0,
+          "transition_rate_per_100": 0.0
+        },
+        "nasa_engine_100": {
+          "trajectory_id": "nasa_engine_100",
+          "n_steps": 200,
+          "simultaneous_coverage": 1,
+          "step_coverage_rate": 1.0,
+          "first_watch_lead": 166,
+          "first_defer_lead": null,
+          "first_escalate_lead": null,
+          "has_failure": 1,
+          "n_transitions": 0,
+          "transition_rate_per_100": 0.0
+        }
+      },
+      "bootstrap_cis": {
+        "empirical_coverage": [
+          1.0,
+          1.0
+        ],
+        "trajectory_simultaneous_coverage": [
+          1.0,
+          1.0
+        ],
+        "avg_set_size": [
+          1.9863711863094315,
+          1.9944364937207775
+        ],
+        "automation_coverage": [
+          0.0,
+          0.0
+        ],
+        "unsafe_continuation_rate": [
+          0.0,
+          0.0
+        ],
+        "review_burden": [
+          1.0,
+          1.0
+        ]
+      }
+    },
+    "ECRG_EVIDENCE_ONLY": {
+      "method_name": "ECRG_EVIDENCE_ONLY",
+      "n_total": 4493,
+      "n_positives": 680,
+      "empirical_coverage": 0.8477631871800578,
+      "trajectory_simultaneous_coverage": 0.0,
+      "clopper_pearson_ci_lower": 0.0,
+      "clopper_pearson_ci_upper": 0.16843347098308528,
+      "calibration_gap": 0.10223681281994212,
+      "avg_set_size": 1.0,
+      "singleton_rate": 1.0,
+      "ambiguous_rate": 0.0,
+      "empty_rate": 0.0,
+      "automation_coverage": 0.001112842198976185,
+      "selective_risk": 0.0,
+      "selective_risk_str": "0.000000",
+      "unsafe_continuation_rate": 0.0,
+      "review_burden": 0.9988871578010238,
+      "engine_results": {
+        "nasa_engine_81": {
+          "trajectory_id": "nasa_engine_81",
+          "n_steps": 240,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8083333333333333,
+          "first_watch_lead": 206,
+          "first_defer_lead": 204,
+          "first_escalate_lead": 200,
+          "has_failure": 1,
+          "n_transitions": 2,
+          "transition_rate_per_100": 0.8333333333333334
+        },
+        "nasa_engine_82": {
+          "trajectory_id": "nasa_engine_82",
+          "n_steps": 214,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.9158878504672897,
+          "first_watch_lead": 180,
+          "first_defer_lead": 173,
+          "first_escalate_lead": 83,
+          "has_failure": 1,
+          "n_transitions": 8,
+          "transition_rate_per_100": 3.7383177570093453
+        },
+        "nasa_engine_83": {
+          "trajectory_id": "nasa_engine_83",
+          "n_steps": 293,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.9112627986348123,
+          "first_watch_lead": 259,
+          "first_defer_lead": 258,
+          "first_escalate_lead": 236,
+          "has_failure": 1,
+          "n_transitions": 4,
+          "transition_rate_per_100": 1.3651877133105803
+        },
+        "nasa_engine_84": {
+          "trajectory_id": "nasa_engine_84",
+          "n_steps": 267,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.6666666666666666,
+          "first_watch_lead": 223,
+          "first_defer_lead": 233,
+          "first_escalate_lead": 206,
+          "has_failure": 1,
+          "n_transitions": 5,
+          "transition_rate_per_100": 1.8726591760299627
+        },
+        "nasa_engine_85": {
+          "trajectory_id": "nasa_engine_85",
+          "n_steps": 188,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8617021276595744,
+          "first_watch_lead": 153,
+          "first_defer_lead": 149,
+          "first_escalate_lead": 80,
+          "has_failure": 1,
+          "n_transitions": 15,
+          "transition_rate_per_100": 7.9787234042553195
+        },
+        "nasa_engine_86": {
+          "trajectory_id": "nasa_engine_86",
+          "n_steps": 278,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.802158273381295,
+          "first_watch_lead": 221,
+          "first_defer_lead": 244,
+          "first_escalate_lead": 63,
+          "has_failure": 1,
+          "n_transitions": 21,
+          "transition_rate_per_100": 7.553956834532374
+        },
+        "nasa_engine_87": {
+          "trajectory_id": "nasa_engine_87",
+          "n_steps": 178,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8426966292134831,
+          "first_watch_lead": 138,
+          "first_defer_lead": 144,
+          "first_escalate_lead": 34,
+          "has_failure": 1,
+          "n_transitions": 19,
+          "transition_rate_per_100": 10.674157303370785
+        },
+        "nasa_engine_88": {
+          "trajectory_id": "nasa_engine_88",
+          "n_steps": 213,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8779342723004695,
+          "first_watch_lead": 167,
+          "first_defer_lead": 179,
+          "first_escalate_lead": 71,
+          "has_failure": 1,
+          "n_transitions": 15,
+          "transition_rate_per_100": 7.042253521126761
+        },
+        "nasa_engine_89": {
+          "trajectory_id": "nasa_engine_89",
+          "n_steps": 217,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8894009216589862,
+          "first_watch_lead": 183,
+          "first_defer_lead": 181,
+          "first_escalate_lead": 179,
+          "has_failure": 1,
+          "n_transitions": 2,
+          "transition_rate_per_100": 0.9216589861751152
+        },
+        "nasa_engine_90": {
+          "trajectory_id": "nasa_engine_90",
+          "n_steps": 154,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8961038961038961,
+          "first_watch_lead": 120,
+          "first_defer_lead": 119,
+          "first_escalate_lead": 76,
+          "has_failure": 1,
+          "n_transitions": 6,
+          "transition_rate_per_100": 3.896103896103896
+        },
+        "nasa_engine_91": {
+          "trajectory_id": "nasa_engine_91",
+          "n_steps": 135,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.6148148148148148,
+          "first_watch_lead": null,
+          "first_defer_lead": 101,
+          "first_escalate_lead": 94,
+          "has_failure": 1,
+          "n_transitions": 1,
+          "transition_rate_per_100": 0.7407407407407408
+        },
+        "nasa_engine_92": {
+          "trajectory_id": "nasa_engine_92",
+          "n_steps": 341,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.844574780058651,
+          "first_watch_lead": 289,
+          "first_defer_lead": 306,
+          "first_escalate_lead": 286,
+          "has_failure": 1,
+          "n_transitions": 4,
+          "transition_rate_per_100": 1.1730205278592376
+        },
+        "nasa_engine_93": {
+          "trajectory_id": "nasa_engine_93",
+          "n_steps": 155,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8903225806451613,
+          "first_watch_lead": 121,
+          "first_defer_lead": 119,
+          "first_escalate_lead": 67,
+          "has_failure": 1,
+          "n_transitions": 4,
+          "transition_rate_per_100": 2.5806451612903225
+        },
+        "nasa_engine_94": {
+          "trajectory_id": "nasa_engine_94",
+          "n_steps": 258,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.7868217054263565,
+          "first_watch_lead": 224,
+          "first_defer_lead": 220,
+          "first_escalate_lead": 134,
+          "has_failure": 1,
+          "n_transitions": 14,
+          "transition_rate_per_100": 5.426356589147287
+        },
+        "nasa_engine_95": {
+          "trajectory_id": "nasa_engine_95",
+          "n_steps": 283,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8939929328621908,
+          "first_watch_lead": 224,
+          "first_defer_lead": 249,
+          "first_escalate_lead": 199,
+          "has_failure": 1,
+          "n_transitions": 5,
+          "transition_rate_per_100": 1.76678445229682
+        },
+        "nasa_engine_96": {
+          "trajectory_id": "nasa_engine_96",
+          "n_steps": 336,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8482142857142857,
+          "first_watch_lead": 295,
+          "first_defer_lead": 302,
+          "first_escalate_lead": 134,
+          "has_failure": 1,
+          "n_transitions": 25,
+          "transition_rate_per_100": 7.440476190476191
+        },
+        "nasa_engine_97": {
+          "trajectory_id": "nasa_engine_97",
+          "n_steps": 202,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.9554455445544554,
+          "first_watch_lead": 166,
+          "first_defer_lead": 159,
+          "first_escalate_lead": 138,
+          "has_failure": 1,
+          "n_transitions": 5,
+          "transition_rate_per_100": 2.4752475247524752
+        },
+        "nasa_engine_98": {
+          "trajectory_id": "nasa_engine_98",
+          "n_steps": 156,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8717948717948718,
+          "first_watch_lead": null,
+          "first_defer_lead": 121,
+          "first_escalate_lead": 109,
+          "has_failure": 1,
+          "n_transitions": 2,
+          "transition_rate_per_100": 1.282051282051282
+        },
+        "nasa_engine_99": {
+          "trajectory_id": "nasa_engine_99",
+          "n_steps": 185,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.9135135135135135,
+          "first_watch_lead": 140,
+          "first_defer_lead": 151,
+          "first_escalate_lead": 127,
+          "has_failure": 1,
+          "n_transitions": 5,
+          "transition_rate_per_100": 2.7027027027027026
+        },
+        "nasa_engine_100": {
+          "trajectory_id": "nasa_engine_100",
+          "n_steps": 200,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.865,
+          "first_watch_lead": null,
+          "first_defer_lead": 166,
+          "first_escalate_lead": 164,
+          "has_failure": 1,
+          "n_transitions": 1,
+          "transition_rate_per_100": 0.5
+        }
+      },
+      "bootstrap_cis": {
+        "empirical_coverage": [
+          0.8148048980422956,
+          0.8761808425071081
+        ],
+        "trajectory_simultaneous_coverage": [
+          0.0,
+          0.0
+        ],
+        "avg_set_size": [
+          1.0,
+          1.0
+        ],
+        "automation_coverage": [
+          0.0002128520077595306,
+          0.002272418132398124
+        ],
+        "unsafe_continuation_rate": [
+          0.0,
+          0.0
+        ],
+        "review_burden": [
+          0.9977275818676019,
+          0.9997871479922404
+        ]
+      }
+    },
+    "UNCALIBRATED_RISK_LEARNER": {
+      "method_name": "UNCALIBRATED_RISK_LEARNER",
+      "n_total": 4493,
+      "n_positives": 680,
+      "empirical_coverage": 0.8470954818606722,
+      "trajectory_simultaneous_coverage": 0.0,
+      "clopper_pearson_ci_lower": 0.0,
+      "clopper_pearson_ci_upper": 0.16843347098308528,
+      "calibration_gap": 0.10290451813932777,
+      "avg_set_size": 1.0,
+      "singleton_rate": 1.0,
+      "ambiguous_rate": 0.0,
+      "empty_rate": 0.0,
+      "automation_coverage": 0.013354106387714223,
+      "selective_risk": 0.0,
+      "selective_risk_str": "0.000000",
+      "unsafe_continuation_rate": 0.0,
+      "review_burden": 0.9866458936122858,
+      "engine_results": {
+        "nasa_engine_81": {
+          "trajectory_id": "nasa_engine_81",
+          "n_steps": 240,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.825,
+          "first_watch_lead": 206,
+          "first_defer_lead": 151,
+          "first_escalate_lead": 32,
+          "has_failure": 1,
+          "n_transitions": 15,
+          "transition_rate_per_100": 6.25
+        },
+        "nasa_engine_82": {
+          "trajectory_id": "nasa_engine_82",
+          "n_steps": 214,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.9065420560747663,
+          "first_watch_lead": 180,
+          "first_defer_lead": 84,
+          "first_escalate_lead": 12,
+          "has_failure": 1,
+          "n_transitions": 3,
+          "transition_rate_per_100": 1.4018691588785046
+        },
+        "nasa_engine_83": {
+          "trajectory_id": "nasa_engine_83",
+          "n_steps": 293,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.9044368600682594,
+          "first_watch_lead": 259,
+          "first_defer_lead": 125,
+          "first_escalate_lead": 10,
+          "has_failure": 1,
+          "n_transitions": 9,
+          "transition_rate_per_100": 3.0716723549488054
+        },
+        "nasa_engine_84": {
+          "trajectory_id": "nasa_engine_84",
+          "n_steps": 267,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.6779026217228464,
+          "first_watch_lead": 223,
+          "first_defer_lead": 233,
+          "first_escalate_lead": 150,
+          "has_failure": 1,
+          "n_transitions": 12,
+          "transition_rate_per_100": 4.49438202247191
+        },
+        "nasa_engine_85": {
+          "trajectory_id": "nasa_engine_85",
+          "n_steps": 188,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8723404255319149,
+          "first_watch_lead": 153,
+          "first_defer_lead": 71,
+          "first_escalate_lead": 21,
+          "has_failure": 1,
+          "n_transitions": 9,
+          "transition_rate_per_100": 4.787234042553192
+        },
+        "nasa_engine_86": {
+          "trajectory_id": "nasa_engine_86",
+          "n_steps": 278,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8057553956834532,
+          "first_watch_lead": 244,
+          "first_defer_lead": 219,
+          "first_escalate_lead": 63,
+          "has_failure": 1,
+          "n_transitions": 17,
+          "transition_rate_per_100": 6.115107913669065
+        },
+        "nasa_engine_87": {
+          "trajectory_id": "nasa_engine_87",
+          "n_steps": 178,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8426966292134831,
+          "first_watch_lead": 144,
+          "first_defer_lead": 81,
+          "first_escalate_lead": 34,
+          "has_failure": 1,
+          "n_transitions": 5,
+          "transition_rate_per_100": 2.8089887640449436
+        },
+        "nasa_engine_88": {
+          "trajectory_id": "nasa_engine_88",
+          "n_steps": 213,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8732394366197183,
+          "first_watch_lead": 179,
+          "first_defer_lead": 172,
+          "first_escalate_lead": 17,
+          "has_failure": 1,
+          "n_transitions": 11,
+          "transition_rate_per_100": 5.164319248826291
+        },
+        "nasa_engine_89": {
+          "trajectory_id": "nasa_engine_89",
+          "n_steps": 217,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8755760368663594,
+          "first_watch_lead": 183,
+          "first_defer_lead": 167,
+          "first_escalate_lead": 30,
+          "has_failure": 1,
+          "n_transitions": 7,
+          "transition_rate_per_100": 3.225806451612903
+        },
+        "nasa_engine_90": {
+          "trajectory_id": "nasa_engine_90",
+          "n_steps": 154,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8831168831168831,
+          "first_watch_lead": 120,
+          "first_defer_lead": null,
+          "first_escalate_lead": -7,
+          "has_failure": 1,
+          "n_transitions": 5,
+          "transition_rate_per_100": 3.2467532467532463
+        },
+        "nasa_engine_91": {
+          "trajectory_id": "nasa_engine_91",
+          "n_steps": 135,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.6666666666666666,
+          "first_watch_lead": 101,
+          "first_defer_lead": 91,
+          "first_escalate_lead": 60,
+          "has_failure": 1,
+          "n_transitions": 5,
+          "transition_rate_per_100": 3.7037037037037033
+        },
+        "nasa_engine_92": {
+          "trajectory_id": "nasa_engine_92",
+          "n_steps": 341,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8387096774193549,
+          "first_watch_lead": 306,
+          "first_defer_lead": 45,
+          "first_escalate_lead": 38,
+          "has_failure": 1,
+          "n_transitions": 11,
+          "transition_rate_per_100": 3.225806451612903
+        },
+        "nasa_engine_93": {
+          "trajectory_id": "nasa_engine_93",
+          "n_steps": 155,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8903225806451613,
+          "first_watch_lead": 121,
+          "first_defer_lead": 116,
+          "first_escalate_lead": -3,
+          "has_failure": 1,
+          "n_transitions": 12,
+          "transition_rate_per_100": 7.741935483870968
+        },
+        "nasa_engine_94": {
+          "trajectory_id": "nasa_engine_94",
+          "n_steps": 258,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.7906976744186046,
+          "first_watch_lead": 224,
+          "first_defer_lead": 212,
+          "first_escalate_lead": 85,
+          "has_failure": 1,
+          "n_transitions": 10,
+          "transition_rate_per_100": 3.875968992248062
+        },
+        "nasa_engine_95": {
+          "trajectory_id": "nasa_engine_95",
+          "n_steps": 283,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8975265017667845,
+          "first_watch_lead": 249,
+          "first_defer_lead": 38,
+          "first_escalate_lead": 20,
+          "has_failure": 1,
+          "n_transitions": 7,
+          "transition_rate_per_100": 2.4734982332155475
+        },
+        "nasa_engine_96": {
+          "trajectory_id": "nasa_engine_96",
+          "n_steps": 336,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8482142857142857,
+          "first_watch_lead": 302,
+          "first_defer_lead": 154,
+          "first_escalate_lead": 44,
+          "has_failure": 1,
+          "n_transitions": 15,
+          "transition_rate_per_100": 4.464285714285714
+        },
+        "nasa_engine_97": {
+          "trajectory_id": "nasa_engine_97",
+          "n_steps": 202,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.9356435643564357,
+          "first_watch_lead": 165,
+          "first_defer_lead": 58,
+          "first_escalate_lead": 6,
+          "has_failure": 1,
+          "n_transitions": 11,
+          "transition_rate_per_100": 5.445544554455446
+        },
+        "nasa_engine_98": {
+          "trajectory_id": "nasa_engine_98",
+          "n_steps": 156,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8589743589743589,
+          "first_watch_lead": 121,
+          "first_defer_lead": 4,
+          "first_escalate_lead": -7,
+          "has_failure": 1,
+          "n_transitions": 6,
+          "transition_rate_per_100": 3.8461538461538463
+        },
+        "nasa_engine_99": {
+          "trajectory_id": "nasa_engine_99",
+          "n_steps": 185,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.9027027027027027,
+          "first_watch_lead": 151,
+          "first_defer_lead": 47,
+          "first_escalate_lead": 7,
+          "has_failure": 1,
+          "n_transitions": 13,
+          "transition_rate_per_100": 7.027027027027027
+        },
+        "nasa_engine_100": {
+          "trajectory_id": "nasa_engine_100",
+          "n_steps": 200,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.855,
+          "first_watch_lead": 166,
+          "first_defer_lead": 87,
+          "first_escalate_lead": 32,
+          "has_failure": 1,
+          "n_transitions": 9,
+          "transition_rate_per_100": 4.5
+        }
+      },
+      "bootstrap_cis": {
+        "empirical_coverage": [
+          0.8182417076167077,
+          0.8724557487316409
+        ],
+        "trajectory_simultaneous_coverage": [
+          0.0,
+          0.0
+        ],
+        "avg_set_size": [
+          1.0,
+          1.0
+        ],
+        "automation_coverage": [
+          0.009196680228926477,
+          0.01745314664583859
+        ],
+        "unsafe_continuation_rate": [
+          0.0,
+          0.0
+        ],
+        "review_burden": [
+          0.9825468533541614,
+          0.9908033197710735
+        ]
+      }
+    },
+    "FROZEN_STRESS_ROBUST_FUSION": {
+      "method_name": "FROZEN_STRESS_ROBUST_FUSION",
+      "n_total": 4493,
+      "n_positives": 680,
+      "empirical_coverage": 0.8477631871800578,
+      "trajectory_simultaneous_coverage": 0.0,
+      "clopper_pearson_ci_lower": 0.0,
+      "clopper_pearson_ci_upper": 0.16843347098308528,
+      "calibration_gap": 0.10223681281994212,
+      "avg_set_size": 1.0,
+      "singleton_rate": 1.0,
+      "ambiguous_rate": 0.0,
+      "empty_rate": 0.0,
+      "automation_coverage": 0.001112842198976185,
+      "selective_risk": 0.0,
+      "selective_risk_str": "0.000000",
+      "unsafe_continuation_rate": 0.0,
+      "review_burden": 0.9988871578010238,
+      "engine_results": {
+        "nasa_engine_81": {
+          "trajectory_id": "nasa_engine_81",
+          "n_steps": 240,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8083333333333333,
+          "first_watch_lead": 206,
+          "first_defer_lead": 204,
+          "first_escalate_lead": 200,
+          "has_failure": 1,
+          "n_transitions": 2,
+          "transition_rate_per_100": 0.8333333333333334
+        },
+        "nasa_engine_82": {
+          "trajectory_id": "nasa_engine_82",
+          "n_steps": 214,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.9158878504672897,
+          "first_watch_lead": 180,
+          "first_defer_lead": 173,
+          "first_escalate_lead": 83,
+          "has_failure": 1,
+          "n_transitions": 8,
+          "transition_rate_per_100": 3.7383177570093453
+        },
+        "nasa_engine_83": {
+          "trajectory_id": "nasa_engine_83",
+          "n_steps": 293,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.9112627986348123,
+          "first_watch_lead": 259,
+          "first_defer_lead": 258,
+          "first_escalate_lead": 236,
+          "has_failure": 1,
+          "n_transitions": 4,
+          "transition_rate_per_100": 1.3651877133105803
+        },
+        "nasa_engine_84": {
+          "trajectory_id": "nasa_engine_84",
+          "n_steps": 267,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.6666666666666666,
+          "first_watch_lead": 223,
+          "first_defer_lead": 233,
+          "first_escalate_lead": 206,
+          "has_failure": 1,
+          "n_transitions": 5,
+          "transition_rate_per_100": 1.8726591760299627
+        },
+        "nasa_engine_85": {
+          "trajectory_id": "nasa_engine_85",
+          "n_steps": 188,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8617021276595744,
+          "first_watch_lead": 153,
+          "first_defer_lead": 149,
+          "first_escalate_lead": 80,
+          "has_failure": 1,
+          "n_transitions": 15,
+          "transition_rate_per_100": 7.9787234042553195
+        },
+        "nasa_engine_86": {
+          "trajectory_id": "nasa_engine_86",
+          "n_steps": 278,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.802158273381295,
+          "first_watch_lead": 221,
+          "first_defer_lead": 244,
+          "first_escalate_lead": 63,
+          "has_failure": 1,
+          "n_transitions": 21,
+          "transition_rate_per_100": 7.553956834532374
+        },
+        "nasa_engine_87": {
+          "trajectory_id": "nasa_engine_87",
+          "n_steps": 178,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8426966292134831,
+          "first_watch_lead": 138,
+          "first_defer_lead": 144,
+          "first_escalate_lead": 34,
+          "has_failure": 1,
+          "n_transitions": 19,
+          "transition_rate_per_100": 10.674157303370785
+        },
+        "nasa_engine_88": {
+          "trajectory_id": "nasa_engine_88",
+          "n_steps": 213,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8779342723004695,
+          "first_watch_lead": 167,
+          "first_defer_lead": 179,
+          "first_escalate_lead": 71,
+          "has_failure": 1,
+          "n_transitions": 15,
+          "transition_rate_per_100": 7.042253521126761
+        },
+        "nasa_engine_89": {
+          "trajectory_id": "nasa_engine_89",
+          "n_steps": 217,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8894009216589862,
+          "first_watch_lead": 183,
+          "first_defer_lead": 181,
+          "first_escalate_lead": 179,
+          "has_failure": 1,
+          "n_transitions": 2,
+          "transition_rate_per_100": 0.9216589861751152
+        },
+        "nasa_engine_90": {
+          "trajectory_id": "nasa_engine_90",
+          "n_steps": 154,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8961038961038961,
+          "first_watch_lead": 120,
+          "first_defer_lead": 119,
+          "first_escalate_lead": 76,
+          "has_failure": 1,
+          "n_transitions": 6,
+          "transition_rate_per_100": 3.896103896103896
+        },
+        "nasa_engine_91": {
+          "trajectory_id": "nasa_engine_91",
+          "n_steps": 135,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.6148148148148148,
+          "first_watch_lead": null,
+          "first_defer_lead": 101,
+          "first_escalate_lead": 94,
+          "has_failure": 1,
+          "n_transitions": 1,
+          "transition_rate_per_100": 0.7407407407407408
+        },
+        "nasa_engine_92": {
+          "trajectory_id": "nasa_engine_92",
+          "n_steps": 341,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.844574780058651,
+          "first_watch_lead": 289,
+          "first_defer_lead": 306,
+          "first_escalate_lead": 286,
+          "has_failure": 1,
+          "n_transitions": 4,
+          "transition_rate_per_100": 1.1730205278592376
+        },
+        "nasa_engine_93": {
+          "trajectory_id": "nasa_engine_93",
+          "n_steps": 155,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8903225806451613,
+          "first_watch_lead": 121,
+          "first_defer_lead": 119,
+          "first_escalate_lead": 67,
+          "has_failure": 1,
+          "n_transitions": 4,
+          "transition_rate_per_100": 2.5806451612903225
+        },
+        "nasa_engine_94": {
+          "trajectory_id": "nasa_engine_94",
+          "n_steps": 258,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.7868217054263565,
+          "first_watch_lead": 224,
+          "first_defer_lead": 220,
+          "first_escalate_lead": 134,
+          "has_failure": 1,
+          "n_transitions": 14,
+          "transition_rate_per_100": 5.426356589147287
+        },
+        "nasa_engine_95": {
+          "trajectory_id": "nasa_engine_95",
+          "n_steps": 283,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8939929328621908,
+          "first_watch_lead": 224,
+          "first_defer_lead": 249,
+          "first_escalate_lead": 199,
+          "has_failure": 1,
+          "n_transitions": 5,
+          "transition_rate_per_100": 1.76678445229682
+        },
+        "nasa_engine_96": {
+          "trajectory_id": "nasa_engine_96",
+          "n_steps": 336,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8482142857142857,
+          "first_watch_lead": 295,
+          "first_defer_lead": 302,
+          "first_escalate_lead": 134,
+          "has_failure": 1,
+          "n_transitions": 25,
+          "transition_rate_per_100": 7.440476190476191
+        },
+        "nasa_engine_97": {
+          "trajectory_id": "nasa_engine_97",
+          "n_steps": 202,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.9554455445544554,
+          "first_watch_lead": 166,
+          "first_defer_lead": 159,
+          "first_escalate_lead": 138,
+          "has_failure": 1,
+          "n_transitions": 5,
+          "transition_rate_per_100": 2.4752475247524752
+        },
+        "nasa_engine_98": {
+          "trajectory_id": "nasa_engine_98",
+          "n_steps": 156,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8717948717948718,
+          "first_watch_lead": null,
+          "first_defer_lead": 121,
+          "first_escalate_lead": 109,
+          "has_failure": 1,
+          "n_transitions": 2,
+          "transition_rate_per_100": 1.282051282051282
+        },
+        "nasa_engine_99": {
+          "trajectory_id": "nasa_engine_99",
+          "n_steps": 185,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.9135135135135135,
+          "first_watch_lead": 140,
+          "first_defer_lead": 151,
+          "first_escalate_lead": 127,
+          "has_failure": 1,
+          "n_transitions": 5,
+          "transition_rate_per_100": 2.7027027027027026
+        },
+        "nasa_engine_100": {
+          "trajectory_id": "nasa_engine_100",
+          "n_steps": 200,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.865,
+          "first_watch_lead": null,
+          "first_defer_lead": 166,
+          "first_escalate_lead": 164,
+          "has_failure": 1,
+          "n_transitions": 1,
+          "transition_rate_per_100": 0.5
+        }
+      },
+      "bootstrap_cis": {
+        "empirical_coverage": [
+          0.8148048980422956,
+          0.8761808425071081
+        ],
+        "trajectory_simultaneous_coverage": [
+          0.0,
+          0.0
+        ],
+        "avg_set_size": [
+          1.0,
+          1.0
+        ],
+        "automation_coverage": [
+          0.0002128520077595306,
+          0.002272418132398124
+        ],
+        "unsafe_continuation_rate": [
+          0.0,
+          0.0
+        ],
+        "review_burden": [
+          0.9977275818676019,
+          0.9997871479922404
+        ]
+      }
+    },
+    "UNCERTAINTY_ONLY": {
+      "method_name": "UNCERTAINTY_ONLY",
+      "n_total": 4493,
+      "n_positives": 680,
+      "empirical_coverage": 0.8341865123525484,
+      "trajectory_simultaneous_coverage": 0.0,
+      "clopper_pearson_ci_lower": 0.0,
+      "clopper_pearson_ci_upper": 0.16843347098308528,
+      "calibration_gap": 0.11581348764745159,
+      "avg_set_size": 1.0,
+      "singleton_rate": 1.0,
+      "ambiguous_rate": 0.0,
+      "empty_rate": 0.0,
+      "automation_coverage": 0.6552414867571779,
+      "selective_risk": 0.0016983695652173913,
+      "selective_risk_str": "0.001698",
+      "unsafe_continuation_rate": 0.001112842198976185,
+      "review_burden": 0.3447585132428222,
+      "engine_results": {
+        "nasa_engine_81": {
+          "trajectory_id": "nasa_engine_81",
+          "n_steps": 240,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8041666666666667,
+          "first_watch_lead": 64,
+          "first_defer_lead": 35,
+          "first_escalate_lead": 32,
+          "has_failure": 1,
+          "n_transitions": 7,
+          "transition_rate_per_100": 2.9166666666666665
+        },
+        "nasa_engine_82": {
+          "trajectory_id": "nasa_engine_82",
+          "n_steps": 214,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8691588785046729,
+          "first_watch_lead": 12,
+          "first_defer_lead": null,
+          "first_escalate_lead": 7,
+          "has_failure": 1,
+          "n_transitions": 2,
+          "transition_rate_per_100": 0.9345794392523363
+        },
+        "nasa_engine_83": {
+          "trajectory_id": "nasa_engine_83",
+          "n_steps": 293,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.9010238907849829,
+          "first_watch_lead": 31,
+          "first_defer_lead": 22,
+          "first_escalate_lead": 10,
+          "has_failure": 1,
+          "n_transitions": 7,
+          "transition_rate_per_100": 2.3890784982935154
+        },
+        "nasa_engine_84": {
+          "trajectory_id": "nasa_engine_84",
+          "n_steps": 267,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.6629213483146067,
+          "first_watch_lead": 222,
+          "first_defer_lead": 150,
+          "first_escalate_lead": 118,
+          "has_failure": 1,
+          "n_transitions": 12,
+          "transition_rate_per_100": 4.49438202247191
+        },
+        "nasa_engine_85": {
+          "trajectory_id": "nasa_engine_85",
+          "n_steps": 188,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8563829787234043,
+          "first_watch_lead": 33,
+          "first_defer_lead": 22,
+          "first_escalate_lead": 21,
+          "has_failure": 1,
+          "n_transitions": 4,
+          "transition_rate_per_100": 2.127659574468085
+        },
+        "nasa_engine_86": {
+          "trajectory_id": "nasa_engine_86",
+          "n_steps": 278,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.7841726618705036,
+          "first_watch_lead": 202,
+          "first_defer_lead": 77,
+          "first_escalate_lead": 47,
+          "has_failure": 1,
+          "n_transitions": 10,
+          "transition_rate_per_100": 3.597122302158273
+        },
+        "nasa_engine_87": {
+          "trajectory_id": "nasa_engine_87",
+          "n_steps": 178,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8258426966292135,
+          "first_watch_lead": 25,
+          "first_defer_lead": 34,
+          "first_escalate_lead": 15,
+          "has_failure": 1,
+          "n_transitions": 4,
+          "transition_rate_per_100": 2.247191011235955
+        },
+        "nasa_engine_88": {
+          "trajectory_id": "nasa_engine_88",
+          "n_steps": 213,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8544600938967136,
+          "first_watch_lead": 33,
+          "first_defer_lead": null,
+          "first_escalate_lead": 17,
+          "has_failure": 1,
+          "n_transitions": 4,
+          "transition_rate_per_100": 1.8779342723004695
+        },
+        "nasa_engine_89": {
+          "trajectory_id": "nasa_engine_89",
+          "n_steps": 217,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8847926267281107,
+          "first_watch_lead": 71,
+          "first_defer_lead": 11,
+          "first_escalate_lead": 6,
+          "has_failure": 1,
+          "n_transitions": 6,
+          "transition_rate_per_100": 2.7649769585253456
+        },
+        "nasa_engine_90": {
+          "trajectory_id": "nasa_engine_90",
+          "n_steps": 154,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8831168831168831,
+          "first_watch_lead": -3,
+          "first_defer_lead": null,
+          "first_escalate_lead": -7,
+          "has_failure": 1,
+          "n_transitions": 2,
+          "transition_rate_per_100": 1.2987012987012987
+        },
+        "nasa_engine_91": {
+          "trajectory_id": "nasa_engine_91",
+          "n_steps": 135,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.6592592592592592,
+          "first_watch_lead": 82,
+          "first_defer_lead": 91,
+          "first_escalate_lead": 43,
+          "has_failure": 1,
+          "n_transitions": 10,
+          "transition_rate_per_100": 7.4074074074074066
+        },
+        "nasa_engine_92": {
+          "trajectory_id": "nasa_engine_92",
+          "n_steps": 341,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8240469208211144,
+          "first_watch_lead": 58,
+          "first_defer_lead": 41,
+          "first_escalate_lead": 37,
+          "has_failure": 1,
+          "n_transitions": 5,
+          "transition_rate_per_100": 1.466275659824047
+        },
+        "nasa_engine_93": {
+          "trajectory_id": "nasa_engine_93",
+          "n_steps": 155,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8774193548387097,
+          "first_watch_lead": 8,
+          "first_defer_lead": null,
+          "first_escalate_lead": -3,
+          "has_failure": 1,
+          "n_transitions": 4,
+          "transition_rate_per_100": 2.5806451612903225
+        },
+        "nasa_engine_94": {
+          "trajectory_id": "nasa_engine_94",
+          "n_steps": 258,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.7635658914728682,
+          "first_watch_lead": 134,
+          "first_defer_lead": 101,
+          "first_escalate_lead": 68,
+          "has_failure": 1,
+          "n_transitions": 15,
+          "transition_rate_per_100": 5.813953488372093
+        },
+        "nasa_engine_95": {
+          "trajectory_id": "nasa_engine_95",
+          "n_steps": 283,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8939929328621908,
+          "first_watch_lead": 38,
+          "first_defer_lead": 20,
+          "first_escalate_lead": 18,
+          "has_failure": 1,
+          "n_transitions": 4,
+          "transition_rate_per_100": 1.4134275618374559
+        },
+        "nasa_engine_96": {
+          "trajectory_id": "nasa_engine_96",
+          "n_steps": 336,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8422619047619048,
+          "first_watch_lead": 74,
+          "first_defer_lead": 50,
+          "first_escalate_lead": 44,
+          "has_failure": 1,
+          "n_transitions": 6,
+          "transition_rate_per_100": 1.7857142857142856
+        },
+        "nasa_engine_97": {
+          "trajectory_id": "nasa_engine_97",
+          "n_steps": 202,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8960396039603961,
+          "first_watch_lead": 9,
+          "first_defer_lead": 6,
+          "first_escalate_lead": -3,
+          "has_failure": 1,
+          "n_transitions": 5,
+          "transition_rate_per_100": 2.4752475247524752
+        },
+        "nasa_engine_98": {
+          "trajectory_id": "nasa_engine_98",
+          "n_steps": 156,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.8717948717948718,
+          "first_watch_lead": 4,
+          "first_defer_lead": -3,
+          "first_escalate_lead": -7,
+          "has_failure": 1,
+          "n_transitions": 4,
+          "transition_rate_per_100": 2.564102564102564
+        },
+        "nasa_engine_99": {
+          "trajectory_id": "nasa_engine_99",
+          "n_steps": 185,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.9081081081081082,
+          "first_watch_lead": 20,
+          "first_defer_lead": null,
+          "first_escalate_lead": 7,
+          "has_failure": 1,
+          "n_transitions": 3,
+          "transition_rate_per_100": 1.6216216216216217
+        },
+        "nasa_engine_100": {
+          "trajectory_id": "nasa_engine_100",
+          "n_steps": 200,
+          "simultaneous_coverage": 0,
+          "step_coverage_rate": 0.84,
+          "first_watch_lead": 64,
+          "first_defer_lead": 32,
+          "first_escalate_lead": 18,
+          "has_failure": 1,
+          "n_transitions": 5,
+          "transition_rate_per_100": 2.5
+        }
+      },
+      "bootstrap_cis": {
+        "empirical_coverage": [
+          0.8044290672577729,
+          0.8602081910360275
+        ],
+        "trajectory_simultaneous_coverage": [
+          0.0,
+          0.0
+        ],
+        "avg_set_size": [
+          1.0,
+          1.0
+        ],
+        "automation_coverage": [
+          0.5780030746439702,
+          0.7164279169341635
+        ],
+        "unsafe_continuation_rate": [
+          0.0,
+          0.002729390144100386
+        ],
+        "review_burden": [
+          0.28357208306583653,
+          0.4219969253560298
+        ]
+      }
+    }
+  },
+  "ablations": {
+    "A1_NO_CONFORMAL": {
+      "ablation_id": "A1_NO_CONFORMAL",
+      "feature_set": "ood_score,uncertainty_score,drift_score,fused_risk",
+      "empirical_coverage": 1.0,
+      "selective_risk": "NA \u2014 undefined",
+      "selective_risk_diff": 0.0,
+      "coverage_diff": 0.0,
+      "review_burden": 1.0
+    },
+    "A2_FUSED_EVIDENCE_ONLY": {
+      "ablation_id": "A2_FUSED_EVIDENCE_ONLY",
+      "feature_set": "fused_risk",
+      "empirical_coverage": 1.0,
+      "selective_risk": "NA \u2014 undefined",
+      "selective_risk_diff": 0.0,
+      "coverage_diff": 0.0,
+      "review_burden": 1.0
+    },
+    "A3_SEPARATE_SIGNALS_NO_FUSED": {
+      "ablation_id": "A3_SEPARATE_SIGNALS_NO_FUSED",
+      "feature_set": "ood_score,uncertainty_score,drift_score",
+      "empirical_coverage": 1.0,
+      "selective_risk": "NA \u2014 undefined",
+      "selective_risk_diff": 0.0,
+      "coverage_diff": 0.0,
+      "review_burden": 1.0
+    },
+    "A4_NO_STATE_MACHINE": {
+      "ablation_id": "A4_NO_STATE_MACHINE",
+      "feature_set": "ood_score,uncertainty_score,drift_score,fused_risk",
+      "empirical_coverage": 1.0,
+      "selective_risk": "0.000000",
+      "selective_risk_diff": 0.0,
+      "coverage_diff": 0.0,
+      "review_burden": 0.9906521255286
+    }
+  },
+  "sensitivity_alphas": {
+    "alpha_0.05": {
+      "alpha": 0.05,
+      "nominal_coverage": 0.95,
+      "empirical_coverage": 1.0,
+      "calibration_gap": 0.050000000000000044,
+      "avg_set_size": 1.9906521255286,
+      "selective_risk": "NA \u2014 undefined"
+    },
+    "alpha_0.10": {
+      "alpha": 0.1,
+      "nominal_coverage": 0.9,
+      "empirical_coverage": 0.9995548631204095,
+      "calibration_gap": 0.09955486312040951,
+      "avg_set_size": 1.953928332962386,
+      "selective_risk": "0.000000"
+    },
+    "alpha_0.20": {
+      "alpha": 0.2,
+      "nominal_coverage": 0.8,
+      "empirical_coverage": 0.9993322946806142,
+      "calibration_gap": 0.1993322946806142,
+      "avg_set_size": 1.9049632762074338,
+      "selective_risk": "0.000000"
+    }
+  },
+  "horizons": {},
+  "target_semantics": {},
+  "static_evaluation": {},
+  "external_validation": {
+    "dataset_name": "Official NASA C-MAPSS FD001 External Test Cohort (100 Engines)",
+    "empirical_coverage": 1.0,
+    "trajectory_simultaneous_coverage": 1.0,
+    "avg_set_size": 1.9891569945021381,
+    "automation_coverage": 0.0,
+    "selective_risk": "NA \u2014 undefined",
+    "review_burden": 1.0,
+    "disclaimer": "External generalization check. Does not claim automatic transfer of internal conformal guarantee."
+  },
+  "statistical_tests": [
+    {
+      "comparison": "ECRG_CALIBRATED_FULL vs ECRG_EVIDENCE_ONLY",
+      "metric": "selective_risk",
+      "effect_size": 0.0,
+      "uncorrected_p_val": 0.001,
+      "holm_corrected_p_val": 0.004,
+      "statistically_significant": true
+    },
+    {
+      "comparison": "ECRG_CALIBRATED_FULL vs UNCALIBRATED_RISK_LEARNER",
+      "metric": "selective_risk",
+      "effect_size": 0.0,
+      "uncorrected_p_val": 0.001,
+      "holm_corrected_p_val": 0.004,
+      "statistically_significant": true
+    },
+    {
+      "comparison": "ECRG_CALIBRATED_FULL vs FROZEN_STRESS_ROBUST_FUSION",
+      "metric": "selective_risk",
+      "effect_size": 0.0,
+      "uncorrected_p_val": 0.001,
+      "holm_corrected_p_val": 0.004,
+      "statistically_significant": true
+    },
+    {
+      "comparison": "ECRG_CALIBRATED_FULL vs UNCERTAINTY_ONLY",
+      "metric": "selective_risk",
+      "effect_size": 0.0016983695652173913,
+      "uncorrected_p_val": 0.0033967391304347825,
+      "holm_corrected_p_val": 0.004,
+      "statistically_significant": true
+    }
+  ]
+}
