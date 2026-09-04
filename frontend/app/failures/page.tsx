@@ -92,14 +92,14 @@ export default function FailureExplorerPage() {
 
       {/* Model & Fault Run Selectors */}
       {models.length > 0 && (
-        <div className="bg-slate-900/90 border border-slate-800/80 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs shadow-md">
-          <div className="flex items-center space-x-3 font-mono">
-            <Layers className="w-4 h-4 text-indigo-400 shrink-0" />
-            <span className="font-semibold text-slate-200">Active Model:</span>
+        <div className="bg-[#151B23] border border-[#26303D] rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs font-sans shadow-sm">
+          <div className="flex items-center space-x-3 font-sans">
+            <Layers className="w-4 h-4 text-[#3B82F6] shrink-0" />
+            <span className="font-semibold text-[#F3F4F6]">Active Model:</span>
             <select
               value={selectedModelId}
               onChange={(e) => setSelectedModelId(e.target.value)}
-              className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-slate-100 font-mono focus:outline-none focus:border-indigo-500 text-xs"
+              className="bg-[#0F141B] border border-[#26303D] rounded-lg px-3 py-1.5 text-[#F3F4F6] font-mono focus:outline-none focus:border-[#3B82F6] text-xs"
             >
               {models.map((m) => (
                 <option key={m.model_id} value={m.model_id}>
@@ -109,12 +109,12 @@ export default function FailureExplorerPage() {
             </select>
           </div>
 
-          <div className="flex items-center space-x-3 font-mono">
-            <span className="font-semibold text-slate-200">Fault Run ID:</span>
+          <div className="flex items-center space-x-3 font-sans">
+            <span className="font-semibold text-[#F3F4F6]">Fault Run ID:</span>
             <select
               value={selectedFaultTestId}
               onChange={(e) => setSelectedFaultTestId(e.target.value)}
-              className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-slate-100 font-mono focus:outline-none focus:border-indigo-500 text-xs"
+              className="bg-[#0F141B] border border-[#26303D] rounded-lg px-3 py-1.5 text-[#F3F4F6] font-mono focus:outline-none focus:border-[#3B82F6] text-xs"
             >
               {faultTests.length === 0 ? (
                 <option value="">No fault test runs available</option>

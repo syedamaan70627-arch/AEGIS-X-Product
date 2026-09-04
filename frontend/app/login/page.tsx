@@ -66,11 +66,11 @@ function LoginForm() {
   };
 
   return (
-    <div className="bg-[#0e131f] border border-slate-800/80 py-8 px-6 shadow-2xl rounded-2xl sm:px-10 space-y-6">
+    <div className="bg-[#151B23] border border-[#26303D] py-8 px-6 shadow-xl rounded-2xl sm:px-10 space-y-6 font-sans">
       {!isConfigured && (
-        <div className="p-3 bg-amber-950/40 border border-amber-800/60 rounded-xl text-xs text-amber-300 space-y-1">
-          <span className="font-bold font-mono uppercase block text-[11px] text-amber-400">Offline Local Context</span>
-          <p className="text-[11px] text-amber-200/90 leading-normal">
+        <div className="p-3 bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl text-xs text-[#F59E0B] space-y-1">
+          <span className="font-bold font-sans uppercase block text-[11px]">Offline Local Context</span>
+          <p className="text-[11px] text-[#9CA3AF] leading-normal font-sans">
             Supabase auth credentials are not configured. Click sign in to open local development session.
           </p>
         </div>
@@ -78,11 +78,11 @@ function LoginForm() {
 
       {error && <ErrorState message={error} />}
 
-      <form onSubmit={handleSubmit} className="space-y-5 text-xs">
+      <form onSubmit={handleSubmit} className="space-y-5 text-xs font-sans">
         <div>
-          <label className="block font-semibold text-slate-300 mb-1.5">Work Email Address</label>
+          <label className="block font-semibold text-[#F3F4F6] mb-1.5 font-sans">Work Email Address</label>
           <div className="relative rounded-lg shadow-sm">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#6B7280]">
               <Mail className="w-4 h-4" />
             </div>
             <input
@@ -91,15 +91,15 @@ function LoginForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="analyst@enterprise.io"
-              className="w-full bg-[#080c14] border border-slate-800/80 rounded-lg pl-10 pr-3 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-mono"
+              className="w-full bg-[#0F141B] border border-[#26303D] rounded-lg pl-10 pr-3 py-2.5 text-[#F3F4F6] placeholder-[#6B7280] focus:outline-none focus:border-[#3B82F6] transition-all font-sans"
             />
           </div>
         </div>
 
         <div>
-          <label className="block font-semibold text-slate-300 mb-1.5">Password</label>
+          <label className="block font-semibold text-[#F3F4F6] mb-1.5 font-sans">Password</label>
           <div className="relative rounded-lg shadow-sm">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#6B7280]">
               <Lock className="w-4 h-4" />
             </div>
             <input
@@ -108,12 +108,12 @@ function LoginForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••••••"
-              className="w-full bg-[#080c14] border border-slate-800/80 rounded-lg pl-10 pr-10 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-mono"
+              className="w-full bg-[#0F141B] border border-[#26303D] rounded-lg pl-10 pr-10 py-2.5 text-[#F3F4F6] placeholder-[#6B7280] focus:outline-none focus:border-[#3B82F6] transition-all font-sans"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300"
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-[#6B7280] hover:text-[#9CA3AF]"
               aria-label="Toggle password visibility"
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -124,16 +124,16 @@ function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg shadow-md transition-all disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full py-2.5 px-4 bg-[#3B82F6] hover:bg-[#2563EB] text-white font-semibold font-sans text-xs rounded-lg shadow-sm transition-all disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[#3B82F6]"
         >
           {loading ? "Authenticating Session..." : "Sign In to Command Center"}
         </button>
       </form>
 
       {isConfigured && (
-        <div className="pt-4 border-t border-slate-800/80 text-center text-xs text-slate-400">
+        <div className="pt-4 border-t border-[#26303D] text-center text-xs text-[#9CA3AF] font-sans">
           Need an enterprise account?{" "}
-          <Link href="/signup" className="text-cyan-400 font-semibold hover:text-cyan-300">
+          <Link href="/signup" className="text-[#3B82F6] font-semibold hover:underline">
             Create Account
           </Link>
         </div>
@@ -144,13 +144,13 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen bg-[#080c14] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans antialiased text-slate-100">
+    <div className="min-h-screen bg-[#0B0F14] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans antialiased text-[#F3F4F6]">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-3">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-indigo-600 shadow-lg border border-indigo-400/30 mb-2">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#3B82F6] shadow-sm mb-2">
           <ShieldCheck className="w-6 h-6 text-white" />
         </div>
-        <h2 className="text-2xl font-bold tracking-tight text-slate-100">AEGIS-X</h2>
-        <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
+        <h2 className="text-2xl font-bold tracking-tight text-[#F3F4F6] font-sans">AEGIS-X</h2>
+        <p className="text-xs text-[#9CA3AF] max-w-xs mx-auto leading-relaxed font-sans">
           Model-Agnostic Enterprise Framework for AI Reliability Monitoring, Stress Testing & Early Warning
         </p>
       </div>

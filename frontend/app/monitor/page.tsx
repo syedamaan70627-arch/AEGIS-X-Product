@@ -107,28 +107,28 @@ export default function BatchMonitorPage() {
       <PageHeader
         title="Batch Operational Monitor"
         description="Execute AEGIS-X multi-signal operational analysis across OOD, Uncertainty, Drift, and Fusion detectors."
-        icon={<Activity className="w-6 h-6 text-cyan-400" />}
+        icon={<Activity className="w-6 h-6 text-[#3B82F6]" />}
         breadcrumbs={[{ label: "Operations" }, { label: "Batch Monitor" }]}
       />
 
       {/* Guided 6-Step Workflow Stepper */}
-      <div className="bg-slate-900/90 border border-slate-800/80 rounded-xl p-4 shadow-md">
-        <div className="flex items-center justify-between overflow-x-auto gap-2 text-xs font-mono py-1">
+      <div className="bg-[#151B23] border border-[#26303D] rounded-xl p-4 shadow-sm font-sans">
+        <div className="flex items-center justify-between overflow-x-auto gap-2 text-xs font-sans py-1">
           {steps.map((s, idx) => (
             <React.Fragment key={s.num}>
               <div className="flex items-center space-x-2 shrink-0">
                 <span
                   className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold ${
                     s.done
-                      ? "bg-indigo-600 text-white"
-                      : "bg-slate-950 border border-slate-800 text-slate-500"
+                      ? "bg-[#3B82F6] text-white"
+                      : "bg-[#0F141B] border border-[#26303D] text-[#6B7280]"
                   }`}
                 >
                   {s.num}
                 </span>
-                <span className={s.done ? "text-slate-200 font-semibold" : "text-slate-500"}>{s.label}</span>
+                <span className={s.done ? "text-[#F3F4F6] font-semibold" : "text-[#6B7280]"}>{s.label}</span>
               </div>
-              {idx < steps.length - 1 && <ChevronRight className="w-4 h-4 text-slate-700 shrink-0" />}
+              {idx < steps.length - 1 && <ChevronRight className="w-4 h-4 text-[#26303D] shrink-0" />}
             </React.Fragment>
           ))}
         </div>
@@ -144,13 +144,13 @@ export default function BatchMonitorPage() {
           <SectionCard title="Execution Setup" subtitle="Configure operational analysis parameter options">
             {analysisError && <ErrorState message={analysisError} />}
 
-            <form onSubmit={handleRunAnalysis} className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs items-end">
+            <form onSubmit={handleRunAnalysis} className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs font-sans items-end">
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">Target Model *</label>
+                <label className="block font-semibold text-[#F3F4F6] mb-1">Target Model *</label>
                 <select
                   value={selectedModelId}
                   onChange={(e) => setSelectedModelId(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800/80 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500 font-mono"
+                  className="w-full bg-[#0F141B] border border-[#26303D] rounded-lg px-3 py-2 text-[#F3F4F6] focus:outline-none focus:border-[#3B82F6] font-mono"
                 >
                   {models.map((m) => (
                     <option key={m.model_id} value={m.model_id}>
@@ -161,11 +161,11 @@ export default function BatchMonitorPage() {
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">Evaluation Dataset *</label>
+                <label className="block font-semibold text-[#F3F4F6] mb-1">Evaluation Dataset *</label>
                 <select
                   value={selectedDatasetId}
                   onChange={(e) => setSelectedDatasetId(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800/80 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500 font-mono"
+                  className="w-full bg-[#0F141B] border border-[#26303D] rounded-lg px-3 py-2 text-[#F3F4F6] focus:outline-none focus:border-[#3B82F6] font-mono"
                 >
                   {datasets.length === 0 ? (
                     <option value="">No EVALUATION datasets available</option>
@@ -180,11 +180,11 @@ export default function BatchMonitorPage() {
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">Operational Fusion Engine *</label>
+                <label className="block font-semibold text-[#F3F4F6] mb-1">Operational Fusion Engine *</label>
                 <select
                   value={fusionMethod}
                   onChange={(e) => setFusionMethod(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800/80 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500 font-mono"
+                  className="w-full bg-[#0F141B] border border-[#26303D] rounded-lg px-3 py-2 text-[#F3F4F6] focus:outline-none focus:border-[#3B82F6] font-sans"
                 >
                   <option value="stress_robust">StressRobust Fusion (Recommended)</option>
                   <option value="original">Original Fusion</option>
@@ -195,7 +195,7 @@ export default function BatchMonitorPage() {
                 <button
                   type="submit"
                   disabled={analyzing || !selectedDatasetId}
-                  className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-semibold shadow-md transition-all disabled:opacity-50 flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full py-2.5 bg-[#3B82F6] hover:bg-[#2563EB] text-white rounded-lg font-semibold shadow-sm transition-all disabled:opacity-50 flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] font-sans"
                 >
                   <Play className="w-4 h-4 fill-current" />
                   <span>{analyzing ? "Running Analysis..." : "Execute Analysis"}</span>
@@ -231,7 +231,7 @@ export default function BatchMonitorPage() {
                   <span>
                     <strong className="text-slate-300">Scientific Scope Notice:</strong> Individual reliability signals (OOD, Uncertainty, Drift) are preserved independently because their operational usefulness varies by deployment context.
                   </span>
-                  <Link href="/reliability" className="text-cyan-400 hover:text-cyan-300 font-semibold inline-flex items-center shrink-0 ml-4 font-mono">
+                  <Link href="/reliability" className="text-[#3B82F6] hover:text-[#2563EB] font-semibold inline-flex items-center shrink-0 ml-4 font-sans">
                     Inspect Diagnostics →
                   </Link>
                 </div>
@@ -277,7 +277,7 @@ export default function BatchMonitorPage() {
 
                     <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800/80 shadow-md">
                       <div className="text-slate-400 uppercase font-semibold text-[11px]">Spearman Correlation</div>
-                      <div className="text-xl font-bold text-indigo-400 mt-1">
+                      <div className="text-xl font-bold text-[#3B82F6] mt-1">
                         {analysisResult.diagnostics.correlation_fused_risk_vs_error ?? "N/A"}
                       </div>
                     </div>

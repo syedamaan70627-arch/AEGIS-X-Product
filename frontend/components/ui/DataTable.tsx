@@ -34,18 +34,18 @@ export function DataTable<T>({
   actions,
 }: DataTableProps<T>) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 font-sans">
       {(searchPlaceholder || actions) && (
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           {searchPlaceholder ? (
             <div className="relative w-full sm:w-72">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7280] pointer-events-none" />
               <input
                 type="text"
                 placeholder={searchPlaceholder}
                 value={searchValue}
                 onChange={(e) => onSearchChange?.(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-800 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                className="w-full bg-[#0F141B] border border-[#26303D] rounded-lg pl-9 pr-3 py-1.5 text-xs text-[#F3F4F6] placeholder-[#6B7280] focus:outline-none focus:border-[#3B82F6] transition-all font-sans"
               />
             </div>
           ) : (
@@ -55,9 +55,9 @@ export function DataTable<T>({
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-xl border border-slate-800/80 bg-[#0e131f] shadow-md">
-        <table className="w-full text-left text-xs border-collapse">
-          <thead className="bg-[#050810] text-slate-400 uppercase font-mono tracking-wider text-[11px] border-b border-slate-800/80">
+      <div className="overflow-x-auto rounded-xl border border-[#26303D] bg-[#151B23] shadow-sm">
+        <table className="w-full text-left text-xs border-collapse font-sans">
+          <thead className="bg-[#0F141B] text-[#9CA3AF] uppercase font-sans tracking-wider text-[11px] border-b border-[#26303D]">
             <tr>
               {columns.map((col, idx) => (
                 <th
@@ -71,19 +71,19 @@ export function DataTable<T>({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/60">
+          <tbody className="divide-y divide-[#26303D]/60">
             {data.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="px-4 py-12 text-center text-slate-400">
+                <td colSpan={columns.length} className="px-4 py-12 text-center text-[#9CA3AF]">
                   <div className="max-w-xs mx-auto space-y-1">
-                    <p className="font-semibold text-slate-300 text-sm">{emptyTitle}</p>
-                    <p className="text-xs text-slate-400">{emptyDescription}</p>
+                    <p className="font-semibold text-[#F3F4F6] text-sm font-sans">{emptyTitle}</p>
+                    <p className="text-xs text-[#9CA3AF] font-sans">{emptyDescription}</p>
                   </div>
                 </td>
               </tr>
             ) : (
               data.map((row) => (
-                <tr key={keyExtractor(row)} className="hover:bg-slate-800/40 transition-colors group">
+                <tr key={keyExtractor(row)} className="hover:bg-[#1A222C] transition-colors group">
                   {columns.map((col, colIdx) => {
                     const content =
                       typeof col.accessor === "function"
@@ -94,7 +94,7 @@ export function DataTable<T>({
                     return (
                       <td
                         key={colIdx}
-                        className={`px-4 py-3.5 text-slate-300 ${
+                        className={`px-4 py-3.5 text-[#F3F4F6] ${
                           col.align === "right" ? "text-right font-mono tabular-nums" : col.align === "center" ? "text-center" : ""
                         } ${col.className || ""}`}
                       >

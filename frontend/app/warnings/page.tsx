@@ -159,10 +159,10 @@ export default function EarlyWarningPage() {
 
       {/* Model Selector Card */}
       {models.length > 0 && (
-        <div className="bg-slate-900/90 border border-slate-800/80 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs font-mono shadow-md">
+        <div className="bg-[#151B23] border border-[#26303D] rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs font-sans shadow-sm">
           <div className="flex items-center space-x-3">
-            <Layers className="w-4 h-4 text-indigo-400 shrink-0" />
-            <span className="font-semibold text-slate-200">Active Model:</span>
+            <Layers className="w-4 h-4 text-[#3B82F6] shrink-0" />
+            <span className="font-semibold text-[#F3F4F6]">Active Model:</span>
             <select
               value={selectedModelId}
               onChange={(e) => {
@@ -171,7 +171,7 @@ export default function EarlyWarningPage() {
                 setWarningError(null);
                 setFitSuccess(null);
               }}
-              className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-slate-100 font-mono focus:outline-none focus:border-indigo-500 text-xs"
+              className="bg-[#0F141B] border border-[#26303D] rounded-lg px-3 py-1.5 text-[#F3F4F6] font-mono focus:outline-none focus:border-[#3B82F6] text-xs"
             >
               {models.map((m) => (
                 <option key={m.model_id} value={m.model_id}>
@@ -184,39 +184,39 @@ export default function EarlyWarningPage() {
         </div>
       )}
 
-      <div className="p-4 bg-slate-900/80 border border-slate-800/80 rounded-xl text-xs text-slate-300 flex items-start space-x-3 shadow-md">
-        <Clock className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
+      <div className="p-4 bg-[#151B23] border border-[#26303D] rounded-xl text-xs text-[#9CA3AF] flex items-start space-x-3 shadow-sm font-sans">
+        <Clock className="w-4 h-4 text-[#3B82F6] shrink-0 mt-0.5" />
         <div className="leading-relaxed">
-          <span className="font-mono font-bold text-slate-100 uppercase tracking-wider block mb-0.5 text-[11px]">Horizon Unit Standard</span>
-          Warning lead horizons are strictly measured in <strong className="text-amber-300 font-mono">controlled_degradation_states</strong>. They reflect controlled degradation trajectory steps and must not be translated into wall-clock time (hours/minutes/days).
+          <span className="font-sans font-bold text-[#F3F4F6] uppercase tracking-wider block mb-0.5 text-[11px]">Horizon Unit Standard</span>
+          Warning lead horizons are strictly measured in <strong className="text-[#F59E0B] font-mono">controlled_degradation_states</strong>. They reflect controlled degradation trajectory steps and must not be translated into wall-clock time (hours/minutes/days).
         </div>
       </div>
 
       {warnCap?.status !== "READY" ? (
-        <div className="space-y-4">
-          <div className="p-6 bg-slate-900/90 border border-slate-800/80 rounded-2xl space-y-4 shadow-xl">
-            <div className="flex items-center space-x-3 text-amber-400 font-bold text-sm">
+        <div className="space-y-4 font-sans">
+          <div className="p-6 bg-[#151B23] border border-[#26303D] rounded-xl space-y-4 shadow-sm">
+            <div className="flex items-center space-x-3 text-[#F59E0B] font-bold text-sm font-sans">
               <AlertCircle className="w-5 h-5 shrink-0" />
               <span>Early Warning Requires Setup</span>
             </div>
-            <p className="text-xs text-slate-300 leading-relaxed">
+            <p className="text-xs text-[#9CA3AF] leading-relaxed font-sans">
               Early Warning fits multi-signal thresholds over temporal degradation trajectories.
-              Ordinary <code className="text-amber-300 font-mono">REFERENCE</code> or <code className="text-amber-300 font-mono">EVALUATION</code> raw feature datasets cannot be used for warning setup.
-              Select an uploaded <code className="text-emerald-400 font-mono">TEMPORAL_TRAJECTORY</code> dataset containing temporal reliability features and ground-truth failure labels to fit the warning engine.
+              Ordinary <code className="text-[#F59E0B] font-mono">REFERENCE</code> or <code className="text-[#F59E0B] font-mono">EVALUATION</code> raw feature datasets cannot be used for warning setup.
+              Select an uploaded <code className="text-[#22C55E] font-mono">TEMPORAL_TRAJECTORY</code> dataset containing temporal reliability features and ground-truth failure labels to fit the warning engine.
             </p>
-            <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800/80 text-[11px] text-slate-400 font-mono flex items-center justify-between">
+            <div className="p-3 bg-[#0F141B] rounded-xl border border-[#26303D] text-[11px] text-[#9CA3AF] font-mono flex items-center justify-between">
               <span>Status: {warnCap?.status || "NOT_AVAILABLE"}</span>
-              <span className="text-indigo-400">Horizon Unit: controlled_degradation_states</span>
+              <span className="text-[#3B82F6]">Horizon Unit: controlled_degradation_states</span>
             </div>
 
             <div className="space-y-2">
-              <label className="block text-xs font-semibold text-slate-300">
+              <label className="block text-xs font-semibold text-[#F3F4F6] font-sans">
                 Select Labeled Temporal Trajectory Dataset (*Required)
               </label>
               <select
                 value={selectedTrajectoryId}
                 onChange={(e) => setSelectedTrajectoryId(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800/80 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 font-mono"
+                className="w-full bg-[#0F141B] border border-[#26303D] rounded-lg px-3 py-2 text-xs text-[#F3F4F6] focus:outline-none focus:border-[#3B82F6] font-mono"
               >
                 <option value="">-- Choose TEMPORAL_TRAJECTORY Dataset --</option>
                 {trajectoryDatasets.map((ds) => (
@@ -227,7 +227,7 @@ export default function EarlyWarningPage() {
               </select>
 
               {trajectoryDatasets.length === 0 && (
-                <p className="text-[11px] text-amber-400/90 italic font-mono">
+                <p className="text-[11px] text-[#F59E0B]/90 italic font-mono">
                   No TEMPORAL_TRAJECTORY datasets found. Upload a temporal trajectory CSV on the Data page to proceed.
                 </p>
               )}
@@ -235,7 +235,7 @@ export default function EarlyWarningPage() {
 
             {warningError && <ErrorState message={warningError} />}
             {fitSuccess && (
-              <div className="p-3 bg-emerald-950/80 border border-emerald-800 rounded-lg text-emerald-300 text-xs font-semibold font-mono">
+              <div className="p-3 bg-[#22C55E]/10 border border-[#22C55E]/30 rounded-lg text-[#22C55E] text-xs font-semibold font-mono">
                 {fitSuccess}
               </div>
             )}
@@ -243,7 +243,7 @@ export default function EarlyWarningPage() {
             <button
               onClick={handleFitWarning}
               disabled={fitting || !selectedModelId || !selectedTrajectoryId}
-              className="w-full md:w-auto px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-semibold text-xs shadow-md transition-all disabled:opacity-50 flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full md:w-auto px-6 py-2.5 bg-[#3B82F6] hover:bg-[#2563EB] text-white rounded-lg font-semibold text-xs shadow-sm transition-all disabled:opacity-50 flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] font-sans"
             >
               <Play className="w-4 h-4 fill-current" />
               <span>{fitting ? "Fitting Warning Engine..." : "Setup Early Warning"}</span>
@@ -258,17 +258,17 @@ export default function EarlyWarningPage() {
         </div>
       ) : (
 
-        <div className="space-y-6">
+        <div className="space-y-6 font-sans">
           <SectionCard title="Query Early Warning Status" subtitle="Query multi-signal temporal warning state">
             {warningError && <ErrorState message={warningError} />}
 
-            <form onSubmit={handleQueryWarning} className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs items-end">
+            <form onSubmit={handleQueryWarning} className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-sans items-end">
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">Temporal Trajectory Dataset *</label>
+                <label className="block font-semibold text-[#F3F4F6] mb-1 font-sans">Temporal Trajectory Dataset *</label>
                 <select
                   value={selectedDatasetId}
                   onChange={(e) => setSelectedDatasetId(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800/80 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500 font-mono"
+                  className="w-full bg-[#0F141B] border border-[#26303D] rounded-lg px-3 py-2 text-[#F3F4F6] focus:outline-none focus:border-[#3B82F6] font-mono"
                 >
                   <option value="">-- Choose TEMPORAL_TRAJECTORY Dataset --</option>
                   {trajectoryDatasets.map((d) => (
@@ -283,7 +283,7 @@ export default function EarlyWarningPage() {
                 <button
                   type="submit"
                   disabled={querying || !selectedDatasetId}
-                  className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-semibold shadow-md transition-all disabled:opacity-50 flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="flex-1 py-2.5 bg-[#3B82F6] hover:bg-[#2563EB] text-white rounded-lg font-semibold shadow-sm transition-all disabled:opacity-50 flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] font-sans"
                 >
                   <Play className="w-4 h-4 fill-current" />
                   <span>{querying ? "Querying..." : "Query Early Warning"}</span>
@@ -293,7 +293,7 @@ export default function EarlyWarningPage() {
                   type="button"
                   onClick={handleEvaluateTrajectories}
                   disabled={evaluating || !selectedDatasetId}
-                  className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-semibold border border-slate-700/80 transition-all disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-slate-500"
+                  className="flex-1 py-2.5 bg-[#1A222C] hover:bg-[#26303D] text-[#F3F4F6] rounded-lg font-semibold border border-[#26303D] transition-all disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] font-sans"
                 >
                   {evaluating ? "Evaluating..." : "Evaluate Lead Trajectories"}
                 </button>
@@ -332,7 +332,7 @@ export default function EarlyWarningPage() {
                 <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800/80 shadow-md">
                   <div className="text-slate-400 uppercase font-semibold text-[11px]">Target Horizon</div>
                   <div className="text-sm font-bold text-slate-100 mt-1">
-                    {warningResult.horizon_value} <span className="text-xs text-indigo-400">{warningResult.horizon_unit}</span>
+                    {warningResult.horizon_value} <span className="text-xs text-[#3B82F6]">{warningResult.horizon_unit}</span>
                   </div>
                 </div>
               </div>

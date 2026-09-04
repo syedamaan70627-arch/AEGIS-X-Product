@@ -5,7 +5,7 @@ interface MetricCardProps {
   value: string | number;
   subtitle?: string;
   icon?: React.ReactNode;
-  statusColor?: "emerald" | "amber" | "rose" | "indigo" | "purple" | "slate";
+  statusColor?: "emerald" | "amber" | "rose" | "steel" | "slate";
 }
 
 export const MetricCard: React.FC<MetricCardProps> = ({
@@ -13,29 +13,27 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   value,
   subtitle,
   icon,
-  statusColor = "indigo",
+  statusColor = "steel",
 }) => {
-  let borderTop = "border-t-indigo-500 text-indigo-400";
+  let borderTop = "border-t-[#3B82F6] text-[#3B82F6]";
   if (statusColor === "emerald") {
-    borderTop = "border-t-emerald-500 text-emerald-400";
+    borderTop = "border-t-[#22C55E] text-[#22C55E]";
   } else if (statusColor === "amber") {
-    borderTop = "border-t-amber-500 text-amber-400";
+    borderTop = "border-t-[#F59E0B] text-[#F59E0B]";
   } else if (statusColor === "rose") {
-    borderTop = "border-t-rose-500 text-rose-400";
-  } else if (statusColor === "purple") {
-    borderTop = "border-t-cyan-500 text-cyan-400";
+    borderTop = "border-t-[#EF4444] text-[#EF4444]";
   } else if (statusColor === "slate") {
-    borderTop = "border-t-slate-700 text-slate-400";
+    borderTop = "border-t-[#64748B] text-[#9CA3AF]";
   }
 
   return (
-    <div className={`bg-[#0e131f] border border-slate-800/80 rounded-xl p-5 border-t-2 ${borderTop.split(" ")[0]} shadow-sm transition-all hover:border-slate-700/80`}>
+    <div className={`bg-[#151B23] border border-[#26303D] rounded-xl p-5 border-t-2 ${borderTop.split(" ")[0]} shadow-sm transition-all hover:border-[#3B82F6]/40`}>
       <div className="flex items-center justify-between">
-        <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold">{title}</span>
-        {icon && <div className={`p-1.5 rounded-lg bg-[#080c14] border border-slate-800/80 ${borderTop.split(" ")[1]}`}>{icon}</div>}
+        <span className="text-[11px] font-sans uppercase tracking-wider text-[#9CA3AF] font-semibold">{title}</span>
+        {icon && <div className={`p-1.5 rounded-lg bg-[#0F141B] border border-[#26303D] ${borderTop.split(" ")[1]}`}>{icon}</div>}
       </div>
-      <div className="mt-3 text-2xl font-bold text-slate-100 tracking-tight font-mono tabular-nums">{value}</div>
-      {subtitle && <div className="mt-1 text-xs text-slate-400 font-sans truncate">{subtitle}</div>}
+      <div className="mt-3 text-2xl font-bold text-[#F3F4F6] tracking-tight font-mono tabular-nums">{value}</div>
+      {subtitle && <div className="mt-1 text-xs text-[#9CA3AF] font-sans truncate">{subtitle}</div>}
     </div>
   );
 };

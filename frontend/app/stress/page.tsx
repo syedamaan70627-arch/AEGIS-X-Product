@@ -112,13 +112,13 @@ export default function StressLabPage() {
           <SectionCard title="Stress Test Parameters" subtitle="Configure controlled perturbation parameters">
             {stressError && <ErrorState message={stressError} />}
 
-            <form onSubmit={handleRunStressTest} className="grid grid-cols-1 md:grid-cols-5 gap-4 text-xs items-end">
+            <form onSubmit={handleRunStressTest} className="grid grid-cols-1 md:grid-cols-5 gap-4 text-xs font-sans items-end">
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">Target Model *</label>
+                <label className="block font-semibold text-[#F3F4F6] mb-1">Target Model *</label>
                 <select
                   value={selectedModelId}
                   onChange={(e) => setSelectedModelId(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800/80 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500 font-mono"
+                  className="w-full bg-[#0F141B] border border-[#26303D] rounded-lg px-3 py-2 text-[#F3F4F6] focus:outline-none focus:border-[#3B82F6] font-mono"
                 >
                   {models.map((m) => (
                     <option key={m.model_id} value={m.model_id}>
@@ -129,11 +129,11 @@ export default function StressLabPage() {
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">Evaluation Dataset *</label>
+                <label className="block font-semibold text-[#F3F4F6] mb-1">Evaluation Dataset *</label>
                 <select
                   value={selectedDatasetId}
                   onChange={(e) => setSelectedDatasetId(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800/80 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500 font-mono"
+                  className="w-full bg-[#0F141B] border border-[#26303D] rounded-lg px-3 py-2 text-[#F3F4F6] focus:outline-none focus:border-[#3B82F6] font-mono"
                 >
                   {datasets.length === 0 ? (
                     <option value="">No EVALUATION datasets available</option>
@@ -148,11 +148,11 @@ export default function StressLabPage() {
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">Stress Family *</label>
+                <label className="block font-semibold text-[#F3F4F6] mb-1">Stress Family *</label>
                 <select
                   value={stressType}
                   onChange={(e) => setStressType(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800/80 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500 font-mono"
+                  className="w-full bg-[#0F141B] border border-[#26303D] rounded-lg px-3 py-2 text-[#F3F4F6] focus:outline-none focus:border-[#3B82F6] font-sans"
                 >
                   <option value="Gaussian_Noise">Gaussian Noise</option>
                   <option value="Feature_Dropout">Feature Dropout</option>
@@ -162,7 +162,7 @@ export default function StressLabPage() {
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-300 mb-1 font-mono">Severity ({severity}) *</label>
+                <label className="block font-semibold text-[#F3F4F6] mb-1 font-mono">Severity ({severity}) *</label>
                 <input
                   type="range"
                   min="0.0"
@@ -170,7 +170,7 @@ export default function StressLabPage() {
                   step="0.05"
                   value={severity}
                   onChange={(e) => setSeverity(parseFloat(e.target.value))}
-                  className="w-full accent-amber-500 cursor-pointer"
+                  className="w-full accent-[#3B82F6] cursor-pointer"
                 />
               </div>
 
@@ -178,7 +178,7 @@ export default function StressLabPage() {
                 <button
                   type="submit"
                   disabled={executing || !selectedDatasetId}
-                  className="w-full py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-semibold shadow-md transition-all disabled:opacity-50 flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full py-2.5 bg-[#3B82F6] hover:bg-[#2563EB] text-white rounded-lg font-semibold shadow-sm transition-all disabled:opacity-50 flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] font-sans"
                 >
                   <Zap className="w-4 h-4 fill-current" />
                   <span>{executing ? "Running Stress..." : "Run Stress Test"}</span>

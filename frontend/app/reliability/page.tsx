@@ -76,21 +76,21 @@ export default function ReliabilityPage() {
       <PageHeader
         title="Reliability & Governance Operations"
         description="Inspect operational Out-of-Distribution, Uncertainty, Feature Drift, and Evidence-Calibrated Reliability Governance (ECRG)."
-        icon={<LineChart className="w-6 h-6 text-cyan-400" />}
+        icon={<LineChart className="w-6 h-6 text-[#3B82F6]" />}
         breadcrumbs={[{ label: "Operations" }, { label: "Reliability & Governance" }]}
       />
 
       {/* Model & Analysis Selector Bar */}
       {models.length > 0 && (
-        <div className="bg-slate-900/90 border border-slate-800/80 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-md">
-          <div className="flex flex-wrap items-center gap-4 text-xs font-mono">
+        <div className="bg-[#151B23] border border-[#26303D] rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm font-sans">
+          <div className="flex flex-wrap items-center gap-4 text-xs">
             <div className="flex items-center space-x-2">
-              <Layers className="w-4 h-4 text-indigo-400 shrink-0" />
-              <span className="font-semibold text-slate-200">Model:</span>
+              <Layers className="w-4 h-4 text-[#3B82F6] shrink-0" />
+              <span className="font-semibold text-[#F3F4F6]">Model:</span>
               <select
                 value={selectedModelId}
                 onChange={(e) => setSelectedModelId(e.target.value)}
-                className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-slate-100 focus:outline-none focus:border-indigo-500 text-xs"
+                className="bg-[#0F141B] border border-[#26303D] rounded-lg px-3 py-1.5 text-[#F3F4F6] focus:outline-none focus:border-[#3B82F6] text-xs font-mono"
               >
                 {models.map((m) => (
                   <option key={m.model_id} value={m.model_id}>
@@ -102,11 +102,11 @@ export default function ReliabilityPage() {
 
             {analyses.length > 0 && (
               <div className="flex items-center space-x-2">
-                <span className="font-semibold text-slate-200">Analysis Run:</span>
+                <span className="font-semibold text-[#F3F4F6]">Analysis Run:</span>
                 <select
                   value={selectedAnalysisId}
                   onChange={(e) => setSelectedAnalysisId(e.target.value)}
-                  className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-slate-100 focus:outline-none focus:border-indigo-500 text-xs"
+                  className="bg-[#0F141B] border border-[#26303D] rounded-lg px-3 py-1.5 text-[#F3F4F6] focus:outline-none focus:border-[#3B82F6] text-xs font-mono"
                 >
                   {analyses.map((a) => (
                     <option key={a.analysis_id} value={a.analysis_id}>
@@ -137,10 +137,10 @@ export default function ReliabilityPage() {
       )}
 
       {/* Scientific Scope Disclosure */}
-      <div className="p-4 bg-slate-900/80 border border-slate-800/80 rounded-xl flex items-start space-x-3 text-xs text-slate-300 shadow-md">
-        <Info className="w-5 h-5 text-indigo-400 shrink-0 mt-0.5" />
+      <div className="p-4 bg-[#151B23] border border-[#26303D] rounded-xl flex items-start space-x-3 text-xs text-[#9CA3AF] shadow-sm font-sans">
+        <Info className="w-5 h-5 text-[#3B82F6] shrink-0 mt-0.5" />
         <div className="leading-relaxed">
-          <span className="font-mono font-bold text-slate-100 uppercase tracking-wider block mb-0.5 text-[11px]">
+          <span className="font-sans font-bold text-[#F3F4F6] uppercase tracking-wider block mb-0.5 text-[11px]">
             Scientific Scope Notice
           </span>
           Individual reliability signals (OOD, Uncertainty, Drift) remain independently inspectable because their operational usefulness varies by deployment environment. Pre-label fusion does not require true target labels. Reliability Governance acts as the decision layer over fused risk.

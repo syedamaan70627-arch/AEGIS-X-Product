@@ -158,28 +158,28 @@ export default function ReportsPageV1() {
       <PageHeader
         title="Reliability Reports V1"
         description="Structured operational reliability report compilation and lightweight export."
-        icon={<FileText className="w-6 h-6 text-indigo-400" />}
+        icon={<FileText className="w-6 h-6 text-[#3B82F6]" />}
         breadcrumbs={[{ label: "Operations" }, { label: "Reliability Reports" }]}
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => window.print()}
               disabled={!fullAnalysis}
-              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700/80 transition-all disabled:opacity-50 inline-flex items-center space-x-1 shadow-sm focus:outline-none"
+              className="px-3 py-1.5 bg-[#1A222C] hover:bg-[#26303D] text-[#F3F4F6] text-xs font-semibold rounded-lg border border-[#26303D] transition-all disabled:opacity-50 inline-flex items-center space-x-1 shadow-sm focus:outline-none font-sans"
             >
               <Printer className="w-3.5 h-3.5 mr-1" /> Print Report
             </button>
             <button
               onClick={handleDownloadJSON}
               disabled={!fullAnalysis}
-              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg shadow-md transition-all disabled:opacity-50 inline-flex items-center space-x-1 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="px-3 py-1.5 bg-[#3B82F6] hover:bg-[#2563EB] text-white text-xs font-semibold rounded-lg shadow-sm transition-all disabled:opacity-50 inline-flex items-center space-x-1 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] font-sans"
             >
               <Download className="w-3.5 h-3.5 mr-1" /> Export JSON
             </button>
             <button
               onClick={handleDownloadCSV}
               disabled={!fullAnalysis}
-              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700/80 transition-all disabled:opacity-50 inline-flex items-center space-x-1 shadow-sm focus:outline-none"
+              className="px-3 py-1.5 bg-[#1A222C] hover:bg-[#26303D] text-[#F3F4F6] text-xs font-semibold rounded-lg border border-[#26303D] transition-all disabled:opacity-50 inline-flex items-center space-x-1 shadow-sm focus:outline-none font-sans"
             >
               <FileText className="w-3.5 h-3.5 mr-1" /> Export CSV
             </button>
@@ -189,14 +189,14 @@ export default function ReportsPageV1() {
 
       {/* Model & Analysis Selectors */}
       {models.length > 0 && (
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs font-mono shadow-sm">
+        <div className="bg-[#151B23] border border-[#26303D] rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs font-sans shadow-sm">
           <div className="flex items-center space-x-3">
-            <Layers className="w-4 h-4 text-indigo-400 shrink-0" />
-            <span className="font-semibold text-slate-200">Model Context:</span>
+            <Layers className="w-4 h-4 text-[#3B82F6] shrink-0" />
+            <span className="font-semibold text-[#F3F4F6]">Model Context:</span>
             <select
               value={selectedModelId}
               onChange={(e) => setSelectedModelId(e.target.value)}
-              className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-slate-100 font-mono focus:outline-none focus:border-indigo-500 text-xs"
+              className="bg-[#0F141B] border border-[#26303D] rounded-lg px-3 py-1.5 text-[#F3F4F6] font-mono focus:outline-none focus:border-[#3B82F6] text-xs"
             >
               {models.map((m) => (
                 <option key={m.model_id} value={m.model_id}>
@@ -207,11 +207,11 @@ export default function ReportsPageV1() {
           </div>
 
           <div className="flex items-center space-x-3">
-            <span className="font-semibold text-slate-200">Analysis Run:</span>
+            <span className="font-semibold text-[#F3F4F6]">Analysis Run:</span>
             <select
               value={selectedAnalysisId}
               onChange={(e) => handleSelectAnalysis(e.target.value)}
-              className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-slate-100 font-mono focus:outline-none focus:border-indigo-500 text-xs"
+              className="bg-[#0F141B] border border-[#26303D] rounded-lg px-3 py-1.5 text-[#F3F4F6] font-mono focus:outline-none focus:border-[#3B82F6] text-xs"
             >
               {analyses.length === 0 ? (
                 <option value="">No analyses available</option>
@@ -246,7 +246,7 @@ export default function ReportsPageV1() {
             }
           >
             <div className="p-4 bg-slate-950/80 border border-slate-800/80 rounded-xl space-y-3 text-xs shadow-md">
-              <div className="flex items-center space-x-2 text-indigo-400 font-bold text-sm">
+              <div className="flex items-center space-x-2 text-[#3B82F6] font-bold text-sm">
                 <ShieldCheck className="w-5 h-5 shrink-0" />
                 <span>Operational Assessment</span>
               </div>
@@ -323,7 +323,7 @@ export default function ReportsPageV1() {
                 </div>
                 <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800/80 shadow-md">
                   <div className="text-slate-400 uppercase font-semibold text-[11px]">Spearman Correlation</div>
-                  <div className="text-xl font-bold text-indigo-400 mt-1 font-sans">
+                  <div className="text-xl font-bold text-[#3B82F6] mt-1 font-sans">
                     {fullAnalysis.diagnostics.correlation_fused_risk_vs_error ?? "N/A"}
                   </div>
                 </div>

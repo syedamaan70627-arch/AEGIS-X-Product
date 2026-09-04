@@ -3,7 +3,7 @@ import { AlertTriangle, CheckCircle2, Info, X } from "lucide-react";
 
 export interface ToastMessage {
   id: string;
-  type: "success" | "error" | "info";
+  type: "success" | "error" | "info" | "warning";
   title: string;
   message?: string;
 }
@@ -21,26 +21,34 @@ export const Toast: React.FC<ToastProps> = ({ toast, onClose }) => {
     return () => clearTimeout(timer);
   }, [toast.id, onClose]);
 
-  let icon = <Info className="w-4 h-4 text-indigo-400" />;
-  let style = "bg-slate-900 border-slate-800 text-slate-200";
+  let icon = <Info className="w-4 h-4 text-[#3B82F6]" />;
+  let borderClass = "border-[#26303D]";
 
   if (toast.type === "success") {
-    icon = <CheckCircle2 className="w-4 h-4 text-emerald-400" />;
-    style = "bg-emerald-950/90 border-emerald-800/80 text-emerald-100";
+    icon = <CheckCircle2 className="w-4 h-4 text-[#22C55E]" />;
+    borderClass = "border-[#22C55E]/40";
   } else if (toast.type === "error") {
-    icon = <AlertTriangle className="w-4 h-4 text-rose-400" />;
-    style = "bg-rose-950/90 border-rose-800/80 text-rose-100";
+    icon = <AlertTriangle className="w-4 h-4 text-[#EF4444]" />;
+    borderClass = "border-[#EF4444]/40";
+  } else if (toast.type === "warning") {
+    icon = <AlertTriangle className="w-4 h-4 text-[#F59E0B]" />;
+    borderClass = "border-[#F59E0B]/40";
   }
 
   return (
-    <div className={`p-4 rounded-xl border shadow-xl flex items-start space-x-3 text-xs max-w-sm ${style}`}>
-      <div className="shrink-0 mt-0.5">{icon}</div>
-      <div className="flex-1">
-        <div className="font-semibold">{toast.title}</div>
-        {toast.message && <div className="mt-0.5 opacity-90">{toast.message}</div>}
+    <div
+      className={`flex items-start justify-between p-4 bg-[#151B23] border ${borderClass} rounded-xl shadow-2xl space-x-3 text-xs font-sans max-w-md w-full animate-in fade-in slide-in-from-top-2 duration-200`}
+    >
+      <div className="flex items-start space-x-3 shrink-0 mt-0.5">{icon}</div>
+      <div className="flex-1 space-y-0.5">
+        <h4 className="font-semibold text-[#F3F4F6] font-sans">{toast.title}</h4>
+        <p className="text-[#9CA3AF] leading-relaxed font-sans">{toast.message}</p>
       </div>
-      <button onClick={() => onClose(toast.id)} className="opacity-70 hover:opacity-100">
-        <X className="w-3.5 h-3.5" />
+      <button
+        onClick={() => onClose(toast.id)}
+        className="text-[#6B7280] hover:text-[#F3F4F6] transition-colors p-1"
+      >
+        <X className="w-4 h-4" />
       </button>
     </div>
   );

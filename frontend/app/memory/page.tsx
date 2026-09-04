@@ -122,20 +122,20 @@ export default function FailureMemoryPage() {
       <PageHeader
         title="Failure Memory Engine"
         description="Fits unsupervised reliability signature centroids from aggregated condition profiles and matches incoming query condition profiles."
-        icon={<BrainCircuit className="w-6 h-6 text-purple-400" />}
+        icon={<BrainCircuit className="w-6 h-6 text-[#3B82F6]" />}
         breadcrumbs={[{ label: "Intelligence" }, { label: "Failure Memory" }]}
       />
 
       {/* Model Selector Bar */}
       {models.length > 0 && (
-        <div className="bg-slate-900/90 border border-slate-800/80 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs font-mono shadow-md">
+        <div className="bg-[#151B23] border border-[#26303D] rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs font-sans shadow-sm">
           <div className="flex items-center space-x-3">
-            <Layers className="w-4 h-4 text-indigo-400 shrink-0" />
-            <span className="font-semibold text-slate-200">Active Model:</span>
+            <Layers className="w-4 h-4 text-[#3B82F6] shrink-0" />
+            <span className="font-semibold text-[#F3F4F6]">Active Model:</span>
             <select
               value={selectedModelId}
               onChange={(e) => setSelectedModelId(e.target.value)}
-              className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-slate-100 font-mono focus:outline-none focus:border-indigo-500 text-xs"
+              className="bg-[#0F141B] border border-[#26303D] rounded-lg px-3 py-1.5 text-[#F3F4F6] font-mono focus:outline-none focus:border-[#3B82F6] text-xs"
             >
               {models.map((m) => (
                 <option key={m.model_id} value={m.model_id}>
@@ -148,7 +148,7 @@ export default function FailureMemoryPage() {
           <button
             onClick={handleBuildMemory}
             disabled={building || !selectedModelId}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg shadow-md transition-all disabled:opacity-50 inline-flex items-center space-x-1.5 shrink-0 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="px-4 py-2 bg-[#3B82F6] hover:bg-[#2563EB] text-white font-semibold rounded-lg shadow-sm transition-all disabled:opacity-50 inline-flex items-center space-x-1.5 shrink-0 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] font-sans"
           >
             <BrainCircuit className="w-4 h-4" />
             <span>{building ? "Fitting Signatures..." : "Build Failure Memory"}</span>
@@ -159,8 +159,8 @@ export default function FailureMemoryPage() {
       {buildError && <ErrorState message={buildError} />}
 
       {/* Concept Note */}
-      <div className="p-4 bg-slate-900/80 border border-slate-800/80 rounded-xl text-xs text-slate-300 shadow-md">
-        <span className="font-mono font-bold text-slate-100 uppercase tracking-wider block mb-0.5 text-[11px]">Non-Causal Pattern Matching</span>
+      <div className="p-4 bg-[#151B23] border border-[#26303D] rounded-xl text-xs text-[#9CA3AF] shadow-sm font-sans">
+        <span className="font-sans font-bold text-[#F3F4F6] uppercase tracking-wider block mb-0.5 text-[11px]">Non-Causal Pattern Matching</span>
         Failure Memory stores recurring <strong>Reliability Signatures</strong> (Condition Profiles). Matches indicate topological similarity to historical fault condition profiles and are associative, not confirmed root causes.
       </div>
 
@@ -190,20 +190,20 @@ export default function FailureMemoryPage() {
             {buildResult?.signatures ? (
               <div className="space-y-4">
                 {buildResult.signatures.map((sig) => (
-                  <div key={sig.signature_id} className="p-4 bg-slate-950/80 border border-slate-800/80 rounded-xl space-y-2 text-xs shadow-md">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-indigo-300 font-mono">Signature #{sig.signature_id}</span>
-                      <span className="text-slate-400 font-mono">Samples: {sig.sample_count}</span>
+                  <div key={sig.signature_id} className="p-4 bg-[#0F141B] border border-[#26303D] rounded-xl space-y-2 text-xs shadow-sm font-sans">
+                    <div className="flex items-center justify-between font-sans">
+                      <span className="font-bold text-[#3B82F6] font-mono">Signature #{sig.signature_id}</span>
+                      <span className="text-[#9CA3AF] font-mono">Samples: {sig.sample_count}</span>
                     </div>
-                    <div className="text-slate-400 font-semibold">Centroid Profile:</div>
-                    <pre className="p-3 bg-slate-900/90 rounded-lg border border-slate-800/80 font-mono text-[11px] text-slate-300 overflow-x-auto">
+                    <div className="text-[#9CA3AF] font-semibold font-sans">Centroid Profile:</div>
+                    <pre className="p-3 bg-[#151B23] rounded-lg border border-[#26303D] font-mono text-[11px] text-[#F3F4F6] overflow-x-auto">
                       {JSON.stringify(sig.centroid_profile, null, 2)}
                     </pre>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-slate-400 py-4">Select a fitted memory instance to inspect signature centroids.</p>
+              <p className="text-xs text-[#6B7280] py-4 font-sans">Select a fitted memory instance to inspect signature centroids.</p>
             )}
           </SectionCard>
 
@@ -211,20 +211,20 @@ export default function FailureMemoryPage() {
           <SectionCard title="Match Query Condition Profile" subtitle="Evaluate incoming condition profile against fitted centroids">
             {matchError && <ErrorState message={matchError} />}
 
-            <form onSubmit={handleMatchQuery} className="space-y-4 text-xs">
+            <form onSubmit={handleMatchQuery} className="space-y-4 text-xs font-sans">
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">Query Condition Profile (JSON) *</label>
+                <label className="block font-semibold text-[#F3F4F6] mb-1 font-sans">Query Condition Profile (JSON) *</label>
                 <textarea
                   value={queryInput}
                   onChange={(e) => setQueryInput(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800/80 rounded-lg p-3 text-slate-100 font-mono h-24 focus:outline-none focus:border-indigo-500"
+                  className="w-full bg-[#0F141B] border border-[#26303D] rounded-lg p-3 text-[#F3F4F6] font-mono h-24 focus:outline-none focus:border-[#3B82F6]"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={matching || !selectedMemoryId}
-                className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg shadow-md transition-all disabled:opacity-50 flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full py-2.5 bg-[#3B82F6] hover:bg-[#2563EB] text-white font-semibold rounded-lg shadow-sm transition-all disabled:opacity-50 flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] font-sans"
               >
                 <Search className="w-4 h-4" />
                 <span>{matching ? "Matching Query..." : "Match Query Profile"}</span>

@@ -80,25 +80,25 @@ export default function SettingsPage() {
         breadcrumbs={[{ label: "System" }, { label: "Settings" }]}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-sans">
         {/* User Account Context */}
         <SectionCard title="User Account Context" subtitle="Identity information acknowledged by FastAPI backend">
-          <div className="space-y-4 text-xs">
-            <div className="p-4 bg-slate-950/80 border border-slate-800/80 rounded-xl flex items-center justify-between shadow-md font-mono">
+          <div className="space-y-4 text-xs font-sans">
+            <div className="p-4 bg-[#0F141B] border border-[#26303D] rounded-xl flex items-center justify-between shadow-sm font-mono">
               <div className="flex items-center space-x-3">
-                <User className="w-5 h-5 text-indigo-400 shrink-0" />
+                <User className="w-5 h-5 text-[#3B82F6] shrink-0" />
                 <div>
-                  <div className="text-slate-400 font-semibold text-[11px]">User ID</div>
-                  <div className="text-sm font-bold text-slate-100 mt-0.5">{displayUserId}</div>
+                  <div className="text-[#9CA3AF] font-semibold text-[11px] font-sans">User ID</div>
+                  <div className="text-sm font-bold text-[#F3F4F6] mt-0.5">{displayUserId}</div>
                 </div>
               </div>
               <CopyButton text={displayUserId} label="Copy ID" />
             </div>
 
-            <div className="p-4 bg-slate-950/80 border border-slate-800/80 rounded-xl flex items-center justify-between shadow-md">
+            <div className="p-4 bg-[#0F141B] border border-[#26303D] rounded-xl flex items-center justify-between shadow-sm font-sans">
               <div>
-                <div className="text-slate-400 font-mono text-[11px]">Authenticated State</div>
-                <div className="text-xs font-semibold text-slate-200 mt-0.5">
+                <div className="text-[#9CA3AF] font-mono text-[11px]">Authenticated State</div>
+                <div className="text-xs font-semibold text-[#F3F4F6] mt-0.5">
                   {authStateLabel}
                 </div>
               </div>
@@ -109,13 +109,13 @@ export default function SettingsPage() {
 
         {/* Backend Environment Configuration */}
         <SectionCard title="Backend Operations" subtitle="Operational infrastructure mode configuration">
-          <div className="space-y-4 text-xs">
-            <div className="p-4 bg-slate-950/80 border border-slate-800/80 rounded-xl flex items-center justify-between shadow-md">
+          <div className="space-y-4 text-xs font-sans">
+            <div className="p-4 bg-[#0F141B] border border-[#26303D] rounded-xl flex items-center justify-between shadow-sm font-sans">
               <div className="flex items-center space-x-3 font-mono">
-                <Database className="w-5 h-5 text-indigo-400 shrink-0" />
+                <Database className="w-5 h-5 text-[#3B82F6] shrink-0" />
                 <div>
-                  <div className="text-slate-400 font-semibold text-[11px]">Database Backend</div>
-                  <div className="text-sm font-bold text-slate-100 uppercase mt-0.5">
+                  <div className="text-[#9CA3AF] font-semibold text-[11px] font-sans">Database Backend</div>
+                  <div className="text-sm font-bold text-[#F3F4F6] uppercase mt-0.5 font-sans">
                     {dbBackendLabel}
                   </div>
                 </div>
@@ -123,12 +123,12 @@ export default function SettingsPage() {
               <StatusBadge status={dbStatusBadge} />
             </div>
 
-            <div className="p-4 bg-slate-950/80 border border-slate-800/80 rounded-xl flex items-center justify-between shadow-md">
+            <div className="p-4 bg-[#0F141B] border border-[#26303D] rounded-xl flex items-center justify-between shadow-sm font-sans">
               <div className="flex items-center space-x-3 font-mono">
-                <Server className="w-5 h-5 text-emerald-400 shrink-0" />
+                <Server className="w-5 h-5 text-[#22C55E] shrink-0" />
                 <div>
-                  <div className="text-slate-400 font-semibold text-[11px]">Storage Adapter</div>
-                  <div className="text-sm font-bold text-slate-100 uppercase mt-0.5">
+                  <div className="text-[#9CA3AF] font-semibold text-[11px] font-sans">Storage Adapter</div>
+                  <div className="text-sm font-bold text-[#F3F4F6] uppercase mt-0.5 font-sans">
                     {storageAdapterLabel}
                   </div>
                 </div>
@@ -141,20 +141,20 @@ export default function SettingsPage() {
 
       {/* API Readiness & Capabilities Summary */}
       <SectionCard title="Engine Capabilities & Readiness" subtitle="Exposed API capabilities and readiness check">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-mono">
-          <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800/80 shadow-md">
-            <div className="text-slate-400 font-semibold uppercase text-[11px]">API Status</div>
-            <div className="text-lg font-bold text-emerald-400 mt-1 font-sans">{status?.api_status || "operational"}</div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-sans">
+          <div className="bg-[#0F141B] p-4 rounded-xl border border-[#26303D] shadow-sm">
+            <div className="text-[#9CA3AF] font-semibold uppercase text-[11px]">API Status</div>
+            <div className="text-lg font-bold text-[#22C55E] mt-1 font-sans">{status?.api_status || "operational"}</div>
           </div>
 
-          <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800/80 shadow-md">
-            <div className="text-slate-400 font-semibold uppercase text-[11px]">API Version</div>
-            <div className="text-lg font-bold text-slate-200 mt-1 font-sans">{status?.api_version || "1.0.0"}</div>
+          <div className="bg-[#0F141B] p-4 rounded-xl border border-[#26303D] shadow-sm">
+            <div className="text-[#9CA3AF] font-semibold uppercase text-[11px]">API Version</div>
+            <div className="text-lg font-bold text-[#F3F4F6] mt-1 font-sans">{status?.api_version || "1.0.0"}</div>
           </div>
 
-          <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800/80 shadow-md">
-            <div className="text-slate-400 font-semibold uppercase text-[11px]">Auth Requirement</div>
-            <div className="text-lg font-bold text-indigo-400 uppercase mt-1 font-sans">{status?.auth_mode || "disabled"}</div>
+          <div className="bg-[#0F141B] p-4 rounded-xl border border-[#26303D] shadow-sm">
+            <div className="text-[#9CA3AF] font-semibold uppercase text-[11px]">Auth Requirement</div>
+            <div className="text-lg font-bold text-[#3B82F6] uppercase mt-1 font-sans">{status?.auth_mode || "disabled"}</div>
           </div>
         </div>
       </SectionCard>

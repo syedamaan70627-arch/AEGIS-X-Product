@@ -106,33 +106,33 @@ export function GovernanceOverviewCard({
   const isMissingEvidence = !hasTelemetry && !status;
 
   return (
-    <div className="bg-[#0e131f] border border-slate-800/80 rounded-2xl p-6 shadow-xl space-y-6">
+    <div className="bg-[#151B23] border border-[#26303D] rounded-2xl p-6 shadow-sm space-y-6 font-sans">
       {/* Top Bar: Title & Evaluation Trigger Button */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#26303D] pb-5">
         <div className="flex items-start space-x-3.5">
-          <div className="p-3 bg-[#080c14] border border-slate-800/80 rounded-xl text-cyan-400 shrink-0">
+          <div className="p-3 bg-[#0F141B] border border-[#26303D] rounded-xl text-[#3B82F6] shrink-0">
             <ShieldCheck className="w-6 h-6" />
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <h2 className="text-lg font-bold text-slate-100 font-mono tracking-tight">
+              <h2 className="text-lg font-bold text-[#F3F4F6] font-sans tracking-tight">
                 Evidence-Calibrated Reliability Governance (ECRG)
               </h2>
-              <span className="px-2 py-0.5 text-[10px] font-mono font-bold bg-indigo-950/80 text-indigo-300 border border-indigo-800/60 rounded">
+              <span className="px-2 py-0.5 text-[10px] font-sans font-semibold bg-[#1A222C] text-[#9CA3AF] border border-[#26303D] rounded">
                 MODULE 14
               </span>
             </div>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-[#9CA3AF] mt-0.5 font-sans">
               Conformal risk-controlled decision framework &amp; state-machine anti-flapping protection.
             </p>
           </div>
         </div>
 
-        {/* Evaluate Action Button */}
+        {/* Evaluate Action Button - STEEL BLUE */}
         <button
           onClick={handleEvaluate}
           disabled={!hasTelemetry || evaluating}
-          className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-mono text-xs font-semibold rounded-xl shadow-md transition-all flex items-center justify-center space-x-2 shrink-0 border border-indigo-500/40"
+          className="px-4 py-2.5 bg-[#3B82F6] hover:bg-[#2563EB] disabled:opacity-50 disabled:cursor-not-allowed text-white font-sans text-xs font-semibold rounded-xl shadow-sm transition-all flex items-center justify-center space-x-2 shrink-0 border border-[#3B82F6]/50"
         >
           {evaluating ? (
             <>
@@ -150,10 +150,10 @@ export function GovernanceOverviewCard({
 
       {/* Fail-Safe Warning if evidence is missing */}
       {isMissingEvidence && (
-        <div className="p-4 bg-amber-950/40 border border-amber-800/50 rounded-xl flex items-start space-x-3 text-xs text-amber-300">
-          <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+        <div className="p-4 bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl flex items-start space-x-3 text-xs text-[#F59E0B]">
+          <AlertTriangle className="w-5 h-5 text-[#F59E0B] shrink-0 mt-0.5" />
           <div>
-            <span className="font-mono font-bold uppercase tracking-wider block mb-0.5">
+            <span className="font-sans font-bold uppercase tracking-wider block mb-0.5">
               Fail-Safe Protection Active
             </span>
             No operational analysis telemetry is selected for this model. Unrestricted automation is strictly disabled until reliability evidence is evaluated.
@@ -163,8 +163,8 @@ export function GovernanceOverviewCard({
 
       {/* Error State */}
       {error && (
-        <div className="p-4 bg-rose-950/40 border border-rose-800/50 rounded-xl text-xs font-mono text-rose-300 flex items-center space-x-3">
-          <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0" />
+        <div className="p-4 bg-[#EF4444]/10 border border-[#EF4444]/30 rounded-xl text-xs font-sans text-[#EF4444] flex items-center space-x-3">
+          <AlertTriangle className="w-5 h-5 text-[#EF4444] shrink-0" />
           <span>{error}</span>
         </div>
       )}
@@ -172,20 +172,20 @@ export function GovernanceOverviewCard({
       {/* Active State Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Card 1: Current Governance Action */}
-        <div className="bg-slate-950/80 border border-slate-800/80 rounded-xl p-4 space-y-3 flex flex-col justify-between">
-          <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400 block">
+        <div className="bg-[#0F141B] border border-[#26303D] rounded-xl p-4 space-y-3 flex flex-col justify-between">
+          <span className="text-[11px] font-sans font-semibold uppercase tracking-wider text-[#9CA3AF] block">
             1. Active Governance Action
           </span>
 
           {loadingStatus ? (
-            <div className="flex items-center space-x-2 text-xs font-mono text-slate-500 py-2">
-              <RefreshCw className="w-4 h-4 animate-spin text-indigo-400" />
+            <div className="flex items-center space-x-2 text-xs font-sans text-[#6B7280] py-2">
+              <RefreshCw className="w-4 h-4 animate-spin text-[#3B82F6]" />
               <span>Loading state...</span>
             </div>
           ) : (latestEval || (status && status.total_evaluations > 0)) ? (
             <div className="space-y-2">
               <GovernanceBadge action={activeAction || "CONTINUE"} size="lg" />
-              <p className="text-xs text-slate-400 leading-relaxed font-sans pt-1">
+              <p className="text-xs text-[#9CA3AF] leading-relaxed font-sans pt-1">
                 {activeAction === "CONTINUE" && "Model operating nominally. Full automation permitted."}
                 {activeAction === "WATCH" && "Minor risk anomaly. Execution allowed with high-frequency logging."}
                 {activeAction === "DEFER" && "High risk detected. Execution deferred pending operator approval."}
@@ -193,12 +193,12 @@ export function GovernanceOverviewCard({
               </p>
             </div>
           ) : (
-            <div className="p-3 bg-amber-950/30 border border-amber-800/40 rounded-xl space-y-1.5">
-              <div className="inline-flex items-center text-amber-300 font-mono text-xs font-bold space-x-1.5">
-                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+            <div className="p-3 bg-[#1A222C] border border-[#26303D] rounded-xl space-y-1.5">
+              <div className="inline-flex items-center text-[#9CA3AF] font-sans text-xs font-semibold space-x-1.5">
+                <AlertTriangle className="w-4 h-4 text-[#F59E0B] shrink-0" />
                 <span>GOVERNANCE NOT EVALUATED</span>
               </div>
-              <p className="text-xs text-amber-200/80 font-sans leading-relaxed">
+              <p className="text-xs text-[#6B7280] font-sans leading-relaxed">
                 No governance evaluation recorded for this model. Click &quot;Evaluate Governance&quot; to run conformal risk analysis. Unrestricted automation is not certified.
               </p>
             </div>
@@ -206,44 +206,44 @@ export function GovernanceOverviewCard({
         </div>
 
         {/* Card 2: Operating Mode & Certification */}
-        <div className="bg-slate-950/80 border border-slate-800/80 rounded-xl p-4 space-y-3 flex flex-col justify-between">
-          <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400 block">
+        <div className="bg-[#0F141B] border border-[#26303D] rounded-xl p-4 space-y-3 flex flex-col justify-between">
+          <span className="text-[11px] font-sans font-semibold uppercase tracking-wider text-[#9CA3AF] block">
             2. Operating Mode &amp; Certification
           </span>
 
           <div className="space-y-2">
             <div className="flex items-center space-x-2">
-              <span className="px-2.5 py-1 rounded bg-indigo-950 border border-indigo-800/60 text-indigo-300 font-mono text-xs font-bold">
+              <span className="px-2.5 py-1 rounded bg-[#1A222C] border border-[#26303D] text-[#F3F4F6] font-sans text-xs font-semibold">
                 {activeMode || "EVIDENCE_ONLY"}
               </span>
             </div>
 
-            <p className="text-xs text-slate-400 leading-relaxed font-sans pt-1">
+            <p className="text-xs text-[#9CA3AF] leading-relaxed font-sans pt-1">
               {latestEval?.certification_banner || "Label-Free Production Governance"}
             </p>
           </div>
         </div>
 
         {/* Card 3: Anti-Flapping & Transition Telemetry */}
-        <div className="bg-slate-950/80 border border-slate-800/80 rounded-xl p-4 space-y-3 flex flex-col justify-between">
-          <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400 block">
+        <div className="bg-[#0F141B] border border-[#26303D] rounded-xl p-4 space-y-3 flex flex-col justify-between">
+          <span className="text-[11px] font-sans font-semibold uppercase tracking-wider text-[#9CA3AF] block">
             3. Anti-Flapping Status
           </span>
 
-          <div className="space-y-1.5 font-mono text-xs text-slate-300">
-            <div className="flex justify-between py-1 border-b border-slate-900">
-              <span className="text-slate-500">Consecutive Steps:</span>
-              <span className="text-slate-100 font-bold">{status?.consecutive_state_count || latestEval?.consecutive_state_count || 1}</span>
+          <div className="space-y-1.5 font-sans text-xs text-[#F3F4F6]">
+            <div className="flex justify-between py-1 border-b border-[#26303D]">
+              <span className="text-[#6B7280]">Consecutive Steps:</span>
+              <span className="text-[#F3F4F6] font-bold font-mono tabular-nums">{status?.consecutive_state_count || latestEval?.consecutive_state_count || 1}</span>
             </div>
-            <div className="flex justify-between py-1 border-b border-slate-900">
-              <span className="text-slate-500">Cooldown Active:</span>
-              <span className={status?.in_cooldown ? "text-amber-400 font-bold" : "text-slate-400"}>
+            <div className="flex justify-between py-1 border-b border-[#26303D]">
+              <span className="text-[#6B7280]">Cooldown Active:</span>
+              <span className={status?.in_cooldown ? "text-[#F59E0B] font-semibold" : "text-[#9CA3AF]"}>
                 {status?.in_cooldown ? "YES (Enforced)" : "NO"}
               </span>
             </div>
             <div className="flex justify-between py-1">
-              <span className="text-slate-500">Total Evaluations:</span>
-              <span className="text-slate-100 font-bold">{status?.total_evaluations || 0}</span>
+              <span className="text-[#6B7280]">Total Evaluations:</span>
+              <span className="text-[#F3F4F6] font-bold font-mono tabular-nums">{status?.total_evaluations || 0}</span>
             </div>
           </div>
         </div>
@@ -251,19 +251,19 @@ export function GovernanceOverviewCard({
 
       {/* Decision Explanation Bar */}
       {latestEval && (
-        <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="bg-[#0F141B] border border-[#26303D] rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1 text-xs">
-            <span className="font-mono font-bold text-slate-400 uppercase tracking-wider block">
+            <span className="font-sans font-semibold text-[#9CA3AF] uppercase tracking-wider block">
               Governance Decision Rationale
             </span>
-            <p className="text-slate-200 font-mono text-xs">{latestEval.transition_reason}</p>
+            <p className="text-[#F3F4F6] font-sans text-xs">{latestEval.transition_reason}</p>
           </div>
 
           <button
             onClick={() => setShowDetailsModal(true)}
-            className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-indigo-300 border border-slate-700/80 rounded-lg font-mono text-xs font-semibold transition-colors flex items-center space-x-1.5 shrink-0"
+            className="px-3.5 py-1.5 bg-[#1A222C] hover:bg-[#26303D] text-[#F3F4F6] border border-[#26303D] rounded-lg font-sans text-xs font-medium transition-colors flex items-center space-x-1.5 shrink-0"
           >
-            <FileText className="w-4 h-4" />
+            <FileText className="w-4 h-4 text-[#3B82F6]" />
             <span>Audit &amp; Provenance Details</span>
           </button>
         </div>

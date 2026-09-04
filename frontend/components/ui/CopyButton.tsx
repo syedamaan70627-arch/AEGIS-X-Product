@@ -28,15 +28,14 @@ export const CopyButton: React.FC<CopyButtonProps> = ({ text, className = "", la
       className={`inline-flex items-center space-x-1.5 px-1.5 py-0.5 text-xs text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded transition-colors ${className}`}
     >
       {copied ? (
-        <>
-          <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-          {label && <span className="text-emerald-400 text-[10px] font-medium">{copied ? "Copied!" : label}</span>}
-        </>
+        <Check className="w-3.5 h-3.5 text-[#22C55E] shrink-0" />
       ) : (
-        <>
-          <Copy className="w-3.5 h-3.5 text-slate-400 hover:text-indigo-400 shrink-0" />
-          {label && <span className="text-[10px] font-medium">{label}</span>}
-        </>
+        <Copy className="w-3.5 h-3.5 text-[#9CA3AF] hover:text-[#3B82F6] shrink-0" />
+      )}
+      {label && (
+        <span className={`text-[10px] font-medium ${copied ? "text-emerald-400" : ""}`}>
+          {copied ? "Copied!" : label}
+        </span>
       )}
     </button>
   );

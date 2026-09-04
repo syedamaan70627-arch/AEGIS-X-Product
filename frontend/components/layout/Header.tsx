@@ -94,19 +94,19 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileNav }) => {
   const authModeLabel = isConfigured ? "Supabase Auth" : isVercel ? "Vercel Session" : "Local Context";
 
   return (
-    <header className="h-16 bg-[#090d16] border-b border-slate-800/80 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 select-none">
+    <header className="h-16 bg-[#11161D] border-b border-[#26303D] px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 select-none">
       <div className="flex items-center space-x-3">
         {onOpenMobileNav && (
           <button
             onClick={onOpenMobileNav}
-            className="md:hidden text-slate-400 hover:text-slate-200 p-2 rounded-lg hover:bg-slate-900 border border-slate-800 transition-colors"
+            className="md:hidden text-[#9CA3AF] hover:text-[#F3F4F6] p-2 rounded-lg hover:bg-[#1A222C] border border-[#26303D] transition-colors"
             aria-label="Open Navigation Drawer"
           >
             <Menu className="w-5 h-5" />
           </button>
         )}
-        <span className="text-xs font-mono font-semibold text-slate-300 uppercase tracking-widest flex items-center gap-2">
-          <Shield className="w-4 h-4 text-cyan-400 shrink-0" />
+        <span className="text-xs font-sans font-semibold text-[#F3F4F6] uppercase tracking-wider flex items-center gap-2">
+          <Shield className="w-4 h-4 text-[#3B82F6] shrink-0" />
           <span className="hidden sm:inline">AI Reliability Command Center</span>
           <span className="sm:hidden">AEGIS-X</span>
         </span>
@@ -114,34 +114,34 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileNav }) => {
 
       <div className="flex items-center space-x-3 sm:space-x-4 text-xs">
         {/* Backend Connection Indicator */}
-        <div className="flex items-center space-x-2 bg-slate-900/90 border border-slate-800/80 px-3 py-1.5 rounded-lg shadow-sm">
+        <div className="flex items-center space-x-2 bg-[#0F141B] border border-[#26303D] px-3 py-1.5 rounded-lg shadow-sm">
           {loading ? (
             <>
-              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-              <span className="text-slate-400 font-mono hidden sm:inline">API:</span>
-              <span className="font-mono font-medium text-amber-300">Connecting</span>
+              <span className="w-2 h-2 rounded-full bg-[#F59E0B] animate-pulse" />
+              <span className="text-[#9CA3AF] font-sans hidden sm:inline">API:</span>
+              <span className="font-sans font-medium text-[#F59E0B]">Connecting</span>
             </>
           ) : isConnected ? (
             <>
-              <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span className="text-slate-400 font-mono hidden sm:inline">API:</span>
-              <span className="font-mono font-medium text-slate-200">Connected</span>
+              <span className="w-2 h-2 rounded-full bg-[#22C55E]" />
+              <span className="text-[#9CA3AF] font-sans hidden sm:inline">API:</span>
+              <span className="font-sans font-medium text-[#F3F4F6]">Connected</span>
             </>
           ) : (
             <>
-              <span className="w-2 h-2 rounded-full bg-rose-500" />
-              <span className="text-slate-400 font-mono hidden sm:inline">API:</span>
-              <span className="font-mono font-medium text-rose-300">Unavailable</span>
+              <span className="w-2 h-2 rounded-full bg-[#EF4444]" />
+              <span className="text-[#9CA3AF] font-sans hidden sm:inline">API:</span>
+              <span className="font-sans font-medium text-[#EF4444]">Unavailable</span>
             </>
           )}
         </div>
 
         {/* Database & Storage Badges */}
-        <div className="hidden lg:flex items-center space-x-2 text-slate-400 bg-slate-900/90 border border-slate-800/80 px-3 py-1.5 rounded-lg font-mono text-[11px]">
-          <Database className="w-3.5 h-3.5 text-cyan-400" />
-          <span className="text-slate-300 font-semibold uppercase">{dbLabel}</span>
-          <span className="text-slate-700">|</span>
-          <span className="text-slate-300 font-semibold uppercase">{storageLabel}</span>
+        <div className="hidden lg:flex items-center space-x-2 text-[#9CA3AF] bg-[#0F141B] border border-[#26303D] px-3 py-1.5 rounded-lg font-sans text-[11px]">
+          <Database className="w-3.5 h-3.5 text-[#64748B]" />
+          <span className="text-[#F3F4F6] font-medium uppercase">{dbLabel}</span>
+          <span className="text-[#6B7280]">|</span>
+          <span className="text-[#F3F4F6] font-medium uppercase">{storageLabel}</span>
         </div>
 
         {/* User Account Menu Dropdown */}
@@ -151,17 +151,17 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileNav }) => {
             onClick={() => setShowMenu(!showMenu)}
             aria-expanded={showMenu}
             aria-label="User Account Menu"
-            className="flex items-center space-x-2 bg-slate-900 hover:bg-slate-800/90 border border-slate-800 px-3 py-1.5 rounded-lg text-slate-200 font-mono text-xs transition-colors focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+            className="flex items-center space-x-2 bg-[#0F141B] hover:bg-[#1A222C] border border-[#26303D] px-3 py-1.5 rounded-lg text-[#F3F4F6] font-sans text-xs transition-colors focus:outline-none focus:ring-1 focus:ring-[#3B82F6]"
           >
-            <User className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+            <User className="w-3.5 h-3.5 text-[#3B82F6] shrink-0" />
             <span className="max-w-[100px] sm:max-w-[140px] truncate">{userLabel}</span>
           </button>
 
           {showMenu && (
-            <div className="absolute right-0 mt-2 w-60 bg-[#0e131f] border border-slate-800/90 rounded-xl shadow-2xl py-2 z-50 text-xs animate-in fade-in zoom-in-95 duration-100">
-              <div className="px-4 py-2 border-b border-slate-800/80 text-slate-400">
-                <div className="font-semibold text-slate-200 truncate">{menuUserTitle}</div>
-                <div className="text-[10px] font-mono text-cyan-400 mt-0.5">
+            <div className="absolute right-0 mt-2 w-60 bg-[#151B23] border border-[#26303D] rounded-xl shadow-2xl py-2 z-50 text-xs font-sans animate-in fade-in zoom-in-95 duration-100">
+              <div className="px-4 py-2 border-b border-[#26303D] text-[#9CA3AF]">
+                <div className="font-semibold text-[#F3F4F6] truncate">{menuUserTitle}</div>
+                <div className="text-[10px] text-[#3B82F6] mt-0.5 font-sans">
                   Auth Mode: {authModeLabel}
                 </div>
               </div>
@@ -169,16 +169,16 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileNav }) => {
               <Link
                 href="/settings"
                 onClick={() => setShowMenu(false)}
-                className="flex items-center space-x-2.5 px-4 py-2.5 text-slate-300 hover:bg-slate-800/60 transition-colors"
+                className="flex items-center space-x-2.5 px-4 py-2.5 text-[#F3F4F6] hover:bg-[#1A222C] transition-colors"
               >
-                <Settings className="w-4 h-4 text-slate-400" />
+                <Settings className="w-4 h-4 text-[#9CA3AF]" />
                 <span>Account & Settings</span>
               </Link>
 
               <button
                 type="button"
                 onClick={handleSignOut}
-                className="w-full flex items-center space-x-2.5 px-4 py-2.5 text-rose-400 hover:bg-slate-800/60 transition-colors text-left font-medium"
+                className="w-full flex items-center space-x-2.5 px-4 py-2.5 text-[#EF4444] hover:bg-[#1A222C] transition-colors text-left font-medium"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Sign Out</span>

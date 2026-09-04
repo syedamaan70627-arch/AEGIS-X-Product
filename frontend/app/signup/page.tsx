@@ -51,32 +51,32 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#080c14] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans antialiased text-slate-100">
+    <div className="min-h-screen bg-[#0B0F14] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 font-sans antialiased text-[#F3F4F6]">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-3">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-indigo-600 shadow-lg border border-indigo-400/30 mb-2">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#3B82F6] shadow-sm mb-2">
           <ShieldCheck className="w-6 h-6 text-white" />
         </div>
-        <h2 className="text-2xl font-bold tracking-tight text-slate-100">Create AEGIS-X Account</h2>
-        <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
+        <h2 className="text-2xl font-bold tracking-tight text-[#F3F4F6] font-sans">Create AEGIS-X Account</h2>
+        <p className="text-xs text-[#9CA3AF] max-w-xs mx-auto leading-relaxed font-sans">
           Register an enterprise account for multi-user reliability telemetry and failure warning
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-[#0e131f] border border-slate-800/80 py-8 px-6 shadow-2xl rounded-2xl sm:px-10 space-y-6">
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md font-sans">
+        <div className="bg-[#151B23] border border-[#26303D] py-8 px-6 shadow-xl rounded-2xl sm:px-10 space-y-6">
           {submitted ? (
-            <div className="text-center space-y-4 py-4">
-              <div className="p-3 bg-emerald-950/60 border border-emerald-800 rounded-full w-12 h-12 mx-auto flex items-center justify-center text-emerald-400 shadow-lg">
+            <div className="text-center space-y-4 py-4 font-sans">
+              <div className="p-3 bg-[#22C55E]/10 border border-[#22C55E]/30 rounded-full w-12 h-12 mx-auto flex items-center justify-center text-[#22C55E] shadow-sm">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
-              <h3 className="text-base font-bold text-slate-100">Verification Email Sent</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                We sent a confirmation link to <span className="text-slate-200 font-semibold font-mono">{email}</span>. Please check your inbox and verify your email address to complete registration.
+              <h3 className="text-base font-bold text-[#F3F4F6] font-sans">Verification Email Sent</h3>
+              <p className="text-xs text-[#9CA3AF] leading-relaxed font-sans">
+                We sent a confirmation link to <span className="text-[#F3F4F6] font-semibold font-mono">{email}</span>. Please check your inbox and verify your email address to complete registration.
               </p>
               <div className="pt-4">
                 <Link
                   href="/login"
-                  className="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-lg transition-colors shadow-md"
+                  className="inline-flex items-center px-4 py-2 bg-[#3B82F6] hover:bg-[#2563EB] text-white font-semibold font-sans text-xs rounded-lg transition-colors shadow-sm"
                 >
                   Return to Sign In
                 </Link>
@@ -86,11 +86,11 @@ export default function SignUpPage() {
             <>
               {error && <ErrorState message={error} />}
 
-              <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+              <form onSubmit={handleSubmit} className="space-y-4 text-xs font-sans">
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">Work Email Address *</label>
+                  <label className="block font-semibold text-[#F3F4F6] mb-1 font-sans">Work Email Address *</label>
                   <div className="relative rounded-lg shadow-sm">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#6B7280]">
                       <Mail className="w-4 h-4" />
                     </div>
                     <input
@@ -99,15 +99,15 @@ export default function SignUpPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="analyst@enterprise.io"
-                      className="w-full bg-[#080c14] border border-slate-800/80 rounded-lg pl-10 pr-3 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-mono"
+                      className="w-full bg-[#0F141B] border border-[#26303D] rounded-lg pl-10 pr-3 py-2.5 text-[#F3F4F6] placeholder-[#6B7280] focus:outline-none focus:border-[#3B82F6] transition-all font-sans"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">Password (Min 8 chars) *</label>
+                  <label className="block font-semibold text-[#F3F4F6] mb-1 font-sans">Password (Min 8 chars) *</label>
                   <div className="relative rounded-lg shadow-sm">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#6B7280]">
                       <Lock className="w-4 h-4" />
                     </div>
                     <input
@@ -116,12 +116,12 @@ export default function SignUpPage() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••••••"
-                      className="w-full bg-[#080c14] border border-slate-800/80 rounded-lg pl-10 pr-10 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-mono"
+                      className="w-full bg-[#0F141B] border border-[#26303D] rounded-lg pl-10 pr-10 py-2.5 text-[#F3F4F6] placeholder-[#6B7280] focus:outline-none focus:border-[#3B82F6] transition-all font-sans"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-[#6B7280] hover:text-[#9CA3AF]"
                       aria-label="Toggle password visibility"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -130,9 +130,9 @@ export default function SignUpPage() {
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-300 mb-1">Confirm Password *</label>
+                  <label className="block font-semibold text-[#F3F4F6] mb-1 font-sans">Confirm Password *</label>
                   <div className="relative rounded-lg shadow-sm">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#6B7280]">
                       <Lock className="w-4 h-4" />
                     </div>
                     <input
@@ -141,7 +141,7 @@ export default function SignUpPage() {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="••••••••••••"
-                      className="w-full bg-[#080c14] border border-slate-800/80 rounded-lg pl-10 pr-10 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-mono"
+                      className="w-full bg-[#0F141B] border border-[#26303D] rounded-lg pl-10 pr-10 py-2.5 text-[#F3F4F6] placeholder-[#6B7280] focus:outline-none focus:border-[#3B82F6] transition-all font-sans"
                     />
                   </div>
                 </div>
@@ -149,15 +149,15 @@ export default function SignUpPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg shadow-md transition-all disabled:opacity-50 mt-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full py-2.5 px-4 bg-[#3B82F6] hover:bg-[#2563EB] text-white font-semibold font-sans rounded-lg shadow-sm transition-all disabled:opacity-50 mt-2 focus:outline-none focus:ring-2 focus:ring-[#3B82F6]"
                 >
                   {loading ? "Creating Account..." : "Create Enterprise Account"}
                 </button>
               </form>
 
-              <div className="pt-4 border-t border-slate-800/80 text-center text-xs text-slate-400">
+              <div className="pt-4 border-t border-[#26303D] text-center text-xs text-[#9CA3AF] font-sans">
                 Already have an account?{" "}
-                <Link href="/login" className="text-cyan-400 font-semibold hover:text-cyan-300">
+                <Link href="/login" className="text-[#3B82F6] font-semibold hover:underline">
                   Sign In
                 </Link>
               </div>

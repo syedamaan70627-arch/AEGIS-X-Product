@@ -53,7 +53,7 @@ export default function ModelDetailsPage() {
       <PageHeader
         title={model.model_name}
         description={`Model ID: ${model.model_id} | Filename: ${model.filename}`}
-        icon={<Layers className="w-6 h-6 text-indigo-400" />}
+        icon={<Layers className="w-6 h-6 text-[#3B82F6]" />}
         breadcrumbs={[{ label: "Operations" }, { label: "Model Registry", href: "/models" }, { label: model.model_name }]}
         badge={<StatusBadge status={model.status} />}
         actions={
@@ -65,21 +65,21 @@ export default function ModelDetailsPage() {
 
       {/* Metadata Overview Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs font-mono">
-        <div className="bg-slate-900/90 border border-slate-800/80 rounded-xl p-4 shadow-md">
-          <div className="text-slate-400 uppercase font-semibold text-[11px]">Task Type</div>
-          <div className="mt-1.5 font-bold text-slate-100 text-sm capitalize">{model.task_type.replace("_", " ")}</div>
+        <div className="bg-[#151B23] border border-[#26303D] rounded-xl p-4 shadow-sm">
+          <div className="text-[#9CA3AF] uppercase font-semibold text-[11px] font-sans">Task Type</div>
+          <div className="mt-1.5 font-bold text-[#F3F4F6] text-sm capitalize">{model.task_type.replace("_", " ")}</div>
         </div>
-        <div className="bg-slate-900/90 border border-slate-800/80 rounded-xl p-4 shadow-md">
-          <div className="text-slate-400 uppercase font-semibold text-[11px]">Expected Features</div>
-          <div className="mt-1.5 font-bold text-indigo-400 text-sm">{model.n_features_in ?? "Unknown"}</div>
+        <div className="bg-[#151B23] border border-[#26303D] rounded-xl p-4 shadow-sm">
+          <div className="text-[#9CA3AF] uppercase font-semibold text-[11px] font-sans">Expected Features</div>
+          <div className="mt-1.5 font-bold text-[#3B82F6] text-sm">{model.n_features_in ?? "Unknown"}</div>
         </div>
-        <div className="bg-slate-900/90 border border-slate-800/80 rounded-xl p-4 shadow-md">
-          <div className="text-slate-400 uppercase font-semibold text-[11px]">Probability Output</div>
-          <div className="mt-1.5 font-bold text-emerald-400 text-sm">{model.predict_proba_supported ? "Supported (predict_proba)" : "Not Supported"}</div>
+        <div className="bg-[#151B23] border border-[#26303D] rounded-xl p-4 shadow-sm">
+          <div className="text-[#9CA3AF] uppercase font-semibold text-[11px] font-sans">Probability Output</div>
+          <div className="mt-1.5 font-bold text-[#22C55E] text-sm">{model.predict_proba_supported ? "Supported (predict_proba)" : "Not Supported"}</div>
         </div>
-        <div className="bg-slate-900/90 border border-slate-800/80 rounded-xl p-4 shadow-md">
-          <div className="text-slate-400 uppercase font-semibold text-[11px]">Registered Date</div>
-          <div className="mt-1.5 font-bold text-slate-100 text-xs">{new Date(model.created_at).toLocaleString()}</div>
+        <div className="bg-[#151B23] border border-[#26303D] rounded-xl p-4 shadow-sm">
+          <div className="text-[#9CA3AF] uppercase font-semibold text-[11px] font-sans">Registered Date</div>
+          <div className="mt-1.5 font-bold text-[#F3F4F6] text-xs">{new Date(model.created_at).toLocaleString()}</div>
         </div>
       </div>
 
@@ -98,55 +98,55 @@ export default function ModelDetailsPage() {
       {/* Quick Action Workflows */}
       <SectionCard title="Action Workflows" subtitle="Execute model reference baseline setup or operational analyses">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-5 flex flex-col justify-between shadow-md">
+          <div className="bg-[#0F141B] border border-[#26303D] rounded-xl p-5 flex flex-col justify-between shadow-sm">
             <div>
-              <div className="flex items-center space-x-2 text-indigo-400 font-semibold text-sm">
+              <div className="flex items-center space-x-2 text-[#3B82F6] font-semibold text-sm font-sans">
                 <Database className="w-4 h-4 shrink-0" />
                 <span>Reference Fit Baseline</span>
               </div>
-              <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+              <p className="text-xs text-[#9CA3AF] mt-2 leading-relaxed font-sans">
                 Fit baseline distributions on a registered REFERENCE dataset before monitoring evaluation batches.
               </p>
             </div>
             <Link
               href="/data"
-              className="mt-4 inline-flex items-center text-xs font-semibold text-indigo-400 hover:text-indigo-300"
+              className="mt-4 inline-flex items-center text-xs font-semibold text-[#3B82F6] hover:text-[#2563EB] font-sans"
             >
               Configure Reference Data <ArrowRight className="w-3 h-3 ml-1" />
             </Link>
           </div>
 
-          <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-5 flex flex-col justify-between shadow-md">
+          <div className="bg-[#0F141B] border border-[#26303D] rounded-xl p-5 flex flex-col justify-between shadow-sm">
             <div>
-              <div className="flex items-center space-x-2 text-emerald-400 font-semibold text-sm">
+              <div className="flex items-center space-x-2 text-[#22C55E] font-semibold text-sm font-sans">
                 <ShieldCheck className="w-4 h-4 shrink-0" />
                 <span>Batch Operational Monitor</span>
               </div>
-              <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+              <p className="text-xs text-[#9CA3AF] mt-2 leading-relaxed font-sans">
                 Run core reliability detection across OOD, Uncertainty, Drift, and Fusion signals on evaluation data.
               </p>
             </div>
             <Link
               href="/monitor"
-              className="mt-4 inline-flex items-center text-xs font-semibold text-emerald-400 hover:text-emerald-300"
+              className="mt-4 inline-flex items-center text-xs font-semibold text-[#22C55E] hover:text-emerald-300 font-sans"
             >
               Go to Batch Monitor <ArrowRight className="w-3 h-3 ml-1" />
             </Link>
           </div>
 
-          <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-5 flex flex-col justify-between shadow-md">
+          <div className="bg-[#0F141B] border border-[#26303D] rounded-xl p-5 flex flex-col justify-between shadow-sm">
             <div>
-              <div className="flex items-center space-x-2 text-amber-400 font-semibold text-sm">
+              <div className="flex items-center space-x-2 text-[#F59E0B] font-semibold text-sm font-sans">
                 <Zap className="w-4 h-4 shrink-0" />
                 <span>Stress & Fault Testing</span>
               </div>
-              <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+              <p className="text-xs text-[#9CA3AF] mt-2 leading-relaxed font-sans">
                 Execute controlled noise stress or inject sensor bias/gain faults to evaluate robust performance.
               </p>
             </div>
             <Link
               href="/stress"
-              className="mt-4 inline-flex items-center text-xs font-semibold text-amber-400 hover:text-amber-300"
+              className="mt-4 inline-flex items-center text-xs font-semibold text-[#F59E0B] hover:text-amber-300 font-sans"
             >
               Open Stress Lab <ArrowRight className="w-3 h-3 ml-1" />
             </Link>
