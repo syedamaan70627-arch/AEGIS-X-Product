@@ -1,11 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
+import { usePathname } from "next/navigation";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
 import { ToastProvider } from "@/components/providers/ToastProvider";
+import { ProtectedRoute } from "@/components/providers/ProtectedRoute";
 import { getEnvConfig } from "@/lib/config";
 import { AlertTriangle, Server, Key, Globe } from "lucide-react";
+import { LoadingState } from "@/components/ui/LoadingState";
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -13,7 +16,10 @@ interface AppShellProps {
 
 export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const pathname = usePathname();
   const cfg = getEnvConfig();
+
+  const isPublicAuthPage = pathname === "/login" || pathname === "/signup";
 
   if (cfg.isVercel && !cfg.isValid) {
     return (
@@ -59,17 +65,29 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     );
   }
 
+  if (isPublicAuthPage) {
+    return (
+      <ToastProvider>
+        <Suspense fallback={<LoadingState message="Loading..." />}>
+          <ProtectedRoute>{children}</ProtectedRoute>
+        </Suspense>
+      </ToastProvider>
+    );
+  }
+
   return (
     <ToastProvider>
       <div className="flex min-h-screen bg-slate-950 text-slate-100 font-sans antialiased selection:bg-indigo-600 selection:text-white">
         <Sidebar isOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
         <div className="flex-1 flex flex-col min-w-0">
           <Header onOpenMobileNav={() => setMobileNavOpen(true)} />
-          <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">{children}</main>
+          <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+            <Suspense fallback={<LoadingState message="Loading..." />}>
+              <ProtectedRoute>{children}</ProtectedRoute>
+            </Suspense>
+          </main>
         </div>
       </div>
     </ToastProvider>
   );
 };
-
-

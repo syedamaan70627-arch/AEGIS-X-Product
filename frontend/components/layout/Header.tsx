@@ -15,7 +15,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onOpenMobileNav }) => {
   const router = useRouter();
-  const { user, signOut, isConfigured } = useAuth();
+  const { user, authenticated, loading: authLoading, signOut, isConfigured } = useAuth();
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [me, setMe] = useState<UserMe | null>(null);
   const [loading, setLoading] = useState(true);
@@ -26,6 +26,10 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileNav }) => {
 
   useEffect(() => {
     async function loadHeaderTelemetry() {
+      if (authLoading || !authenticated) {
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       try {
         const [st, _, meRes] = await Promise.all([
@@ -41,7 +45,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileNav }) => {
       }
     }
     loadHeaderTelemetry();
-  }, []);
+  }, [authLoading, authenticated]);
 
   // Dropdown click-outside & Escape key handler
   useEffect(() => {

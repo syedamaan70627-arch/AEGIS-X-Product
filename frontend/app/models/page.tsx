@@ -17,7 +17,7 @@ import { CheckCircle2, Layers, Plus, Search, ShieldAlert, XCircle } from "lucide
 
 export default function ModelsPage() {
   const toast = useToast();
-  const { loading: authLoading } = useAuth();
+  const { loading: authLoading, authenticated } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [models, setModels] = useState<ModelRecord[]>([]);
@@ -35,7 +35,7 @@ export default function ModelsPage() {
   useEffect(() => {
     let active = true;
     async function load() {
-      if (authLoading) return;
+      if (authLoading || !authenticated) return;
       setLoading(true);
       setError(null);
       try {
@@ -51,7 +51,7 @@ export default function ModelsPage() {
     return () => {
       active = false;
     };
-  }, [authLoading]);
+  }, [authLoading, authenticated]);
 
   const fetchModels = async () => {
     setLoading(true);

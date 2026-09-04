@@ -18,7 +18,7 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { Info, Layers, LineChart, ShieldCheck } from "lucide-react";
 
 export default function ReliabilityPage() {
-  const { loading: authLoading } = useAuth();
+  const { loading: authLoading, authenticated } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [models, setModels] = useState<ModelRecord[]>([]);
@@ -29,7 +29,7 @@ export default function ReliabilityPage() {
 
   useEffect(() => {
     async function loadModels() {
-      if (authLoading) return;
+      if (authLoading || !authenticated) return;
       setLoading(true);
       setError(null);
       try {
@@ -47,7 +47,7 @@ export default function ReliabilityPage() {
       }
     }
     loadModels();
-  }, [authLoading]);
+  }, [authLoading, authenticated]);
 
   useEffect(() => {
     async function loadAnalyses() {
