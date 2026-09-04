@@ -40,6 +40,7 @@ class CapabilityService:
                     "failure_memory": CapabilityStatusDetail(status="NOT_READY", reason=f"Model '{model_id}' not found."),
                     "failure_prediction": CapabilityStatusDetail(status="NOT_READY", reason=f"Model '{model_id}' not found."),
                     "early_warning": CapabilityStatusDetail(status="NOT_READY", reason=f"Model '{model_id}' not found."),
+                    "reliability_governance": CapabilityStatusDetail(status="NOT_READY", reason=f"Model '{model_id}' not found."),
                 },
             )
 
@@ -77,6 +78,9 @@ class CapabilityService:
         warn_status = "READY" if has_warn else "REQUIRES_SETUP"
         warn_reason = None if has_warn else "Early Warning engine artifact not fitted for this deployment."
 
+        gov_status = "READY"
+        gov_reason = None
+
         return ModelCapabilitiesResponse(
             model_id=model_id,
             capabilities={
@@ -86,5 +90,7 @@ class CapabilityService:
                 "failure_memory": CapabilityStatusDetail(status=mem_status, reason=mem_reason),
                 "failure_prediction": CapabilityStatusDetail(status=pred_status, reason=pred_reason),
                 "early_warning": CapabilityStatusDetail(status=warn_status, reason=warn_reason),
+                "reliability_governance": CapabilityStatusDetail(status=gov_status, reason=gov_reason),
             },
         )
+

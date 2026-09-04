@@ -24,6 +24,7 @@ from api.routes import (
     readiness,
     stress,
     warning,
+    governance,
 )
 
 # Ensure storage directories and database tables exist on module import
@@ -49,7 +50,8 @@ app = FastAPI(
         "- Fault Injection & Failure Explorer (Sensor Bias, Gain Error, Stuck-At, Channel Swap, Sign Inversion)\n"
         "- Failure Memory (Unsupervised Failure Signature Centroids & Matcher)\n"
         "- Failure Prediction (Onset-Aware Next-Step Prediction)\n"
-        "- Early Warning (Multi-Signal Temporal Lead Evaluation)\n\n"
+        "- Early Warning (Multi-Signal Temporal Lead Evaluation)\n"
+        "- Evidence-Calibrated Reliability Governance (ECRG Conformal Risk Control & Anti-Flapping)\n\n"
         "SECURITY WARNING: Uploaded model files (.joblib or .pkl) are deserialized using Python pickle. "
         "Model files MUST only be uploaded from trusted sources."
     ),
@@ -86,6 +88,8 @@ app.include_router(faults.router)
 app.include_router(memory.router)
 app.include_router(prediction.router)
 app.include_router(warning.router)
+app.include_router(governance.router)
+
 
 
 if __name__ == "__main__":

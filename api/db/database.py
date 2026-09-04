@@ -14,12 +14,19 @@ from api.core.config import settings
 
 
 def get_db_connection(db_path: Path = settings.DB_PATH) -> sqlite3.Connection:
-    """Create and configure a SQLite connection with Row factory and busy timeout."""
+    """Create and configure a SQLite connection with Row factory, WAL mode, autocommit, and busy timeout."""
     db_path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(str(db_path), timeout=30.0, check_same_thread=False)
+    conn = sqlite3.connect(str(db_path), timeout=60.0, check_same_thread=False, isolation_level=None)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON;")
+    conn.execute("PRAGMA busy_timeout = 60000;")
+    try:
+        conn.execute("PRAGMA journal_mode = WAL;")
+    except Exception:
+        pass
     return conn
+
+
 
 
 @contextmanager
@@ -215,5 +222,53 @@ def init_db() -> None:
             );
         """)
 
-        for tbl in ["models", "datasets", "reference_states", "analyses", "stress_tests", "fault_tests", "failure_memories", "predictions", "warnings"]:
+        # Governance Evaluations table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS governance_evaluations (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL DEFAULT 'local_dev_user',
+                model_id TEXT NOT NULL,
+                analysis_id TEXT,
+                decision_id TEXT NOT NULL,
+                state_index INTEGER NOT NULL,
+                operating_mode TEXT NOT NULL,
+                raw_action TEXT NOT NULL,
+                effective_action TEXT NOT NULL,
+                previous_effective_action TEXT,
+                transition_occurred INTEGER NOT NULL DEFAULT 0,
+                transition_reason TEXT,
+                p_adverse REAL,
+                prediction_set_json TEXT,
+                reason_codes_json TEXT,
+                calibrated INTEGER NOT NULL DEFAULT 0,
+                calibrator_artifact_id TEXT,
+                calibrator_artifact_sha256 TEXT,
+                evidence_snapshot_hash TEXT NOT NULL,
+                result_path TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY(model_id) REFERENCES models(id) ON DELETE CASCADE
+            );
+        """)
+
+        # Governance Transitions Audit Log table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS governance_transitions (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL DEFAULT 'local_dev_user',
+                model_id TEXT NOT NULL,
+                evaluation_id TEXT NOT NULL,
+                state_index INTEGER NOT NULL,
+                previous_state TEXT,
+                new_state TEXT NOT NULL,
+                raw_action TEXT NOT NULL,
+                transition_reason TEXT NOT NULL,
+                evidence_snapshot_hash TEXT NOT NULL,
+                calibrated INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY(model_id) REFERENCES models(id) ON DELETE CASCADE,
+                FOREIGN KEY(evaluation_id) REFERENCES governance_evaluations(id) ON DELETE CASCADE
+            );
+        """)
+
+        for tbl in ["models", "datasets", "reference_states", "analyses", "stress_tests", "fault_tests", "failure_memories", "predictions", "warnings", "governance_evaluations", "governance_transitions"]:
             _ensure_user_id_column(conn, tbl)

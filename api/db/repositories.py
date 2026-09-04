@@ -13,6 +13,7 @@ from api.db.base import (
     IDatasetRepository,
     IFailureMemoryRepository,
     IFaultTestRepository,
+    IGovernanceRepository,
     IModelRepository,
     IPredictionRepository,
     IReferenceStateRepository,
@@ -24,6 +25,8 @@ from api.db.models import (
     DatasetRecord,
     FailureMemoryRecord,
     FaultTestRecord,
+    GovernanceEvaluationRecord,
+    GovernanceTransitionRecord,
     ModelRecord,
     PredictionRecord,
     ReferenceStateRecord,
@@ -738,7 +741,6 @@ class WarningRepository(IWarningRepository):
         else:
             query = "SELECT * FROM warnings WHERE model_id = ? ORDER BY created_at DESC;"
             cursor = self.conn.execute(query, (model_id,))
-        rows = cursor.fetchall()
         return [
             WarningRecord(
                 id=row["id"],
@@ -753,3 +755,231 @@ class WarningRepository(IWarningRepository):
             )
             for row in rows
         ]
+
+
+class GovernanceRepository(IGovernanceRepository):
+    """SQLite repository for managing Governance Evaluation and Transition records."""
+
+    def __init__(self, conn: sqlite3.Connection) -> None:
+        self.conn = conn
+
+    def create_evaluation(self, record: GovernanceEvaluationRecord) -> GovernanceEvaluationRecord:
+        query = """
+            INSERT INTO governance_evaluations (
+                id, user_id, model_id, analysis_id, decision_id, state_index, operating_mode,
+                raw_action, effective_action, previous_effective_action, transition_occurred,
+                transition_reason, p_adverse, prediction_set_json, reason_codes_json,
+                calibrated, calibrator_artifact_id, calibrator_artifact_sha256,
+                evidence_snapshot_hash, result_path, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        """
+        self.conn.execute(
+            query,
+            (
+                record.id,
+                record.user_id,
+                record.model_id,
+                record.analysis_id,
+                record.decision_id,
+                record.state_index,
+                record.operating_mode,
+                record.raw_action,
+                record.effective_action,
+                record.previous_effective_action,
+                1 if record.transition_occurred else 0,
+                record.transition_reason,
+                record.p_adverse,
+                record.prediction_set_json,
+                record.reason_codes_json,
+                1 if record.calibrated else 0,
+                record.calibrator_artifact_id,
+                record.calibrator_artifact_sha256,
+                record.evidence_snapshot_hash,
+                record.result_path,
+                record.created_at,
+            ),
+        )
+        self.conn.commit()
+        return record
+
+    def create_transition(self, record: GovernanceTransitionRecord) -> GovernanceTransitionRecord:
+        query = """
+            INSERT INTO governance_transitions (
+                id, user_id, model_id, evaluation_id, state_index, previous_state,
+                new_state, raw_action, transition_reason, evidence_snapshot_hash,
+                calibrated, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        """
+        self.conn.execute(
+            query,
+            (
+                record.id,
+                record.user_id,
+                record.model_id,
+                record.evaluation_id,
+                record.state_index,
+                record.previous_state,
+                record.new_state,
+                record.raw_action,
+                record.transition_reason,
+                record.evidence_snapshot_hash,
+                1 if record.calibrated else 0,
+                record.created_at,
+            ),
+        )
+        self.conn.commit()
+        return record
+
+    def get_evaluation_by_id(self, evaluation_id: str, owner_id: Optional[str] = None) -> Optional[GovernanceEvaluationRecord]:
+        if owner_id:
+            query = "SELECT * FROM governance_evaluations WHERE id = ? AND user_id = ?;"
+            cursor = self.conn.execute(query, (evaluation_id, owner_id))
+        else:
+            query = "SELECT * FROM governance_evaluations WHERE id = ?;"
+            cursor = self.conn.execute(query, (evaluation_id,))
+        row = cursor.fetchone()
+        if not row:
+            return None
+        return GovernanceEvaluationRecord(
+            id=row["id"],
+            user_id=row["user_id"] if "user_id" in row.keys() else "local_dev_user",
+            model_id=row["model_id"],
+            analysis_id=row["analysis_id"],
+            decision_id=row["decision_id"],
+            state_index=row["state_index"],
+            operating_mode=row["operating_mode"],
+            raw_action=row["raw_action"],
+            effective_action=row["effective_action"],
+            previous_effective_action=row["previous_effective_action"],
+            transition_occurred=bool(row["transition_occurred"]),
+            transition_reason=row["transition_reason"],
+            p_adverse=row["p_adverse"],
+            prediction_set_json=row["prediction_set_json"],
+            reason_codes_json=row["reason_codes_json"],
+            calibrated=bool(row["calibrated"]),
+            calibrator_artifact_id=row["calibrator_artifact_id"],
+            calibrator_artifact_sha256=row["calibrator_artifact_sha256"],
+            evidence_snapshot_hash=row["evidence_snapshot_hash"],
+            result_path=row["result_path"],
+            created_at=row["created_at"],
+        )
+
+    def get_latest_evaluation(self, model_id: str, owner_id: Optional[str] = None) -> Optional[GovernanceEvaluationRecord]:
+        if owner_id:
+            query = "SELECT * FROM governance_evaluations WHERE model_id = ? AND user_id = ? ORDER BY created_at DESC LIMIT 1;"
+            cursor = self.conn.execute(query, (model_id, owner_id))
+        else:
+            query = "SELECT * FROM governance_evaluations WHERE model_id = ? ORDER BY created_at DESC LIMIT 1;"
+            cursor = self.conn.execute(query, (model_id,))
+        row = cursor.fetchone()
+        if not row:
+            return None
+        return GovernanceEvaluationRecord(
+            id=row["id"],
+            user_id=row["user_id"] if "user_id" in row.keys() else "local_dev_user",
+            model_id=row["model_id"],
+            analysis_id=row["analysis_id"],
+            decision_id=row["decision_id"],
+            state_index=row["state_index"],
+            operating_mode=row["operating_mode"],
+            raw_action=row["raw_action"],
+            effective_action=row["effective_action"],
+            previous_effective_action=row["previous_effective_action"],
+            transition_occurred=bool(row["transition_occurred"]),
+            transition_reason=row["transition_reason"],
+            p_adverse=row["p_adverse"],
+            prediction_set_json=row["prediction_set_json"],
+            reason_codes_json=row["reason_codes_json"],
+            calibrated=bool(row["calibrated"]),
+            calibrator_artifact_id=row["calibrator_artifact_id"],
+            calibrator_artifact_sha256=row["calibrator_artifact_sha256"],
+            evidence_snapshot_hash=row["evidence_snapshot_hash"],
+            result_path=row["result_path"],
+            created_at=row["created_at"],
+        )
+
+    def list_evaluations(self, model_id: str, owner_id: Optional[str] = None, limit: int = 50, offset: int = 0) -> List[GovernanceEvaluationRecord]:
+        if owner_id:
+            query = "SELECT * FROM governance_evaluations WHERE model_id = ? AND user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?;"
+            cursor = self.conn.execute(query, (model_id, owner_id, limit, offset))
+        else:
+            query = "SELECT * FROM governance_evaluations WHERE model_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?;"
+            cursor = self.conn.execute(query, (model_id, limit, offset))
+        rows = cursor.fetchall()
+        return [
+            GovernanceEvaluationRecord(
+                id=row["id"],
+                user_id=row["user_id"] if "user_id" in row.keys() else "local_dev_user",
+                model_id=row["model_id"],
+                analysis_id=row["analysis_id"],
+                decision_id=row["decision_id"],
+                state_index=row["state_index"],
+                operating_mode=row["operating_mode"],
+                raw_action=row["raw_action"],
+                effective_action=row["effective_action"],
+                previous_effective_action=row["previous_effective_action"],
+                transition_occurred=bool(row["transition_occurred"]),
+                transition_reason=row["transition_reason"],
+                p_adverse=row["p_adverse"],
+                prediction_set_json=row["prediction_set_json"],
+                reason_codes_json=row["reason_codes_json"],
+                calibrated=bool(row["calibrated"]),
+                calibrator_artifact_id=row["calibrator_artifact_id"],
+                calibrator_artifact_sha256=row["calibrator_artifact_sha256"],
+                evidence_snapshot_hash=row["evidence_snapshot_hash"],
+                result_path=row["result_path"],
+                created_at=row["created_at"],
+            )
+            for row in rows
+        ]
+
+    list_evaluations_by_model = list_evaluations
+
+    def list_transitions(self, model_id: str, owner_id: Optional[str] = None, limit: int = 50, offset: int = 0) -> List[GovernanceTransitionRecord]:
+        if owner_id:
+            query = "SELECT * FROM governance_transitions WHERE model_id = ? AND user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?;"
+            cursor = self.conn.execute(query, (model_id, owner_id, limit, offset))
+        else:
+            query = "SELECT * FROM governance_transitions WHERE model_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?;"
+            cursor = self.conn.execute(query, (model_id, limit, offset))
+        rows = cursor.fetchall()
+        return [
+            GovernanceTransitionRecord(
+                id=row["id"],
+                user_id=row["user_id"] if "user_id" in row.keys() else "local_dev_user",
+                model_id=row["model_id"],
+                evaluation_id=row["evaluation_id"],
+                state_index=row["state_index"],
+                previous_state=row["previous_state"],
+                new_state=row["new_state"],
+                raw_action=row["raw_action"],
+                transition_reason=row["transition_reason"],
+                evidence_snapshot_hash=row["evidence_snapshot_hash"],
+                calibrated=bool(row["calibrated"]),
+                created_at=row["created_at"],
+            )
+            for row in rows
+        ]
+
+    list_transitions_by_model = list_transitions
+
+
+    def count_evaluations_by_model(self, model_id: str, owner_id: Optional[str] = None) -> int:
+        if owner_id:
+            query = "SELECT COUNT(*) as cnt FROM governance_evaluations WHERE model_id = ? AND user_id = ?;"
+            cursor = self.conn.execute(query, (model_id, owner_id))
+        else:
+            query = "SELECT COUNT(*) as cnt FROM governance_evaluations WHERE model_id = ?;"
+            cursor = self.conn.execute(query, (model_id,))
+        row = cursor.fetchone()
+        return row["cnt"] if row else 0
+
+    def count_transitions_by_model(self, model_id: str, owner_id: Optional[str] = None) -> int:
+        if owner_id:
+            query = "SELECT COUNT(*) as cnt FROM governance_transitions WHERE model_id = ? AND user_id = ?;"
+            cursor = self.conn.execute(query, (model_id, owner_id))
+        else:
+            query = "SELECT COUNT(*) as cnt FROM governance_transitions WHERE model_id = ?;"
+            cursor = self.conn.execute(query, (model_id,))
+        row = cursor.fetchone()
+        return row["cnt"] if row else 0

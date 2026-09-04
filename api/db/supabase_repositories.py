@@ -15,6 +15,7 @@ from api.db.base import (
     IDatasetRepository,
     IFailureMemoryRepository,
     IFaultTestRepository,
+    IGovernanceRepository,
     IModelRepository,
     IPredictionRepository,
     IReferenceStateRepository,
@@ -26,6 +27,8 @@ from api.db.models import (
     DatasetRecord,
     FailureMemoryRecord,
     FaultTestRecord,
+    GovernanceEvaluationRecord,
+    GovernanceTransitionRecord,
     ModelRecord,
     PredictionRecord,
     ReferenceStateRecord,
@@ -623,3 +626,209 @@ class SupabaseWarningRepository(BaseSupabaseRepository, IWarningRepository):
             )
             for row in res.json()
         ]
+
+
+class SupabaseGovernanceRepository(BaseSupabaseRepository, IGovernanceRepository):
+    def create_evaluation(self, record: GovernanceEvaluationRecord) -> GovernanceEvaluationRecord:
+        payload = {
+            "id": record.id,
+            "user_id": record.user_id,
+            "model_id": record.model_id,
+            "analysis_id": record.analysis_id,
+            "decision_id": record.decision_id,
+            "state_index": record.state_index,
+            "operating_mode": record.operating_mode,
+            "raw_action": record.raw_action,
+            "effective_action": record.effective_action,
+            "previous_effective_action": record.previous_effective_action,
+            "transition_occurred": record.transition_occurred,
+            "transition_reason": record.transition_reason,
+            "p_adverse": record.p_adverse,
+            "prediction_set_json": record.prediction_set_json,
+            "reason_codes_json": record.reason_codes_json,
+            "calibrated": record.calibrated,
+            "calibrator_artifact_id": record.calibrator_artifact_id,
+            "calibrator_artifact_sha256": record.calibrator_artifact_sha256,
+            "evidence_snapshot_hash": record.evidence_snapshot_hash,
+            "result_path": record.result_path,
+            "created_at": record.created_at,
+        }
+        res = self.client.post(f"{self.url}/governance_evaluations", headers=self.headers, json=payload)
+        res.raise_for_status()
+        return record
+
+    def create_transition(self, record: GovernanceTransitionRecord) -> GovernanceTransitionRecord:
+        payload = {
+            "id": record.id,
+            "user_id": record.user_id,
+            "model_id": record.model_id,
+            "evaluation_id": record.evaluation_id,
+            "state_index": record.state_index,
+            "previous_state": record.previous_state,
+            "new_state": record.new_state,
+            "raw_action": record.raw_action,
+            "transition_reason": record.transition_reason,
+            "evidence_snapshot_hash": record.evidence_snapshot_hash,
+            "calibrated": record.calibrated,
+            "created_at": record.created_at,
+        }
+        res = self.client.post(f"{self.url}/governance_transitions", headers=self.headers, json=payload)
+        res.raise_for_status()
+        return record
+
+    def get_evaluation_by_id(self, evaluation_id: str, owner_id: Optional[str] = None) -> Optional[GovernanceEvaluationRecord]:
+        endpoint = f"{self.url}/governance_evaluations?id=eq.{evaluation_id}"
+        if owner_id:
+            endpoint += f"&user_id=eq.{owner_id}"
+        res = self.client.get(endpoint, headers=self.headers)
+        if res.status_code != 200 or not res.json():
+            return None
+        row = res.json()[0]
+        return GovernanceEvaluationRecord(
+            id=row["id"],
+            user_id=row.get("user_id", "local_dev_user"),
+            model_id=row["model_id"],
+            analysis_id=row.get("analysis_id"),
+            decision_id=row["decision_id"],
+            state_index=row["state_index"],
+            operating_mode=row["operating_mode"],
+            raw_action=row["raw_action"],
+            effective_action=row["effective_action"],
+            previous_effective_action=row.get("previous_effective_action"),
+            transition_occurred=bool(row["transition_occurred"]),
+            transition_reason=row.get("transition_reason"),
+            p_adverse=row.get("p_adverse"),
+            prediction_set_json=row.get("prediction_set_json"),
+            reason_codes_json=row.get("reason_codes_json"),
+            calibrated=bool(row.get("calibrated", False)),
+            calibrator_artifact_id=row.get("calibrator_artifact_id"),
+            calibrator_artifact_sha256=row.get("calibrator_artifact_sha256"),
+            evidence_snapshot_hash=row["evidence_snapshot_hash"],
+            result_path=row["result_path"],
+            created_at=row["created_at"],
+        )
+
+    def get_latest_evaluation(self, model_id: str, owner_id: Optional[str] = None) -> Optional[GovernanceEvaluationRecord]:
+        endpoint = f"{self.url}/governance_evaluations?model_id=eq.{model_id}&order=created_at.desc&limit=1"
+        if owner_id:
+            endpoint += f"&user_id=eq.{owner_id}"
+        res = self.client.get(endpoint, headers=self.headers)
+        if res.status_code != 200 or not res.json():
+            return None
+        row = res.json()[0]
+        return GovernanceEvaluationRecord(
+            id=row["id"],
+            user_id=row.get("user_id", "local_dev_user"),
+            model_id=row["model_id"],
+            analysis_id=row.get("analysis_id"),
+            decision_id=row["decision_id"],
+            state_index=row["state_index"],
+            operating_mode=row["operating_mode"],
+            raw_action=row["raw_action"],
+            effective_action=row["effective_action"],
+            previous_effective_action=row.get("previous_effective_action"),
+            transition_occurred=bool(row["transition_occurred"]),
+            transition_reason=row.get("transition_reason"),
+            p_adverse=row.get("p_adverse"),
+            prediction_set_json=row.get("prediction_set_json"),
+            reason_codes_json=row.get("reason_codes_json"),
+            calibrated=bool(row.get("calibrated", False)),
+            calibrator_artifact_id=row.get("calibrator_artifact_id"),
+            calibrator_artifact_sha256=row.get("calibrator_artifact_sha256"),
+            evidence_snapshot_hash=row["evidence_snapshot_hash"],
+            result_path=row["result_path"],
+            created_at=row["created_at"],
+        )
+
+    def list_evaluations_by_model(self, model_id: str, owner_id: Optional[str] = None, limit: int = 50, offset: int = 0) -> List[GovernanceEvaluationRecord]:
+        endpoint = f"{self.url}/governance_evaluations?model_id=eq.{model_id}&order=created_at.desc&limit={limit}&offset={offset}"
+        if owner_id:
+            endpoint += f"&user_id=eq.{owner_id}"
+        res = self.client.get(endpoint, headers=self.headers)
+        if res.status_code != 200:
+            return []
+        return [
+            GovernanceEvaluationRecord(
+                id=row["id"],
+                user_id=row.get("user_id", "local_dev_user"),
+                model_id=row["model_id"],
+                analysis_id=row.get("analysis_id"),
+                decision_id=row["decision_id"],
+                state_index=row["state_index"],
+                operating_mode=row["operating_mode"],
+                raw_action=row["raw_action"],
+                effective_action=row["effective_action"],
+                previous_effective_action=row.get("previous_effective_action"),
+                transition_occurred=bool(row["transition_occurred"]),
+                transition_reason=row.get("transition_reason"),
+                p_adverse=row.get("p_adverse"),
+                prediction_set_json=row.get("prediction_set_json"),
+                reason_codes_json=row.get("reason_codes_json"),
+                calibrated=bool(row.get("calibrated", False)),
+                calibrator_artifact_id=row.get("calibrator_artifact_id"),
+                calibrator_artifact_sha256=row.get("calibrator_artifact_sha256"),
+                evidence_snapshot_hash=row["evidence_snapshot_hash"],
+                result_path=row["result_path"],
+                created_at=row["created_at"],
+            )
+            for row in res.json()
+        ]
+
+    list_evaluations = list_evaluations_by_model
+
+
+    def list_transitions_by_model(self, model_id: str, owner_id: Optional[str] = None, limit: int = 50, offset: int = 0) -> List[GovernanceTransitionRecord]:
+        endpoint = f"{self.url}/governance_transitions?model_id=eq.{model_id}&order=created_at.desc&limit={limit}&offset={offset}"
+        if owner_id:
+            endpoint += f"&user_id=eq.{owner_id}"
+        res = self.client.get(endpoint, headers=self.headers)
+        if res.status_code != 200:
+            return []
+        return [
+            GovernanceTransitionRecord(
+                id=row["id"],
+                user_id=row.get("user_id", "local_dev_user"),
+                model_id=row["model_id"],
+                evaluation_id=row["evaluation_id"],
+                state_index=row["state_index"],
+                previous_state=row.get("previous_state"),
+                new_state=row["new_state"],
+                raw_action=row["raw_action"],
+                transition_reason=row["transition_reason"],
+                evidence_snapshot_hash=row["evidence_snapshot_hash"],
+                calibrated=bool(row.get("calibrated", False)),
+                created_at=row["created_at"],
+            )
+            for row in res.json()
+        ]
+
+    list_transitions = list_transitions_by_model
+
+
+    def count_evaluations_by_model(self, model_id: str, owner_id: Optional[str] = None) -> int:
+        endpoint = f"{self.url}/governance_evaluations?model_id=eq.{model_id}"
+        if owner_id:
+            endpoint += f"&user_id=eq.{owner_id}"
+        headers = {**self.headers, "Prefer": "count=exact"}
+        res = self.client.get(endpoint, headers=headers)
+        range_header = res.headers.get("Content-Range", "")
+        if "/" in range_header:
+            try:
+                return int(range_header.split("/")[-1])
+            except ValueError:
+                pass
+        return len(res.json()) if res.status_code == 200 else 0
+
+    def count_transitions_by_model(self, model_id: str, owner_id: Optional[str] = None) -> int:
+        endpoint = f"{self.url}/governance_transitions?model_id=eq.{model_id}"
+        if owner_id:
+            endpoint += f"&user_id=eq.{owner_id}"
+        headers = {**self.headers, "Prefer": "count=exact"}
+        res = self.client.get(endpoint, headers=headers)
+        range_header = res.headers.get("Content-Range", "")
+        if "/" in range_header:
+            try:
+                return int(range_header.split("/")[-1])
+            except ValueError:
+                pass
+        return len(res.json()) if res.status_code == 200 else 0

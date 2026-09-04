@@ -90,8 +90,10 @@ export interface ModelCapabilitiesResponse {
     failure_memory: CapabilityStatusDetail;
     failure_prediction: CapabilityStatusDetail;
     early_warning: CapabilityStatusDetail;
+    reliability_governance?: CapabilityStatusDetail;
   };
 }
+
 
 export interface SignalDetail {
   status: string;
@@ -355,3 +357,77 @@ export interface ApiErrorEnvelope {
     details?: Record<string, any> | null;
   };
 }
+
+export type ECRGOperatingMode = "EVIDENCE_ONLY" | "CALIBRATED_GOVERNANCE";
+export type ECRGGovernanceAction = "CONTINUE" | "WATCH" | "DEFER" | "ESCALATE";
+
+export interface GovernanceEvaluationRequest {
+  model_id: string;
+  dataset_id: string;
+  trajectory_id?: string | null;
+  state_index?: number;
+  timestamp?: string | null;
+  source_analysis_id?: string | null;
+  ood_score: number;
+  uncertainty_score: number;
+  drift_score: number;
+  fused_risk: number;
+  signal_disagreement?: number;
+  ood_drift_redundancy?: number;
+  stress_robustness?: number;
+  fault_sensitivity?: number;
+  memory_similarity?: number;
+  temporal_failure_probability?: number;
+  early_warning_state?: string;
+  prediction_horizon?: number;
+  eventual_failure?: boolean | null;
+  failure_within_horizon?: boolean | null;
+  mode?: ECRGOperatingMode;
+  target_risk_alpha?: number;
+}
+
+export interface GovernanceEvaluationResponse {
+  evaluation_id: string;
+  model_id: string;
+  user_id: string;
+  dataset_id: string;
+  mode: ECRGOperatingMode;
+  action: ECRGGovernanceAction;
+  warning_severity: "LOW" | "MODERATE" | "HIGH" | "CRITICAL";
+  certification_banner: string;
+  calibrated: boolean;
+  primary_supporting_signal: string;
+  supporting_evidence: string[];
+  contradictory_evidence: string[];
+  signal_disagreement_index: number;
+  consecutive_state_count: number;
+  in_cooldown: boolean;
+  state_transition_occurred: boolean;
+  evidence_snapshot_hash: string;
+  p_adverse: number;
+  transition_reason: string;
+  reason_codes: string[];
+  result_json_path?: string | null;
+  created_at: string;
+}
+
+export interface GovernanceStatusResponse {
+  model_id: string;
+  latest_action: ECRGGovernanceAction;
+  mode: ECRGOperatingMode;
+  warning_severity: "LOW" | "MODERATE" | "HIGH" | "CRITICAL";
+  consecutive_state_count: number;
+  in_cooldown: boolean;
+  last_evaluated_at: string;
+  total_evaluations: number;
+  total_transitions: number;
+}
+
+export interface GovernanceHistoryResponse {
+  model_id: string;
+  total: number;
+  limit: number;
+  offset: number;
+  evaluations: GovernanceEvaluationResponse[];
+}
+

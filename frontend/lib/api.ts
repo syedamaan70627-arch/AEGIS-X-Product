@@ -27,7 +27,12 @@ import {
   UserMe,
   WarningEvaluationResponse,
   WarningResponse,
+  GovernanceEvaluationRequest,
+  GovernanceEvaluationResponse,
+  GovernanceStatusResponse,
+  GovernanceHistoryResponse,
 } from "@/types/api";
+
 
 import { getEnvConfig } from "@/lib/config";
 
@@ -402,5 +407,28 @@ export const api = {
       body: JSON.stringify(body || {}),
     });
   },
+
+  // Reliability Governance
+  evaluateGovernance: async (body: GovernanceEvaluationRequest): Promise<GovernanceEvaluationResponse> => {
+    return authenticatedFetch<GovernanceEvaluationResponse>(`${getBASE_URL()}/governance/evaluate`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  },
+
+  getGovernanceStatus: async (modelId: string): Promise<GovernanceStatusResponse> => {
+    return authenticatedFetch<GovernanceStatusResponse>(`${getBASE_URL()}/governance/${modelId}/status`);
+  },
+
+  getGovernanceHistory: async (
+    modelId: string,
+    limit: number = 50,
+    offset: number = 0
+  ): Promise<GovernanceHistoryResponse> => {
+    return authenticatedFetch<GovernanceHistoryResponse>(
+      `${getBASE_URL()}/governance/${modelId}/history?limit=${limit}&offset=${offset}`
+    );
+  },
 };
+
 

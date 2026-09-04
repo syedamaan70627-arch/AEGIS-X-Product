@@ -18,6 +18,7 @@ from api.db.base import (
     IReferenceStateRepository,
     IStressTestRepository,
     IWarningRepository,
+    IGovernanceRepository,
 )
 from api.db.database import get_db_connection
 from api.db.repositories import (
@@ -30,6 +31,7 @@ from api.db.repositories import (
     ReferenceStateRepository,
     StressTestRepository,
     WarningRepository,
+    GovernanceRepository,
 )
 from api.db.supabase_repositories import (
     SupabaseAnalysisRepository,
@@ -41,6 +43,7 @@ from api.db.supabase_repositories import (
     SupabaseReferenceStateRepository,
     SupabaseStressTestRepository,
     SupabaseWarningRepository,
+    SupabaseGovernanceRepository,
 )
 from api.storage.base import IStorageProvider
 from api.storage.local_storage import LocalStorageProvider
@@ -106,3 +109,10 @@ def get_warning_repository(conn: Optional[sqlite3.Connection] = None) -> IWarnin
     if settings.DATABASE_BACKEND == "supabase":
         return SupabaseWarningRepository()
     return WarningRepository(conn or get_db_connection())
+
+
+def get_governance_repository(conn: Optional[sqlite3.Connection] = None) -> IGovernanceRepository:
+    if settings.DATABASE_BACKEND == "supabase":
+        return SupabaseGovernanceRepository()
+    return GovernanceRepository(conn or get_db_connection())
+

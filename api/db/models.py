@@ -133,3 +133,44 @@ class WarningRecord:
     created_at: str
     user_id: str = "local_dev_user"
     warning_score: Optional[float] = None
+
+
+@dataclass
+class GovernanceEvaluationRecord:
+    id: str
+    model_id: str
+    decision_id: str
+    state_index: int
+    operating_mode: str
+    raw_action: str
+    effective_action: str
+    transition_occurred: bool
+    evidence_snapshot_hash: str
+    result_path: str
+    created_at: str
+    user_id: str = "local_dev_user"
+    analysis_id: Optional[str] = None
+    previous_effective_action: Optional[str] = None
+    transition_reason: Optional[str] = None
+    p_adverse: Optional[float] = None
+    prediction_set_json: Optional[str] = None
+    reason_codes_json: Optional[str] = None
+    calibrated: bool = False
+    calibrator_artifact_id: Optional[str] = None
+    calibrator_artifact_sha256: Optional[str] = None
+
+
+@dataclass
+class GovernanceTransitionRecord:
+    id: str
+    model_id: str
+    evaluation_id: str
+    state_index: int
+    new_state: str
+    raw_action: str
+    transition_reason: str
+    evidence_snapshot_hash: str
+    created_at: str
+    user_id: str = "local_dev_user"
+    previous_state: Optional[str] = None
+    calibrated: bool = False
