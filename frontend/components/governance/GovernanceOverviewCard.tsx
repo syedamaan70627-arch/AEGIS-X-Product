@@ -182,20 +182,25 @@ export function GovernanceOverviewCard({
               <RefreshCw className="w-4 h-4 animate-spin text-indigo-400" />
               <span>Loading state...</span>
             </div>
-          ) : activeAction ? (
+          ) : (latestEval || (status && status.total_evaluations > 0)) ? (
             <div className="space-y-2">
-              <GovernanceBadge action={activeAction} size="lg" />
+              <GovernanceBadge action={activeAction || "CONTINUE"} size="lg" />
               <p className="text-xs text-slate-400 leading-relaxed font-sans pt-1">
                 {activeAction === "CONTINUE" && "Model operating nominally. Full automation permitted."}
                 {activeAction === "WATCH" && "Minor risk anomaly. Execution allowed with high-frequency logging."}
                 {activeAction === "DEFER" && "High risk detected. Execution deferred pending operator approval."}
                 {activeAction === "ESCALATE" && "Critical risk or corrupted evidence. Automation strictly disabled."}
-
               </p>
             </div>
           ) : (
-            <div className="text-xs font-mono text-slate-500 italic py-2">
-              Unevaluated (Run evaluation above)
+            <div className="p-3 bg-amber-950/30 border border-amber-800/40 rounded-xl space-y-1.5">
+              <div className="inline-flex items-center text-amber-300 font-mono text-xs font-bold space-x-1.5">
+                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                <span>GOVERNANCE NOT EVALUATED</span>
+              </div>
+              <p className="text-xs text-amber-200/80 font-sans leading-relaxed">
+                No governance evaluation recorded for this model. Click &quot;Evaluate Governance&quot; to run conformal risk analysis. Unrestricted automation is not certified.
+              </p>
             </div>
           )}
         </div>

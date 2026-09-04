@@ -218,8 +218,9 @@ class SupabaseDatasetRepository(BaseSupabaseRepository, IDatasetRepository):
 
 class SupabaseReferenceStateRepository(BaseSupabaseRepository, IReferenceStateRepository):
     def save_or_update(self, record: ReferenceStateRecord) -> ReferenceStateRecord:
+        existing = self.get_by_model_id(record.model_id, record.user_id)
         payload = {
-            "id": record.id,
+            "id": existing.id if existing else record.id,
             "user_id": record.user_id,
             "model_id": record.model_id,
             "dataset_id": record.dataset_id,
@@ -228,10 +229,24 @@ class SupabaseReferenceStateRepository(BaseSupabaseRepository, IReferenceStateRe
             "num_samples": record.num_samples,
             "fitted_at": record.fitted_at,
         }
-        headers = {**self.headers, "Prefer": "resolution=merge-duplicates"}
-        res = self.client.post(f"{self.url}/reference_states", headers=headers, json=payload)
-        res.raise_for_status()
-        return record
+        if existing:
+            patch_url = f"{self.url}/reference_states?id=eq.{existing.id}&user_id=eq.{record.user_id}"
+            res = self.client.patch(patch_url, headers=self.headers, json=payload)
+            res.raise_for_status()
+            return ReferenceStateRecord(
+                id=existing.id,
+                user_id=record.user_id,
+                model_id=record.model_id,
+                dataset_id=record.dataset_id,
+                artifact_path=record.artifact_path,
+                feature_names=record.feature_names,
+                num_samples=record.num_samples,
+                fitted_at=record.fitted_at,
+            )
+        else:
+            res = self.client.post(f"{self.url}/reference_states", headers=self.headers, json=payload)
+            res.raise_for_status()
+            return record
 
     def get_by_model_id(self, model_id: str, owner_id: Optional[str] = None) -> Optional[ReferenceStateRecord]:
         endpoint = f"{self.url}/reference_states?model_id=eq.{model_id}"
