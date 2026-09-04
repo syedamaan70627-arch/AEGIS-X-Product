@@ -16,7 +16,7 @@ export const SectionCard: React.FC<SectionCardProps> = ({
   className = "",
 }) => {
   return (
-    <div className={`bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm ${className}`}>
+    <div className={`bg-[#0e131f] border border-slate-800/80 rounded-xl p-5 shadow-sm ${className}`}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-5 border-b border-slate-800/80 gap-2">
         <div>
           <h3 className="text-sm sm:text-base font-bold text-slate-100 tracking-tight">{title}</h3>

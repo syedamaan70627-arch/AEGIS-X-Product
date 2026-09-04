@@ -94,7 +94,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileNav }) => {
   const authModeLabel = isConfigured ? "Supabase Auth" : isVercel ? "Vercel Session" : "Local Context";
 
   return (
-    <header className="h-16 bg-slate-950 border-b border-slate-800 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 select-none">
+    <header className="h-16 bg-[#090d16] border-b border-slate-800/80 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 select-none">
       <div className="flex items-center space-x-3">
         {onOpenMobileNav && (
           <button
@@ -114,7 +114,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileNav }) => {
 
       <div className="flex items-center space-x-3 sm:space-x-4 text-xs">
         {/* Backend Connection Indicator */}
-        <div className="flex items-center space-x-2 bg-slate-900/80 border border-slate-800/80 px-3 py-1.5 rounded-lg shadow-sm">
+        <div className="flex items-center space-x-2 bg-slate-900/90 border border-slate-800/80 px-3 py-1.5 rounded-lg shadow-sm">
           {loading ? (
             <>
               <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
@@ -137,10 +137,10 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileNav }) => {
         </div>
 
         {/* Database & Storage Badges */}
-        <div className="hidden lg:flex items-center space-x-2 text-slate-400 bg-slate-900/80 border border-slate-800/80 px-3 py-1.5 rounded-lg font-mono text-[11px]">
-          <Database className="w-3.5 h-3.5 text-indigo-400" />
+        <div className="hidden lg:flex items-center space-x-2 text-slate-400 bg-slate-900/90 border border-slate-800/80 px-3 py-1.5 rounded-lg font-mono text-[11px]">
+          <Database className="w-3.5 h-3.5 text-cyan-400" />
           <span className="text-slate-300 font-semibold uppercase">{dbLabel}</span>
-          <span className="text-slate-600">|</span>
+          <span className="text-slate-700">|</span>
           <span className="text-slate-300 font-semibold uppercase">{storageLabel}</span>
         </div>
 
@@ -151,15 +151,15 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileNav }) => {
             onClick={() => setShowMenu(!showMenu)}
             aria-expanded={showMenu}
             aria-label="User Account Menu"
-            className="flex items-center space-x-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 px-3 py-1.5 rounded-lg text-slate-200 font-mono text-xs transition-colors focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            className="flex items-center space-x-2 bg-slate-900 hover:bg-slate-800/90 border border-slate-800 px-3 py-1.5 rounded-lg text-slate-200 font-mono text-xs transition-colors focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
           >
             <User className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
             <span className="max-w-[100px] sm:max-w-[140px] truncate">{userLabel}</span>
           </button>
 
           {showMenu && (
-            <div className="absolute right-0 mt-2 w-60 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl py-2 z-50 text-xs animate-in fade-in zoom-in-95 duration-100">
-              <div className="px-4 py-2 border-b border-slate-800 text-slate-400">
+            <div className="absolute right-0 mt-2 w-60 bg-[#0e131f] border border-slate-800/90 rounded-xl shadow-2xl py-2 z-50 text-xs animate-in fade-in zoom-in-95 duration-100">
+              <div className="px-4 py-2 border-b border-slate-800/80 text-slate-400">
                 <div className="font-semibold text-slate-200 truncate">{menuUserTitle}</div>
                 <div className="text-[10px] font-mono text-cyan-400 mt-0.5">
                   Auth Mode: {authModeLabel}
@@ -169,7 +169,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileNav }) => {
               <Link
                 href="/settings"
                 onClick={() => setShowMenu(false)}
-                className="flex items-center space-x-2.5 px-4 py-2.5 text-slate-300 hover:bg-slate-800 transition-colors"
+                className="flex items-center space-x-2.5 px-4 py-2.5 text-slate-300 hover:bg-slate-800/60 transition-colors"
               >
                 <Settings className="w-4 h-4 text-slate-400" />
                 <span>Account & Settings</span>
@@ -178,7 +178,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileNav }) => {
               <button
                 type="button"
                 onClick={handleSignOut}
-                className="w-full flex items-center space-x-2.5 px-4 py-2.5 text-rose-400 hover:bg-slate-800 transition-colors text-left font-medium"
+                className="w-full flex items-center space-x-2.5 px-4 py-2.5 text-rose-400 hover:bg-slate-800/60 transition-colors text-left font-medium"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Sign Out</span>

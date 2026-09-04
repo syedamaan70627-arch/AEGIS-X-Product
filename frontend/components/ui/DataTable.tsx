@@ -55,14 +55,14 @@ export function DataTable<T>({
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-xl border border-slate-800/80 bg-slate-900/60 shadow-xl">
+      <div className="overflow-x-auto rounded-xl border border-slate-800/80 bg-[#0e131f] shadow-md">
         <table className="w-full text-left text-xs border-collapse">
-          <thead className="bg-slate-950/80 text-slate-400 uppercase font-mono tracking-wider text-[11px] border-b border-slate-800">
+          <thead className="bg-[#050810] text-slate-400 uppercase font-mono tracking-wider text-[11px] border-b border-slate-800/80">
             <tr>
               {columns.map((col, idx) => (
                 <th
                   key={idx}
-                  className={`px-4 py-3 font-semibold ${
+                  className={`px-4 py-3.5 font-semibold ${
                     col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left"
                   } ${col.className || ""}`}
                 >
@@ -71,7 +71,7 @@ export function DataTable<T>({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/50">
+          <tbody className="divide-y divide-slate-800/60">
             {data.length === 0 ? (
               <tr>
                 <td colSpan={columns.length} className="px-4 py-12 text-center text-slate-400">
@@ -94,8 +94,8 @@ export function DataTable<T>({
                     return (
                       <td
                         key={colIdx}
-                        className={`px-4 py-3 text-slate-300 ${
-                          col.align === "right" ? "text-right font-mono" : col.align === "center" ? "text-center" : ""
+                        className={`px-4 py-3.5 text-slate-300 ${
+                          col.align === "right" ? "text-right font-mono tabular-nums" : col.align === "center" ? "text-center" : ""
                         } ${col.className || ""}`}
                       >
                         {content}

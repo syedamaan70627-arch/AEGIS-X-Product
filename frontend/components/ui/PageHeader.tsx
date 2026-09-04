@@ -28,7 +28,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
     <div className="pb-6 mb-8 border-b border-slate-800/80">
       {breadcrumbs && breadcrumbs.length > 0 && (
         <nav className="flex items-center space-x-1.5 text-xs text-slate-400 mb-2 font-mono" aria-label="Breadcrumb">
-          <Link href="/dashboard" className="hover:text-slate-200 transition-colors">
+          <Link href="/dashboard" className="hover:text-cyan-400 transition-colors">
             AEGIS-X
           </Link>
           {breadcrumbs.map((crumb, idx) => (
@@ -39,7 +39,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
                   {crumb.label}
                 </Link>
               ) : (
-                <span className="text-slate-300 font-semibold">{crumb.label}</span>
+                <span className="text-slate-300 font-medium">{crumb.label}</span>
               )}
             </React.Fragment>
           ))}
@@ -49,7 +49,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-start space-x-3.5">
           {icon && (
-            <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-indigo-400 shrink-0 mt-0.5 shadow-md shadow-slate-950/40">
+            <div className="p-2.5 rounded-xl bg-[#0e131f] border border-slate-800/80 text-cyan-400 shrink-0 mt-0.5 shadow-sm">
               {icon}
             </div>
           )}

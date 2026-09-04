@@ -106,11 +106,11 @@ export function GovernanceOverviewCard({
   const isMissingEvidence = !hasTelemetry && !status;
 
   return (
-    <div className="bg-slate-900/90 border border-slate-800/90 rounded-2xl p-6 shadow-2xl space-y-6">
+    <div className="bg-[#0e131f] border border-slate-800/80 rounded-2xl p-6 shadow-xl space-y-6">
       {/* Top Bar: Title & Evaluation Trigger Button */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-5">
         <div className="flex items-start space-x-3.5">
-          <div className="p-3 bg-indigo-950/80 border border-indigo-800/60 rounded-xl text-indigo-400 shrink-0">
+          <div className="p-3 bg-[#080c14] border border-slate-800/80 rounded-xl text-cyan-400 shrink-0">
             <ShieldCheck className="w-6 h-6" />
           </div>
           <div>
@@ -118,7 +118,7 @@ export function GovernanceOverviewCard({
               <h2 className="text-lg font-bold text-slate-100 font-mono tracking-tight">
                 Evidence-Calibrated Reliability Governance (ECRG)
               </h2>
-              <span className="px-2 py-0.5 text-[10px] font-mono font-bold bg-indigo-950 text-indigo-300 border border-indigo-800/60 rounded">
+              <span className="px-2 py-0.5 text-[10px] font-mono font-bold bg-indigo-950/80 text-indigo-300 border border-indigo-800/60 rounded">
                 MODULE 14
               </span>
             </div>
@@ -132,7 +132,7 @@ export function GovernanceOverviewCard({
         <button
           onClick={handleEvaluate}
           disabled={!hasTelemetry || evaluating}
-          className="px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-mono text-xs font-semibold rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2 shrink-0 border border-indigo-500/30"
+          className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-mono text-xs font-semibold rounded-xl shadow-md transition-all flex items-center justify-center space-x-2 shrink-0 border border-indigo-500/40"
         >
           {evaluating ? (
             <>

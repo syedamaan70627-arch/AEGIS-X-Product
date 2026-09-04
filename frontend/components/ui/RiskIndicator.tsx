@@ -23,18 +23,18 @@ export const RiskIndicator: React.FC<RiskIndicatorProps> = ({ label, value, stat
   let riskLevel = "Low";
   let barColor = "bg-emerald-500";
   let textColor = "text-emerald-400";
-  let bgStyle = "bg-emerald-950/20 border-emerald-900/40";
+  let bgStyle = "bg-emerald-950/30 border-emerald-800/50";
 
   if (score >= 0.7) {
     riskLevel = "High";
     barColor = "bg-rose-500";
     textColor = "text-rose-400";
-    bgStyle = "bg-rose-950/20 border-rose-900/40";
+    bgStyle = "bg-rose-950/30 border-rose-800/50";
   } else if (score >= 0.35) {
     riskLevel = "Moderate";
     barColor = "bg-amber-500";
     textColor = "text-amber-400";
-    bgStyle = "bg-amber-950/20 border-amber-900/40";
+    bgStyle = "bg-amber-950/30 border-amber-800/50";
   }
 
   // Label specific signal accent line
@@ -50,7 +50,7 @@ export const RiskIndicator: React.FC<RiskIndicatorProps> = ({ label, value, stat
   if (isFused) signalBadge = <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-blue-950/80 text-blue-300 border border-blue-800/60">Fused</span>;
 
   return (
-    <div className={`border rounded-xl p-4 shadow-lg transition-all ${bgStyle}`}>
+    <div className={`border rounded-xl p-4 shadow-sm transition-all ${bgStyle}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           {signalBadge}
@@ -61,10 +61,10 @@ export const RiskIndicator: React.FC<RiskIndicatorProps> = ({ label, value, stat
         </span>
       </div>
       <div className="mt-3 flex items-baseline justify-between">
-        <span className="text-2xl font-bold text-slate-100 font-sans tracking-tight">{percentage}%</span>
-        <span className="text-[11px] text-slate-400 font-mono">score: {score.toFixed(4)}</span>
+        <span className="text-2xl font-bold text-slate-100 font-mono tracking-tight tabular-nums">{percentage}%</span>
+        <span className="text-[11px] text-slate-400 font-mono tabular-nums">score: {score.toFixed(4)}</span>
       </div>
-      <div className="mt-2.5 w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800/80 p-0.5">
+      <div className="mt-2.5 w-full bg-[#080c14] rounded-full h-2 overflow-hidden border border-slate-800/80 p-0.5">
         <div className={`h-full ${barColor} rounded-full transition-all duration-500`} style={{ width: `${percentage}%` }} />
       </div>
     </div>
