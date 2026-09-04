@@ -91,6 +91,36 @@ export const getValidSessionToken = async (): Promise<string | null> => {
         activeAuthToken = data.session.access_token;
         return data.session.access_token;
       }
+
+      // Browser storage fallback when getSession() resolves null during initial hydration
+      if (typeof window !== "undefined" && window.localStorage) {
+        for (let i = 0; i < window.localStorage.length; i++) {
+          const key = window.localStorage.key(i);
+          if (key && /^sb-.*-auth-token$/.test(key)) {
+            const raw = window.localStorage.getItem(key);
+            if (raw) {
+              try {
+                const parsed = JSON.parse(raw);
+                const token = parsed?.access_token || parsed?.currentSession?.access_token;
+                const refreshToken = parsed?.refresh_token || parsed?.currentSession?.refresh_token;
+
+                if (refreshToken) {
+                  const { data: refreshData, error: refreshErr } = await supabase.auth.refreshSession({ refresh_token: refreshToken });
+                  if (!refreshErr && refreshData?.session?.access_token) {
+                    activeAuthToken = refreshData.session.access_token;
+                    return refreshData.session.access_token;
+                  }
+                }
+
+                if (token) {
+                  activeAuthToken = token;
+                  return token;
+                }
+              } catch (_) {}
+            }
+          }
+        }
+      }
     } catch (_) {}
   }
   return activeAuthToken || getStoredAuthToken();
@@ -137,13 +167,27 @@ async function authenticatedFetch<T>(
   isMultipart: boolean = false,
   isRetry: boolean = false
 ): Promise<T> {
-  const headers = await buildHeaders(isMultipart);
+  const defaultHeaders = (await buildHeaders(isMultipart)) as Record<string, string>;
+  const callerHeaders = (options.headers as Record<string, string>) || {};
+
+  const mergedHeaders: Record<string, string> = {
+    ...defaultHeaders,
+    ...callerHeaders,
+  };
+
+  if (
+    defaultHeaders["Authorization"] &&
+    (!callerHeaders["Authorization"] ||
+      callerHeaders["Authorization"] === "Bearer null" ||
+      callerHeaders["Authorization"] === "Bearer undefined" ||
+      callerHeaders["Authorization"] === "Bearer ")
+  ) {
+    mergedHeaders["Authorization"] = defaultHeaders["Authorization"];
+  }
+
   const fetchOptions: RequestInit = {
     ...options,
-    headers: {
-      ...(headers as Record<string, string>),
-      ...((options.headers as Record<string, string>) || {}),
-    },
+    headers: mergedHeaders,
   };
 
   const res = await fetch(url, fetchOptions);
@@ -151,17 +195,24 @@ async function authenticatedFetch<T>(
   if (res.status === 401 && !isRetry && isSupabaseConfigured()) {
     try {
       const supabase = getSupabaseClient();
+      let newToken: string | null = null;
+
       const { data, error } = await supabase.auth.refreshSession();
       if (!error && data?.session?.access_token) {
-        const newToken = data.session.access_token;
-        setAuthToken(newToken);
+        newToken = data.session.access_token;
+      } else {
+        newToken = await getValidSessionToken();
+      }
 
-        const newHeaders = await buildHeaders(isMultipart, newToken);
+      if (newToken) {
+        setAuthToken(newToken);
+        const retryHeaders = (await buildHeaders(isMultipart, newToken)) as Record<string, string>;
         const retryOptions: RequestInit = {
           ...options,
           headers: {
-            ...(newHeaders as Record<string, string>),
-            ...((options.headers as Record<string, string>) || {}),
+            ...retryHeaders,
+            ...callerHeaders,
+            Authorization: `Bearer ${newToken}`,
           },
         };
         const retryRes = await fetch(url, retryOptions);

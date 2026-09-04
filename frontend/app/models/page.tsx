@@ -11,11 +11,13 @@ import { LoadingState } from "@/components/ui/LoadingState";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { useAuth } from "@/components/providers/AuthProvider";
 import { useToast } from "@/components/providers/ToastProvider";
 import { CheckCircle2, Layers, Plus, Search, ShieldAlert, XCircle } from "lucide-react";
 
 export default function ModelsPage() {
   const toast = useToast();
+  const { loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [models, setModels] = useState<ModelRecord[]>([]);
@@ -33,6 +35,7 @@ export default function ModelsPage() {
   useEffect(() => {
     let active = true;
     async function load() {
+      if (authLoading) return;
       setLoading(true);
       setError(null);
       try {
@@ -48,7 +51,7 @@ export default function ModelsPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [authLoading]);
 
   const fetchModels = async () => {
     setLoading(true);

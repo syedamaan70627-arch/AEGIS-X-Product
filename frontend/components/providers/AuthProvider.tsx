@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { setAuthToken } from "@/lib/api";
+import { setAuthToken, getValidSessionToken } from "@/lib/api";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { AuthSession, AuthUser } from "@/lib/supabase/types";
 import { isVercelEnvironment } from "@/lib/config";
@@ -40,28 +40,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     const supabase = getSupabaseClient();
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.access_token) {
-        setAuthToken(session.access_token);
+
+    const syncSessionState = async (sess: AuthSession | null) => {
+      setSession(sess);
+      setUser(sess?.user ?? null);
+      if (sess?.access_token) {
+        setAuthToken(sess.access_token);
       } else {
-        setAuthToken(null);
+        const fallbackToken = await getValidSessionToken();
+        if (fallbackToken) {
+          const { data: latest } = await supabase.auth.getSession();
+          if (latest?.session) {
+            setSession(latest.session as AuthSession);
+            setUser(latest.session.user as AuthUser);
+            setAuthToken(latest.session.access_token);
+          } else {
+            setAuthToken(fallbackToken);
+          }
+        } else {
+          setAuthToken(null);
+        }
       }
       setLoading(false);
+    };
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      syncSessionState(session as AuthSession | null);
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.access_token) {
-        setAuthToken(session.access_token);
-      } else {
-        setAuthToken(null);
-      }
-      setLoading(false);
+      syncSessionState(session as AuthSession | null);
     });
 
     return () => {
