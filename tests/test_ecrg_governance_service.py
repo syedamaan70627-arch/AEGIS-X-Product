@@ -140,3 +140,33 @@ def test_governance_service_failsafe_on_exception(registered_model, monkeypatch)
     assert resp.action == ECRGGovernanceAction.ESCALATE
     assert "SAFE_ESCALATION_TRIGGERED" in resp.reason_codes
     assert "CRITICAL_EVIDENCE_CORRUPTED" in resp.reason_codes
+
+
+def test_governance_persistence_id_separation(registered_model):
+    """Test that GovernanceEvaluationRecord.id is a valid UUID while decision_id is dec- string."""
+    from api.core.dependencies import get_governance_repository
+    res = registered_model
+    req = GovernanceEvaluationRequest(
+        model_id=res["model_id"],
+        dataset_id="dataset_uuid_test",
+        state_index=0,
+        ood_score=0.1,
+        uncertainty_score=0.1,
+        drift_score=0.05,
+        fused_risk=0.1,
+    )
+    resp = GovernanceService.evaluate_governance(req, user_id=res["user_id"])
+
+    gov_repo = get_governance_repository()
+    evals = gov_repo.list_evaluations(res["model_id"], owner_id=res["user_id"])
+    assert len(evals) == 1
+    eval_rec = evals[0]
+
+    # Verify rec.id is a valid UUID
+    parsed_uuid = uuid.UUID(eval_rec.id)
+    assert str(parsed_uuid) == eval_rec.id
+
+    # Verify rec.decision_id is a dec- string
+    assert eval_rec.decision_id.startswith("dec-")
+    assert resp.evaluation_id.startswith("dec-")
+

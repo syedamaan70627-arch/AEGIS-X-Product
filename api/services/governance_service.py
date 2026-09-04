@@ -101,16 +101,15 @@ class GovernanceService:
             logger.error(f"Error during ECRG governance evaluation: {err}", exc_info=True)
             return cls._build_failsafe_response(request, user_id, timestamp, str(err))
 
-        eval_id = decision_record.decision_id
+        eval_id = str(uuid.uuid4())
         created_at = decision_record.creation_timestamp
 
         # Save result JSON via StorageService (serverless & cloud storage safe)
         json_path = StorageService.save_analysis_result(
-            f"governance/{request.model_id}/{eval_id}.json",
+            f"governance/{request.model_id}/{decision_record.decision_id}.json",
             decision_record.model_dump(),
             user_id=user_id,
         )
-
 
         transition_occurred = previous_effective_action != decision_record.effective_action if previous_effective_action else False
 
@@ -269,7 +268,7 @@ class GovernanceService:
         reason_codes = json.loads(rec.reason_codes_json) if rec.reason_codes_json else []
 
         return GovernanceEvaluationResponse(
-            evaluation_id=rec.id,
+            evaluation_id=rec.decision_id or rec.id,
             model_id=rec.model_id,
             user_id=rec.user_id,
             dataset_id=dataset_id,
