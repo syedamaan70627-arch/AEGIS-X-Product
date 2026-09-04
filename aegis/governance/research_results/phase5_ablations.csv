@@ -1,5 +1,5 @@
-ablation_id,feature_set,empirical_coverage,selective_risk,selective_risk_diff,coverage_diff,review_burden
-A1_NO_CONFORMAL,"ood_score,uncertainty_score,drift_score,fused_risk",1.0,NA — undefined,0.0,0.0,1.0
-A2_FUSED_EVIDENCE_ONLY,fused_risk,1.0,NA — undefined,0.0,0.0,1.0
-A3_SEPARATE_SIGNALS_NO_FUSED,"ood_score,uncertainty_score,drift_score",1.0,NA — undefined,0.0,0.0,1.0
-A4_NO_STATE_MACHINE,"ood_score,uncertainty_score,drift_score,fused_risk",1.0,0.000000,0.0,0.0,0.9906521255286
+ablation_id,feature_set,empirical_coverage,selective_risk,selective_risk_diff,coverage_diff,review_burden,transition_rate_diff_95ci
+A1_NO_CONFORMAL,"ood_score,uncertainty_score,drift_score,fused_risk",1.0,NA — undefined,0.0,0.0,1.0,
+A2_FUSED_EVIDENCE_ONLY,fused_risk,1.0,NA — undefined,0.0,0.0,1.0,
+A3_SEPARATE_SIGNALS_NO_FUSED,"ood_score,uncertainty_score,drift_score",1.0,NA — undefined,0.0,0.0,1.0,
+A4_NO_STATE_MACHINE,"ood_score,uncertainty_score,drift_score,fused_risk",1.0,0.000000,0.0,0.0,0.9906521255286,"(1.1335999979003366, 2.7864071887850095)"

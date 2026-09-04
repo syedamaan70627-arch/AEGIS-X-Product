@@ -73,8 +73,8 @@ class DeterministicRiskLearner:
             # Fallback for synthetic/single-class toy inputs
             self.model = LogisticRegression(penalty="l2", C=self.c_penalty, solver="lbfgs", random_state=self.random_seed)
             # Create synthetic tiny perturbation for fitting single class
-            X_dummy = np.vstack([X_scaled, X_scaled])
-            y_dummy = np.array([0, 1]) if unique_y[0] == 0 else np.array([1, 0])
+            X_dummy = np.vstack([X_scaled, X_scaled + 1e-5])
+            y_dummy = np.concatenate([np.full(len(X_scaled), unique_y[0]), np.full(len(X_scaled), 1 - unique_y[0])])
             self.model.fit(X_dummy, y_dummy)
         else:
             self.model = LogisticRegression(penalty="l2", C=self.c_penalty, solver="lbfgs", random_state=self.random_seed)

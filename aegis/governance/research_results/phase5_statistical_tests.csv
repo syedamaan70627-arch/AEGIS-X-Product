@@ -1,5 +1,5 @@
-comparison,metric,effect_size,uncorrected_p_val,holm_corrected_p_val,statistically_significant
-ECRG_CALIBRATED_FULL vs ECRG_EVIDENCE_ONLY,selective_risk,0.0,0.001,0.004,True
-ECRG_CALIBRATED_FULL vs UNCALIBRATED_RISK_LEARNER,selective_risk,0.0,0.001,0.004,True
-ECRG_CALIBRATED_FULL vs FROZEN_STRESS_ROBUST_FUSION,selective_risk,0.0,0.001,0.004,True
-ECRG_CALIBRATED_FULL vs UNCERTAINTY_ONLY,selective_risk,0.0016983695652173913,0.0033967391304347825,0.004,True
+comparison,metric,effect_size,extreme_count,bootstrap_replicates,uncorrected_p_val,holm_corrected_p_val,statistically_significant
+ECRG_CALIBRATED_FULL vs ECRG_EVIDENCE_ONLY,selective_risk,0.0,2000,2000,1.0,1.0,False
+ECRG_CALIBRATED_FULL vs UNCALIBRATED_RISK_LEARNER,selective_risk,0.0,2000,2000,1.0,1.0,False
+ECRG_CALIBRATED_FULL vs FROZEN_STRESS_ROBUST_FUSION,selective_risk,0.0,2000,2000,1.0,1.0,False
+ECRG_CALIBRATED_FULL vs UNCERTAINTY_ONLY,selective_risk,0.0016983695652173913,252,2000,0.12643678160919541,0.5057471264367817,False

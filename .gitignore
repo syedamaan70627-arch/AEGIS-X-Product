@@ -42,3 +42,6 @@ CMAPSSData.zip
 .idea/
 *.swp
 *.swo
+
+# Temporary Run 2 Reproducibility Verification Directory
+aegis/governance/research_results_run2/

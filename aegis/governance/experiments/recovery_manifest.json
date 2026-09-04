@@ -1,21 +1,42 @@
 {
-  "recovery_timestamp": "2026-09-03T10:28:00Z",
-  "detected_recovery_state": "State C — Preregistration commit exists",
-  "current_head_sha": "1f688831a05771649b5ffd801224a71446b8bad9",
-  "verified_phase4_head_sha": "e98980c1d5c84e209676342b6dc7ba45ca98f903",
-  "existing_phase5_commits": [
-    {
-      "sha": "1f688831a05771649b5ffd801224a71446b8bad9",
-      "subject": "chore(ecrg): preregister phase 5 evaluation protocol"
-    }
+  "recovery_version": "1.0.0",
+  "checkpoint_timestamp": "2026-09-04T00:38:25+05:30",
+  "git_state": {
+    "branch": "research/ecrg-module-14",
+    "head_sha": "9cf36633cd42d7c690fb3b342d7f04ff91073ef8",
+    "tree_status": "clean_working_files_saved"
+  },
+  "protocol": {
+    "preregistration_commit": "1f688831a05771649b5ffd801224a71446b8bad9",
+    "protocol_file": "aegis/governance/experiments/phase5_protocol.json"
+  },
+  "completed_steps": [
+    "Gate 0 verification confirmed clean tree and expected commit HEAD.",
+    "Updated run_phase5_experiments.py with complete preregistered static splits (Breast Cancer & Digits Parity), all targets, all horizons K in {1,2,3,5}, and sensitivity alphas {0.05, 0.10, 0.20}.",
+    "Implemented plus-one empirical bootstrap p-value formula p = (extreme_count + 1) / (B + 1) and Holm-Bonferroni monotonicity.",
+    "Implemented 95% CIs (sample-level for static, engine cluster bootstrap for temporal, Clopper-Pearson for trajectory simultaneous coverage).",
+    "Implemented metric label separation (Conformal Empirical Coverage vs Singleton Accuracy).",
+    "Implemented latency microbenchmarking distinguishing narrow score vs end-to-end governance evaluation.",
+    "Added 15 new unit tests in tests/test_ecrg_phase5_integrity.py (collected test count increased from 304 to 319, 100% passing).",
+    "Execution Run 1 completed 100% successfully and generated clean scientific payload artifacts."
   ],
-  "dirty_or_untracked_files": [],
-  "partial_output_paths": [],
-  "partial_file_hashes": {},
-  "last_completed_step": "Warning triage & pre-registration commit/push (1f68883)",
-  "test_data_accessed_before_preregistration": false,
-  "preregistration_pushed": true,
-  "chosen_resume_action": "State C continuation — Execute Phase 5 pre-registered evaluation protocol on final-test cohorts without scientific setting alteration",
-  "scientific_settings_changed": false,
-  "warning_triage_verdict": "PASSED — 137 benign third-party warnings triaged; 0 ECRG convergence/overflow/NaN/leakage/artifact warnings"
+  "run1_artifact_hashes": {
+    "phase5_results_json": "f8e9d85bc3213d9c",
+    "phase5_method_comparison_csv": "53a6f7a3e9f73bc5",
+    "phase5_ablations_csv": "ec0e29b1f85d223e",
+    "phase5_static_results_csv": "2d618664c6a2e690",
+    "phase5_statistical_tests_csv": "fa7d9fcf21189e11",
+    "phase5_temporal_per_engine_csv": "f5451f33196ecf15"
+  },
+  "run2_execution_status": {
+    "status": "INTERRUPTED — USER SHUTDOWN",
+    "stopped_at": "Execution Run 2 (Clean Reproducibility Verification) loop",
+    "task_id": "2dc30029-181b-4acc-adbd-bbd9394b69de/task-271",
+    "pid": 25988,
+    "run1_artifacts_preserved": true
+  },
+  "resume_instructions": {
+    "checkpoint": "Phase 5B Execution Run 2 Clean Reproducibility Verification",
+    "command": "python -u aegis/governance/experiments/run_phase5_experiments.py"
+  }
 }

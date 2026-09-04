@@ -1,0 +1,11 @@
+dataset_name,method_name,coverage_metric_label,n_test_samples,failure_prevalence,empirical_coverage,avg_set_size,singleton_rate,ambiguous_rate,empty_rate,automation_coverage,selective_risk,review_burden,aurc
+breast_cancer_wisconsin,ECRG_CALIBRATED_FULL,Conformal Empirical Coverage,114,0.0,1.0,2.0,0.0,1.0,0.0,0.0,NA — undefined,1.0,0.0
+breast_cancer_wisconsin,ECRG_EVIDENCE_ONLY,Singleton Accuracy,114,0.0,0.6666666666666666,1.0,1.0,0.0,0.0,0.0,NA — undefined,1.0,0.0
+breast_cancer_wisconsin,UNCALIBRATED_RISK_LEARNER,Singleton Accuracy,114,0.0,1.0,1.0,1.0,0.0,0.0,0.0,NA — undefined,1.0,0.0
+breast_cancer_wisconsin,FROZEN_STRESS_ROBUST_FUSION,Singleton Accuracy,114,0.0,0.6666666666666666,1.0,1.0,0.0,0.0,0.0,NA — undefined,1.0,0.0
+breast_cancer_wisconsin,UNCERTAINTY_ONLY,Singleton Accuracy,114,0.0,1.0,1.0,1.0,0.0,0.0,0.0,NA — undefined,1.0,0.0
+digits_parity,ECRG_CALIBRATED_FULL,Conformal Empirical Coverage,360,0.0,1.0,1.0,1.0,0.0,0.0,1.0,0.000000,0.0,0.0
+digits_parity,ECRG_EVIDENCE_ONLY,Singleton Accuracy,360,0.0,1.0,1.0,1.0,0.0,0.0,0.0,NA — undefined,1.0,0.0
+digits_parity,UNCALIBRATED_RISK_LEARNER,Singleton Accuracy,360,0.0,1.0,1.0,1.0,0.0,0.0,1.0,0.000000,0.0,0.0
+digits_parity,FROZEN_STRESS_ROBUST_FUSION,Singleton Accuracy,360,0.0,1.0,1.0,1.0,0.0,0.0,0.0,NA — undefined,1.0,0.0
+digits_parity,UNCERTAINTY_ONLY,Singleton Accuracy,360,0.0,1.0,1.0,1.0,0.0,0.0,0.0,NA — undefined,1.0,0.0

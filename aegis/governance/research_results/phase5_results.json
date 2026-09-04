@@ -4,6 +4,8 @@
   "method_comparison": {
     "ECRG_CALIBRATED_FULL": {
       "method_name": "ECRG_CALIBRATED_FULL",
+      "is_conformal": true,
+      "coverage_metric_label": "Conformal Empirical Coverage",
       "n_total": 4493,
       "n_positives": 680,
       "empirical_coverage": 1.0,
@@ -20,6 +22,7 @@
       "selective_risk_str": "NA \u2014 undefined",
       "unsafe_continuation_rate": 0.0,
       "review_burden": 1.0,
+      "aurc": 0.044988542864582856,
       "engine_results": {
         "nasa_engine_81": {
           "trajectory_id": "nasa_engine_81",
@@ -286,11 +289,17 @@
         "review_burden": [
           1.0,
           1.0
+        ],
+        "aurc": [
+          0.03624519696566012,
+          0.05636863961471771
         ]
       }
     },
     "ECRG_EVIDENCE_ONLY": {
       "method_name": "ECRG_EVIDENCE_ONLY",
+      "is_conformal": false,
+      "coverage_metric_label": "Singleton Accuracy",
       "n_total": 4493,
       "n_positives": 680,
       "empirical_coverage": 0.8477631871800578,
@@ -307,6 +316,7 @@
       "selective_risk_str": "0.000000",
       "unsafe_continuation_rate": 0.0,
       "review_burden": 0.9988871578010238,
+      "aurc": 0.04591436269081697,
       "engine_results": {
         "nasa_engine_81": {
           "trajectory_id": "nasa_engine_81",
@@ -573,11 +583,17 @@
         "review_burden": [
           0.9977275818676019,
           0.9997871479922404
+        ],
+        "aurc": [
+          0.036962344664244175,
+          0.057104707805458094
         ]
       }
     },
     "UNCALIBRATED_RISK_LEARNER": {
       "method_name": "UNCALIBRATED_RISK_LEARNER",
+      "is_conformal": false,
+      "coverage_metric_label": "Singleton Accuracy",
       "n_total": 4493,
       "n_positives": 680,
       "empirical_coverage": 0.8470954818606722,
@@ -594,6 +610,7 @@
       "selective_risk_str": "0.000000",
       "unsafe_continuation_rate": 0.0,
       "review_burden": 0.9866458936122858,
+      "aurc": 0.044988542864582856,
       "engine_results": {
         "nasa_engine_81": {
           "trajectory_id": "nasa_engine_81",
@@ -860,11 +877,17 @@
         "review_burden": [
           0.9825468533541614,
           0.9908033197710735
+        ],
+        "aurc": [
+          0.03624519696566012,
+          0.05636863961471771
         ]
       }
     },
     "FROZEN_STRESS_ROBUST_FUSION": {
       "method_name": "FROZEN_STRESS_ROBUST_FUSION",
+      "is_conformal": false,
+      "coverage_metric_label": "Singleton Accuracy",
       "n_total": 4493,
       "n_positives": 680,
       "empirical_coverage": 0.8477631871800578,
@@ -881,6 +904,7 @@
       "selective_risk_str": "0.000000",
       "unsafe_continuation_rate": 0.0,
       "review_burden": 0.9988871578010238,
+      "aurc": 0.04591436269081697,
       "engine_results": {
         "nasa_engine_81": {
           "trajectory_id": "nasa_engine_81",
@@ -1147,11 +1171,17 @@
         "review_burden": [
           0.9977275818676019,
           0.9997871479922404
+        ],
+        "aurc": [
+          0.036962344664244175,
+          0.057104707805458094
         ]
       }
     },
     "UNCERTAINTY_ONLY": {
       "method_name": "UNCERTAINTY_ONLY",
+      "is_conformal": false,
+      "coverage_metric_label": "Singleton Accuracy",
       "n_total": 4493,
       "n_positives": 680,
       "empirical_coverage": 0.8341865123525484,
@@ -1168,6 +1198,7 @@
       "selective_risk_str": "0.001698",
       "unsafe_continuation_rate": 0.001112842198976185,
       "review_burden": 0.3447585132428222,
+      "aurc": 0.06929840521968848,
       "engine_results": {
         "nasa_engine_81": {
           "trajectory_id": "nasa_engine_81",
@@ -1434,6 +1465,10 @@
         "review_burden": [
           0.28357208306583653,
           0.4219969253560298
+        ],
+        "aurc": [
+          0.06171113420672796,
+          0.0977276218825088
         ]
       }
     }
@@ -1473,7 +1508,11 @@
       "selective_risk": "0.000000",
       "selective_risk_diff": 0.0,
       "coverage_diff": 0.0,
-      "review_burden": 0.9906521255286
+      "review_burden": 0.9906521255286,
+      "transition_rate_diff_95ci": [
+        1.1335999979003366,
+        2.7864071887850095
+      ]
     }
   },
   "sensitivity_alphas": {
@@ -1503,8 +1542,690 @@
     }
   },
   "horizons": {},
-  "target_semantics": {},
-  "static_evaluation": {},
+  "target_grid": {
+    "C_MAPSS_RUL30_PROXY_WITHIN_K": {
+      "K_1": {
+        "horizon": 1,
+        "n_total": 4493,
+        "n_positives": 640,
+        "empirical_coverage": 1.0,
+        "simultaneous_coverage": 1.0,
+        "avg_set_size": 1.9906521255286,
+        "automation_coverage": 0.0,
+        "selective_risk": "NA \u2014 undefined",
+        "review_burden": 1.0
+      },
+      "K_2": {
+        "horizon": 2,
+        "n_total": 4493,
+        "n_positives": 660,
+        "empirical_coverage": 1.0,
+        "simultaneous_coverage": 1.0,
+        "avg_set_size": 1.9906521255286,
+        "automation_coverage": 0.0,
+        "selective_risk": "NA \u2014 undefined",
+        "review_burden": 1.0
+      },
+      "K_3": {
+        "horizon": 3,
+        "n_total": 4493,
+        "n_positives": 680,
+        "empirical_coverage": 1.0,
+        "simultaneous_coverage": 1.0,
+        "avg_set_size": 1.9906521255286,
+        "automation_coverage": 0.0,
+        "selective_risk": "NA \u2014 undefined",
+        "review_burden": 1.0
+      },
+      "K_5": {
+        "horizon": 5,
+        "n_total": 4493,
+        "n_positives": 720,
+        "empirical_coverage": 0.9997774315602047,
+        "simultaneous_coverage": 0.95,
+        "avg_set_size": 1.9904295570888049,
+        "automation_coverage": 0.0,
+        "selective_risk": "NA \u2014 undefined",
+        "review_burden": 1.0
+      }
+    },
+    "C_MAPSS_RUL50_PROXY_WITHIN_K": {
+      "K_1": {
+        "horizon": 1,
+        "n_total": 4493,
+        "n_positives": 1040,
+        "empirical_coverage": 1.0,
+        "simultaneous_coverage": 1.0,
+        "avg_set_size": 1.9931003783663477,
+        "automation_coverage": 0.0,
+        "selective_risk": "NA \u2014 undefined",
+        "review_burden": 1.0
+      },
+      "K_2": {
+        "horizon": 2,
+        "n_total": 4493,
+        "n_positives": 1060,
+        "empirical_coverage": 1.0,
+        "simultaneous_coverage": 1.0,
+        "avg_set_size": 1.9931003783663477,
+        "automation_coverage": 0.0,
+        "selective_risk": "NA \u2014 undefined",
+        "review_burden": 1.0
+      },
+      "K_3": {
+        "horizon": 3,
+        "n_total": 4493,
+        "n_positives": 1080,
+        "empirical_coverage": 0.9997774315602047,
+        "simultaneous_coverage": 0.95,
+        "avg_set_size": 1.9931003783663477,
+        "automation_coverage": 0.0,
+        "selective_risk": "NA \u2014 undefined",
+        "review_burden": 1.0
+      },
+      "K_5": {
+        "horizon": 5,
+        "n_total": 4493,
+        "n_positives": 1120,
+        "empirical_coverage": 0.9997774315602047,
+        "simultaneous_coverage": 0.95,
+        "avg_set_size": 1.9931003783663477,
+        "automation_coverage": 0.0,
+        "selective_risk": "NA \u2014 undefined",
+        "review_burden": 1.0
+      }
+    },
+    "C_MAPSS_TERMINAL_FAILURE_WITHIN_K": {
+      "K_1": {
+        "horizon": 1,
+        "n_total": 4493,
+        "n_positives": 40,
+        "empirical_coverage": 0.9997774315602047,
+        "simultaneous_coverage": 0.95,
+        "avg_set_size": 1.2405964834186511,
+        "automation_coverage": 0.2989094146450033,
+        "selective_risk": "0.000000",
+        "review_burden": 0.7010905853549967
+      },
+      "K_2": {
+        "horizon": 2,
+        "n_total": 4493,
+        "n_positives": 60,
+        "empirical_coverage": 0.9997774315602047,
+        "simultaneous_coverage": 0.95,
+        "avg_set_size": 1.6372134431337637,
+        "automation_coverage": 0.019363454262185623,
+        "selective_risk": "0.000000",
+        "review_burden": 0.9806365457378143
+      },
+      "K_3": {
+        "horizon": 3,
+        "n_total": 4493,
+        "n_positives": 80,
+        "empirical_coverage": 0.9995548631204095,
+        "simultaneous_coverage": 0.9,
+        "avg_set_size": 1.763409748497663,
+        "automation_coverage": 0.005119074115290452,
+        "selective_risk": "0.000000",
+        "review_burden": 0.9948809258847096
+      },
+      "K_5": {
+        "horizon": 5,
+        "n_total": 4493,
+        "n_positives": 120,
+        "empirical_coverage": 1.0,
+        "simultaneous_coverage": 1.0,
+        "avg_set_size": 1.997996884041843,
+        "automation_coverage": 0.0,
+        "selective_risk": "NA \u2014 undefined",
+        "review_burden": 1.0
+      }
+    }
+  },
+  "static_evaluation": {
+    "breast_cancer_wisconsin": {
+      "n_test_samples": 114,
+      "failure_prevalence": 0.0,
+      "methods": {
+        "ECRG_CALIBRATED_FULL": {
+          "method_name": "ECRG_CALIBRATED_FULL",
+          "is_conformal": true,
+          "coverage_metric_label": "Conformal Empirical Coverage",
+          "n_total": 114,
+          "n_positives": 0,
+          "empirical_coverage": 1.0,
+          "trajectory_simultaneous_coverage": 1.0,
+          "clopper_pearson_ci_lower": 0.9681593459165257,
+          "clopper_pearson_ci_upper": 1.0,
+          "calibration_gap": 0.050000000000000044,
+          "avg_set_size": 2.0,
+          "singleton_rate": 0.0,
+          "ambiguous_rate": 1.0,
+          "empty_rate": 0.0,
+          "automation_coverage": 0.0,
+          "selective_risk": null,
+          "selective_risk_str": "NA \u2014 undefined",
+          "unsafe_continuation_rate": 0.0,
+          "review_burden": 1.0,
+          "aurc": 0.0,
+          "engine_results": {},
+          "bootstrap_cis": {
+            "empirical_coverage": [
+              1.0,
+              1.0
+            ],
+            "trajectory_simultaneous_coverage": [
+              1.0,
+              1.0
+            ],
+            "avg_set_size": [
+              2.0,
+              2.0
+            ],
+            "automation_coverage": [
+              0.0,
+              0.0
+            ],
+            "unsafe_continuation_rate": [
+              0.0,
+              0.0
+            ],
+            "review_burden": [
+              1.0,
+              1.0
+            ],
+            "aurc": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "ECRG_EVIDENCE_ONLY": {
+          "method_name": "ECRG_EVIDENCE_ONLY",
+          "is_conformal": false,
+          "coverage_metric_label": "Singleton Accuracy",
+          "n_total": 114,
+          "n_positives": 0,
+          "empirical_coverage": 0.6666666666666666,
+          "trajectory_simultaneous_coverage": 0.6666666666666666,
+          "clopper_pearson_ci_lower": 0.5722587941222539,
+          "clopper_pearson_ci_upper": 0.7521757708319854,
+          "calibration_gap": 0.2833333333333333,
+          "avg_set_size": 1.0,
+          "singleton_rate": 1.0,
+          "ambiguous_rate": 0.0,
+          "empty_rate": 0.0,
+          "automation_coverage": 0.0,
+          "selective_risk": null,
+          "selective_risk_str": "NA \u2014 undefined",
+          "unsafe_continuation_rate": 0.0,
+          "review_burden": 1.0,
+          "aurc": 0.0,
+          "engine_results": {},
+          "bootstrap_cis": {
+            "empirical_coverage": [
+              0.5789473684210527,
+              0.7543859649122807
+            ],
+            "trajectory_simultaneous_coverage": [
+              0.5789473684210527,
+              0.7543859649122807
+            ],
+            "avg_set_size": [
+              1.0,
+              1.0
+            ],
+            "automation_coverage": [
+              0.0,
+              0.0
+            ],
+            "unsafe_continuation_rate": [
+              0.0,
+              0.0
+            ],
+            "review_burden": [
+              1.0,
+              1.0
+            ],
+            "aurc": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "UNCALIBRATED_RISK_LEARNER": {
+          "method_name": "UNCALIBRATED_RISK_LEARNER",
+          "is_conformal": false,
+          "coverage_metric_label": "Singleton Accuracy",
+          "n_total": 114,
+          "n_positives": 0,
+          "empirical_coverage": 1.0,
+          "trajectory_simultaneous_coverage": 1.0,
+          "clopper_pearson_ci_lower": 0.9681593459165257,
+          "clopper_pearson_ci_upper": 1.0,
+          "calibration_gap": 0.050000000000000044,
+          "avg_set_size": 1.0,
+          "singleton_rate": 1.0,
+          "ambiguous_rate": 0.0,
+          "empty_rate": 0.0,
+          "automation_coverage": 0.0,
+          "selective_risk": null,
+          "selective_risk_str": "NA \u2014 undefined",
+          "unsafe_continuation_rate": 0.0,
+          "review_burden": 1.0,
+          "aurc": 0.0,
+          "engine_results": {},
+          "bootstrap_cis": {
+            "empirical_coverage": [
+              1.0,
+              1.0
+            ],
+            "trajectory_simultaneous_coverage": [
+              1.0,
+              1.0
+            ],
+            "avg_set_size": [
+              1.0,
+              1.0
+            ],
+            "automation_coverage": [
+              0.0,
+              0.0
+            ],
+            "unsafe_continuation_rate": [
+              0.0,
+              0.0
+            ],
+            "review_burden": [
+              1.0,
+              1.0
+            ],
+            "aurc": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "FROZEN_STRESS_ROBUST_FUSION": {
+          "method_name": "FROZEN_STRESS_ROBUST_FUSION",
+          "is_conformal": false,
+          "coverage_metric_label": "Singleton Accuracy",
+          "n_total": 114,
+          "n_positives": 0,
+          "empirical_coverage": 0.6666666666666666,
+          "trajectory_simultaneous_coverage": 0.6666666666666666,
+          "clopper_pearson_ci_lower": 0.5722587941222539,
+          "clopper_pearson_ci_upper": 0.7521757708319854,
+          "calibration_gap": 0.2833333333333333,
+          "avg_set_size": 1.0,
+          "singleton_rate": 1.0,
+          "ambiguous_rate": 0.0,
+          "empty_rate": 0.0,
+          "automation_coverage": 0.0,
+          "selective_risk": null,
+          "selective_risk_str": "NA \u2014 undefined",
+          "unsafe_continuation_rate": 0.0,
+          "review_burden": 1.0,
+          "aurc": 0.0,
+          "engine_results": {},
+          "bootstrap_cis": {
+            "empirical_coverage": [
+              0.5789473684210527,
+              0.7543859649122807
+            ],
+            "trajectory_simultaneous_coverage": [
+              0.5789473684210527,
+              0.7543859649122807
+            ],
+            "avg_set_size": [
+              1.0,
+              1.0
+            ],
+            "automation_coverage": [
+              0.0,
+              0.0
+            ],
+            "unsafe_continuation_rate": [
+              0.0,
+              0.0
+            ],
+            "review_burden": [
+              1.0,
+              1.0
+            ],
+            "aurc": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "UNCERTAINTY_ONLY": {
+          "method_name": "UNCERTAINTY_ONLY",
+          "is_conformal": false,
+          "coverage_metric_label": "Singleton Accuracy",
+          "n_total": 114,
+          "n_positives": 0,
+          "empirical_coverage": 1.0,
+          "trajectory_simultaneous_coverage": 1.0,
+          "clopper_pearson_ci_lower": 0.9681593459165257,
+          "clopper_pearson_ci_upper": 1.0,
+          "calibration_gap": 0.050000000000000044,
+          "avg_set_size": 1.0,
+          "singleton_rate": 1.0,
+          "ambiguous_rate": 0.0,
+          "empty_rate": 0.0,
+          "automation_coverage": 0.0,
+          "selective_risk": null,
+          "selective_risk_str": "NA \u2014 undefined",
+          "unsafe_continuation_rate": 0.0,
+          "review_burden": 1.0,
+          "aurc": 0.0,
+          "engine_results": {},
+          "bootstrap_cis": {
+            "empirical_coverage": [
+              1.0,
+              1.0
+            ],
+            "trajectory_simultaneous_coverage": [
+              1.0,
+              1.0
+            ],
+            "avg_set_size": [
+              1.0,
+              1.0
+            ],
+            "automation_coverage": [
+              0.0,
+              0.0
+            ],
+            "unsafe_continuation_rate": [
+              0.0,
+              0.0
+            ],
+            "review_burden": [
+              1.0,
+              1.0
+            ],
+            "aurc": [
+              0.0,
+              0.0
+            ]
+          }
+        }
+      }
+    },
+    "digits_parity": {
+      "n_test_samples": 360,
+      "failure_prevalence": 0.0,
+      "methods": {
+        "ECRG_CALIBRATED_FULL": {
+          "method_name": "ECRG_CALIBRATED_FULL",
+          "is_conformal": true,
+          "coverage_metric_label": "Conformal Empirical Coverage",
+          "n_total": 360,
+          "n_positives": 0,
+          "empirical_coverage": 1.0,
+          "trajectory_simultaneous_coverage": 1.0,
+          "clopper_pearson_ci_lower": 0.9898054331179876,
+          "clopper_pearson_ci_upper": 1.0,
+          "calibration_gap": 0.050000000000000044,
+          "avg_set_size": 1.0,
+          "singleton_rate": 1.0,
+          "ambiguous_rate": 0.0,
+          "empty_rate": 0.0,
+          "automation_coverage": 1.0,
+          "selective_risk": 0.0,
+          "selective_risk_str": "0.000000",
+          "unsafe_continuation_rate": 0.0,
+          "review_burden": 0.0,
+          "aurc": 0.0,
+          "engine_results": {},
+          "bootstrap_cis": {
+            "empirical_coverage": [
+              1.0,
+              1.0
+            ],
+            "trajectory_simultaneous_coverage": [
+              1.0,
+              1.0
+            ],
+            "avg_set_size": [
+              1.0,
+              1.0
+            ],
+            "automation_coverage": [
+              1.0,
+              1.0
+            ],
+            "unsafe_continuation_rate": [
+              0.0,
+              0.0
+            ],
+            "review_burden": [
+              0.0,
+              0.0
+            ],
+            "aurc": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "ECRG_EVIDENCE_ONLY": {
+          "method_name": "ECRG_EVIDENCE_ONLY",
+          "is_conformal": false,
+          "coverage_metric_label": "Singleton Accuracy",
+          "n_total": 360,
+          "n_positives": 0,
+          "empirical_coverage": 1.0,
+          "trajectory_simultaneous_coverage": 1.0,
+          "clopper_pearson_ci_lower": 0.9898054331179876,
+          "clopper_pearson_ci_upper": 1.0,
+          "calibration_gap": 0.050000000000000044,
+          "avg_set_size": 1.0,
+          "singleton_rate": 1.0,
+          "ambiguous_rate": 0.0,
+          "empty_rate": 0.0,
+          "automation_coverage": 0.0,
+          "selective_risk": null,
+          "selective_risk_str": "NA \u2014 undefined",
+          "unsafe_continuation_rate": 0.0,
+          "review_burden": 1.0,
+          "aurc": 0.0,
+          "engine_results": {},
+          "bootstrap_cis": {
+            "empirical_coverage": [
+              1.0,
+              1.0
+            ],
+            "trajectory_simultaneous_coverage": [
+              1.0,
+              1.0
+            ],
+            "avg_set_size": [
+              1.0,
+              1.0
+            ],
+            "automation_coverage": [
+              0.0,
+              0.0
+            ],
+            "unsafe_continuation_rate": [
+              0.0,
+              0.0
+            ],
+            "review_burden": [
+              1.0,
+              1.0
+            ],
+            "aurc": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "UNCALIBRATED_RISK_LEARNER": {
+          "method_name": "UNCALIBRATED_RISK_LEARNER",
+          "is_conformal": false,
+          "coverage_metric_label": "Singleton Accuracy",
+          "n_total": 360,
+          "n_positives": 0,
+          "empirical_coverage": 1.0,
+          "trajectory_simultaneous_coverage": 1.0,
+          "clopper_pearson_ci_lower": 0.9898054331179876,
+          "clopper_pearson_ci_upper": 1.0,
+          "calibration_gap": 0.050000000000000044,
+          "avg_set_size": 1.0,
+          "singleton_rate": 1.0,
+          "ambiguous_rate": 0.0,
+          "empty_rate": 0.0,
+          "automation_coverage": 1.0,
+          "selective_risk": 0.0,
+          "selective_risk_str": "0.000000",
+          "unsafe_continuation_rate": 0.0,
+          "review_burden": 0.0,
+          "aurc": 0.0,
+          "engine_results": {},
+          "bootstrap_cis": {
+            "empirical_coverage": [
+              1.0,
+              1.0
+            ],
+            "trajectory_simultaneous_coverage": [
+              1.0,
+              1.0
+            ],
+            "avg_set_size": [
+              1.0,
+              1.0
+            ],
+            "automation_coverage": [
+              1.0,
+              1.0
+            ],
+            "unsafe_continuation_rate": [
+              0.0,
+              0.0
+            ],
+            "review_burden": [
+              0.0,
+              0.0
+            ],
+            "aurc": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "FROZEN_STRESS_ROBUST_FUSION": {
+          "method_name": "FROZEN_STRESS_ROBUST_FUSION",
+          "is_conformal": false,
+          "coverage_metric_label": "Singleton Accuracy",
+          "n_total": 360,
+          "n_positives": 0,
+          "empirical_coverage": 1.0,
+          "trajectory_simultaneous_coverage": 1.0,
+          "clopper_pearson_ci_lower": 0.9898054331179876,
+          "clopper_pearson_ci_upper": 1.0,
+          "calibration_gap": 0.050000000000000044,
+          "avg_set_size": 1.0,
+          "singleton_rate": 1.0,
+          "ambiguous_rate": 0.0,
+          "empty_rate": 0.0,
+          "automation_coverage": 0.0,
+          "selective_risk": null,
+          "selective_risk_str": "NA \u2014 undefined",
+          "unsafe_continuation_rate": 0.0,
+          "review_burden": 1.0,
+          "aurc": 0.0,
+          "engine_results": {},
+          "bootstrap_cis": {
+            "empirical_coverage": [
+              1.0,
+              1.0
+            ],
+            "trajectory_simultaneous_coverage": [
+              1.0,
+              1.0
+            ],
+            "avg_set_size": [
+              1.0,
+              1.0
+            ],
+            "automation_coverage": [
+              0.0,
+              0.0
+            ],
+            "unsafe_continuation_rate": [
+              0.0,
+              0.0
+            ],
+            "review_burden": [
+              1.0,
+              1.0
+            ],
+            "aurc": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "UNCERTAINTY_ONLY": {
+          "method_name": "UNCERTAINTY_ONLY",
+          "is_conformal": false,
+          "coverage_metric_label": "Singleton Accuracy",
+          "n_total": 360,
+          "n_positives": 0,
+          "empirical_coverage": 1.0,
+          "trajectory_simultaneous_coverage": 1.0,
+          "clopper_pearson_ci_lower": 0.9898054331179876,
+          "clopper_pearson_ci_upper": 1.0,
+          "calibration_gap": 0.050000000000000044,
+          "avg_set_size": 1.0,
+          "singleton_rate": 1.0,
+          "ambiguous_rate": 0.0,
+          "empty_rate": 0.0,
+          "automation_coverage": 0.0,
+          "selective_risk": null,
+          "selective_risk_str": "NA \u2014 undefined",
+          "unsafe_continuation_rate": 0.0,
+          "review_burden": 1.0,
+          "aurc": 0.0,
+          "engine_results": {},
+          "bootstrap_cis": {
+            "empirical_coverage": [
+              1.0,
+              1.0
+            ],
+            "trajectory_simultaneous_coverage": [
+              1.0,
+              1.0
+            ],
+            "avg_set_size": [
+              1.0,
+              1.0
+            ],
+            "automation_coverage": [
+              0.0,
+              0.0
+            ],
+            "unsafe_continuation_rate": [
+              0.0,
+              0.0
+            ],
+            "review_burden": [
+              1.0,
+              1.0
+            ],
+            "aurc": [
+              0.0,
+              0.0
+            ]
+          }
+        }
+      }
+    }
+  },
   "external_validation": {
     "dataset_name": "Official NASA C-MAPSS FD001 External Test Cohort (100 Engines)",
     "empirical_coverage": 1.0,
@@ -1520,33 +2241,53 @@
       "comparison": "ECRG_CALIBRATED_FULL vs ECRG_EVIDENCE_ONLY",
       "metric": "selective_risk",
       "effect_size": 0.0,
-      "uncorrected_p_val": 0.001,
-      "holm_corrected_p_val": 0.004,
-      "statistically_significant": true
+      "extreme_count": 2000,
+      "bootstrap_replicates": 2000,
+      "uncorrected_p_val": 1.0,
+      "holm_corrected_p_val": 1.0,
+      "statistically_significant": false
     },
     {
       "comparison": "ECRG_CALIBRATED_FULL vs UNCALIBRATED_RISK_LEARNER",
       "metric": "selective_risk",
       "effect_size": 0.0,
-      "uncorrected_p_val": 0.001,
-      "holm_corrected_p_val": 0.004,
-      "statistically_significant": true
+      "extreme_count": 2000,
+      "bootstrap_replicates": 2000,
+      "uncorrected_p_val": 1.0,
+      "holm_corrected_p_val": 1.0,
+      "statistically_significant": false
     },
     {
       "comparison": "ECRG_CALIBRATED_FULL vs FROZEN_STRESS_ROBUST_FUSION",
       "metric": "selective_risk",
       "effect_size": 0.0,
-      "uncorrected_p_val": 0.001,
-      "holm_corrected_p_val": 0.004,
-      "statistically_significant": true
+      "extreme_count": 2000,
+      "bootstrap_replicates": 2000,
+      "uncorrected_p_val": 1.0,
+      "holm_corrected_p_val": 1.0,
+      "statistically_significant": false
     },
     {
       "comparison": "ECRG_CALIBRATED_FULL vs UNCERTAINTY_ONLY",
       "metric": "selective_risk",
       "effect_size": 0.0016983695652173913,
-      "uncorrected_p_val": 0.0033967391304347825,
-      "holm_corrected_p_val": 0.004,
-      "statistically_significant": true
+      "extreme_count": 252,
+      "bootstrap_replicates": 2000,
+      "uncorrected_p_val": 0.12643678160919541,
+      "holm_corrected_p_val": 0.5057471264367817,
+      "statistically_significant": false
     }
-  ]
+  ],
+  "latency_benchmark": {
+    "hardware_environment": "Intel64 Family 6 Model 186 Stepping 3, GenuineIntel (Windows 11)",
+    "timer_used": "time.perf_counter_ns()",
+    "warmup_count": 10000,
+    "repetition_count": 100000,
+    "narrow_score_latency_median_us": 0.1,
+    "narrow_score_latency_p95_us": 0.2,
+    "end_to_end_governance_latency_median_us": 1849.5,
+    "end_to_end_governance_latency_p95_us": 3321.4,
+    "included_operations": "Evidence contract validation, conformal prediction set calculation, risk score evaluation, state machine anti-flapping transition check, audit record creation",
+    "excluded_operations": "Disk I/O, network transit, offline learner model fitting, offline split conformal q calibration"
+  }
 }
