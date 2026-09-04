@@ -20,6 +20,9 @@ from aegis.governance.schemas import (
     ECRGOperatingMode,
 )
 from api.core.dependencies import get_governance_repository, get_model_repository
+from api.services.storage_service import StorageService
+
+
 from api.db.models import GovernanceEvaluationRecord, GovernanceTransitionRecord
 from api.schemas.governance import (
     GovernanceEvaluationRequest,
@@ -101,12 +104,13 @@ class GovernanceService:
         eval_id = decision_record.decision_id
         created_at = decision_record.creation_timestamp
 
-        # Save result JSON to storage/results/governance/{model_id}/{eval_id}.json
-        storage_dir = Path("storage/results/governance") / request.model_id
-        storage_dir.mkdir(parents=True, exist_ok=True)
-        json_path = storage_dir / f"{eval_id}.json"
-        with open(json_path, "w", encoding="utf-8") as f:
-            json.dump(decision_record.model_dump(), f, indent=2)
+        # Save result JSON via StorageService (serverless & cloud storage safe)
+        json_path = StorageService.save_analysis_result(
+            f"governance/{request.model_id}/{eval_id}.json",
+            decision_record.model_dump(),
+            user_id=user_id,
+        )
+
 
         transition_occurred = previous_effective_action != decision_record.effective_action if previous_effective_action else False
 

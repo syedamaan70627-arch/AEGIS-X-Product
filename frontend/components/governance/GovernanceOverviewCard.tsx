@@ -186,10 +186,11 @@ export function GovernanceOverviewCard({
             <div className="space-y-2">
               <GovernanceBadge action={activeAction} size="lg" />
               <p className="text-xs text-slate-400 leading-relaxed font-sans pt-1">
-                {activeAction === "CONTINUE" &amp;&amp; "Model operating nominally. Full automation permitted."}
-                {activeAction === "WATCH" &amp;&amp; "Minor risk anomaly. Execution allowed with high-frequency logging."}
-                {activeAction === "DEFER" &amp;&amp; "High risk detected. Execution deferred pending operator approval."}
-                {activeAction === "ESCALATE" &amp;&amp; "Critical risk or corrupted evidence. Automation strictly disabled."}
+                {activeAction === "CONTINUE" && "Model operating nominally. Full automation permitted."}
+                {activeAction === "WATCH" && "Minor risk anomaly. Execution allowed with high-frequency logging."}
+                {activeAction === "DEFER" && "High risk detected. Execution deferred pending operator approval."}
+                {activeAction === "ESCALATE" && "Critical risk or corrupted evidence. Automation strictly disabled."}
+
               </p>
             </div>
           ) : (
@@ -244,7 +245,7 @@ export function GovernanceOverviewCard({
       </div>
 
       {/* Decision Explanation Bar */}
-      {latestEval &amp;&amp; (
+      {latestEval && (
         <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1 text-xs">
             <span className="font-mono font-bold text-slate-400 uppercase tracking-wider block">
@@ -264,13 +265,14 @@ export function GovernanceOverviewCard({
       )}
 
       {/* Details Modal */}
-      {latestEval &amp;&amp; (
+      {latestEval && (
         <GovernanceDetailsModal
           evaluation={latestEval}
           isOpen={showDetailsModal}
           onClose={() => setShowDetailsModal(false)}
         />
       )}
+
     </div>
   );
 }
