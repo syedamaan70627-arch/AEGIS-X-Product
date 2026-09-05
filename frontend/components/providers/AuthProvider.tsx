@@ -14,6 +14,7 @@ interface AuthContextType {
   isConfigured: boolean;
   signIn: (email: string, pass: string) => Promise<void>;
   signUp: (email: string, pass: string) => Promise<void>;
+  resendVerification: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -25,6 +26,7 @@ const AuthContext = createContext<AuthContextType>({
   isConfigured: false,
   signIn: async () => {},
   signUp: async () => {},
+  resendVerification: async () => {},
   signOut: async () => {},
 });
 
@@ -79,12 +81,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [configured]);
 
+  const getConfirmationUrl = (): string => {
+    if (typeof window !== "undefined" && window.location.origin) {
+      return `${window.location.origin}/auth/confirm`;
+    }
+    return "https://aegis-x-product.vercel.app/auth/confirm";
+  };
+
   const signIn = async (email: string, pass: string) => {
     if (!configured) {
       throw new Error("Supabase Auth is not configured in current environment.");
     }
     const supabase = getSupabaseClient();
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
+    const { data, error } = await supabase.auth.signInWithPassword({ email: (email || "").trim().toLowerCase(), password: pass });
     if (error) throw error;
     if (data.session?.access_token) {
       setAuthToken(data.session.access_token);
@@ -96,7 +105,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error("Supabase Auth is not configured in current environment.");
     }
     const supabase = getSupabaseClient();
-    const { error } = await supabase.auth.signUp({ email, password: pass });
+    const normalizedEmail = (email || "").trim().toLowerCase();
+    const { error } = await supabase.auth.signUp({
+      email: normalizedEmail,
+      password: pass,
+      options: {
+        emailRedirectTo: getConfirmationUrl(),
+      },
+    });
+    if (error) throw error;
+  };
+
+  const resendVerification = async (email: string) => {
+    const normalizedEmail = (email || "").trim().toLowerCase();
+    if (!normalizedEmail) {
+      throw new Error("Please enter a valid email address.");
+    }
+    if (!configured) {
+      return;
+    }
+    const supabase = getSupabaseClient();
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: normalizedEmail,
+      options: {
+        emailRedirectTo: getConfirmationUrl(),
+      },
+    });
     if (error) throw error;
   };
 
@@ -113,7 +148,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isVercel = isVercelEnvironment();
   const authenticated = Boolean(session?.user) || (!configured && !isVercel);
 
-
   return (
     <AuthContext.Provider
       value={{
@@ -124,6 +158,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isConfigured: configured,
         signIn,
         signUp,
+        resendVerification,
         signOut,
       }}
     >

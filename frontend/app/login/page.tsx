@@ -4,6 +4,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
+import { classifyAuthError } from "@/lib/auth_errors";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { Eye, EyeOff, Lock, Mail, ShieldCheck } from "lucide-react";
@@ -24,13 +25,33 @@ function getSanitizedReturnUrl(rawNext: string | null): string {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { signIn, authenticated, isConfigured, loading: authLoading } = useAuth();
+  const { signIn, resendVerification, authenticated, isConfigured, loading: authLoading } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [authError, setAuthError] = useState<{
+    title: string;
+    message: string;
+    isUnconfirmedEmail: boolean;
+  } | null>(null);
+
+  // Resend state & 60s cooldown
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendMessage, setResendMessage] = useState<string | null>(null);
+  const [resendError, setResendError] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (cooldown > 0) {
+      timer = setInterval(() => {
+        setCooldown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [cooldown]);
 
   const nextParam = searchParams ? searchParams.get("next") : null;
   const targetUrl = getSanitizedReturnUrl(nextParam);
@@ -44,12 +65,19 @@ function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      setError("Please fill in both email and password.");
+      setAuthError({
+        title: "Missing Information",
+        message: "Please fill in both email and password.",
+        isUnconfirmedEmail: false,
+      });
       return;
     }
 
     setLoading(true);
-    setError(null);
+    setAuthError(null);
+    setResendMessage(null);
+    setResendError(null);
+
     try {
       if (!isConfigured) {
         // Offline local mode fallback
@@ -59,9 +87,32 @@ function LoginForm() {
       await signIn(email, password);
       router.push(targetUrl);
     } catch (err: any) {
-      setError(err.message || "Failed to sign in. Please verify your credentials.");
+      const classified = classifyAuthError(err);
+      setAuthError({
+        title: classified.title,
+        message: classified.message,
+        isUnconfirmedEmail: classified.isUnconfirmedEmail,
+      });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendFromLogin = async () => {
+    if (cooldown > 0 || resendLoading || !email) return;
+    setResendLoading(true);
+    setResendMessage(null);
+    setResendError(null);
+
+    try {
+      await resendVerification(email);
+      setResendMessage("Verification email sent! Please check your inbox.");
+      setCooldown(60);
+    } catch (err: any) {
+      const classified = classifyAuthError(err);
+      setResendError(classified.message);
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -76,7 +127,52 @@ function LoginForm() {
         </div>
       )}
 
-      {error && <ErrorState message={error} />}
+      {authError && authError.isUnconfirmedEmail ? (
+        <div className="p-5 bg-[#3B82F6]/10 border border-[#3B82F6]/30 rounded-xl space-y-4 text-left font-sans">
+          <div className="space-y-1">
+            <h4 className="text-sm font-bold text-[#F3F4F6]">Email Verification Required</h4>
+            <p className="text-xs text-[#9CA3AF] leading-relaxed">
+              Please verify your email address before signing in. Check your inbox or request a new verification email.
+            </p>
+          </div>
+
+          {resendMessage && (
+            <div className="p-2.5 bg-[#22C55E]/10 border border-[#22C55E]/30 rounded-lg text-xs text-[#22C55E]">
+              {resendMessage}
+            </div>
+          )}
+
+          {resendError && (
+            <div className="p-2.5 bg-[#EF4444]/10 border border-[#EF4444]/30 rounded-lg text-xs text-[#EF4444]">
+              {resendError}
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row gap-2 pt-1">
+            <button
+              type="button"
+              onClick={handleResendFromLogin}
+              disabled={resendLoading || cooldown > 0}
+              className="py-2 px-3 bg-[#3B82F6] hover:bg-[#2563EB] text-white font-semibold text-xs rounded-lg transition-colors disabled:opacity-50"
+            >
+              {resendLoading
+                ? "Sending..."
+                : cooldown > 0
+                ? `Resend Verification Email (${cooldown}s)`
+                : "Resend Verification Email"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setAuthError(null)}
+              className="py-2 px-3 bg-transparent border border-[#26303D] hover:bg-[#0F141B] text-[#9CA3AF] hover:text-[#F3F4F6] text-xs font-medium rounded-lg transition-colors"
+            >
+              Back to Sign In
+            </button>
+          </div>
+        </div>
+      ) : authError ? (
+        <ErrorState title={authError.title} message={authError.message} />
+      ) : null}
 
       <form onSubmit={handleSubmit} className="space-y-5 text-xs font-sans">
         <div>
@@ -132,7 +228,7 @@ function LoginForm() {
 
       {isConfigured && (
         <div className="pt-4 border-t border-[#26303D] text-center text-xs text-[#9CA3AF] font-sans">
-          Need an enterprise account?{" "}
+          Need an account?{" "}
           <Link href="/signup" className="text-[#3B82F6] font-semibold hover:underline">
             Create Account
           </Link>

@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { LoadingState } from "@/components/ui/LoadingState";
 
-const PUBLIC_ROUTES = ["/login", "/signup"];
+const PUBLIC_ROUTES = ["/login", "/signup", "/auth/confirm", "/auth/callback"];
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
