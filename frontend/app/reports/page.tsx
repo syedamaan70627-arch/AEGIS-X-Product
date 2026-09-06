@@ -75,6 +75,39 @@ export default function ReportsPage() {
     loadModels();
   }, []);
 
+  // Helper to load or generate report
+  const loadExistingOrGenerateReport = async (
+    modelId: string,
+    analysisId: string,
+    reportType: string
+  ) => {
+    try {
+      setErrorObj(null);
+      // Check existing reports
+      const existing = await api.listReportsByModel(modelId);
+      const match = existing.find((r) => r.analysis_id === analysisId);
+      if (match) {
+        setActiveReport(match);
+      } else {
+        // Auto-generate initial report snapshot if none exists
+        const generated = await api.generateReport({
+          model_id: modelId,
+          analysis_id: analysisId,
+          report_type: reportType,
+        });
+        setActiveReport(generated);
+      }
+    } catch (err: any) {
+      setActiveReport(null);
+      setErrorObj({
+        message: "Report generation failed",
+        reason: err.reason || "Report storage is currently unavailable.",
+        action: err.action || "Please retry after the reporting service becomes available.",
+        techDetails: err.details || err.message || String(err),
+      });
+    }
+  };
+
   // 2. Load Analyses for Selected Model
   useEffect(() => {
     async function loadAnalyses() {
@@ -114,39 +147,6 @@ export default function ReportsPage() {
     }
     loadAnalyses();
   }, [selectedModelId]);
-
-  // Helper to load or generate report
-  const loadExistingOrGenerateReport = async (
-    modelId: string,
-    analysisId: string,
-    reportType: string
-  ) => {
-    try {
-      setErrorObj(null);
-      // Check existing reports
-      const existing = await api.listReportsByModel(modelId);
-      const match = existing.find((r) => r.analysis_id === analysisId);
-      if (match) {
-        setActiveReport(match);
-      } else {
-        // Auto-generate initial report snapshot if none exists
-        const generated = await api.generateReport({
-          model_id: modelId,
-          analysis_id: analysisId,
-          report_type: reportType,
-        });
-        setActiveReport(generated);
-      }
-    } catch (err: any) {
-      setActiveReport(null);
-      setErrorObj({
-        message: "Report generation failed",
-        reason: err.reason || "Report storage is currently unavailable.",
-        action: err.action || "Please retry after the reporting service becomes available.",
-        techDetails: err.details || err.message || String(err),
-      });
-    }
-  };
 
   const handleSelectAnalysis = async (analysisId: string) => {
     setSelectedAnalysisId(analysisId);
@@ -402,7 +402,7 @@ export default function ReportsPage() {
         <IntegratedReportView report={payload} reportId={activeReport?.id || "N/A"} activeTab={activeTab} />
       ) : (
         <div className="p-12 text-center bg-slate-900/40 rounded-2xl border border-slate-800 text-slate-400 text-sm">
-          No report snapshot loaded for the selected analysis context. Click "Generate New Snapshot" above.
+          No report snapshot loaded for the selected analysis context. Click &quot;Generate New Snapshot&quot; above.
         </div>
       )}
 
