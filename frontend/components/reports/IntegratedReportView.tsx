@@ -35,7 +35,11 @@ interface IntegratedReportViewProps {
   activeTab?: string;
 }
 
-export function IntegratedReportView({ report, reportId, activeTab = "integrated" }: IntegratedReportViewProps) {
+export function IntegratedReportView({
+  report,
+  reportId,
+  activeTab = "integrated",
+}: IntegratedReportViewProps) {
   const {
     context,
     trust_disposition,
@@ -67,7 +71,6 @@ export function IntegratedReportView({ report, reportId, activeTab = "integrated
     return String(driver);
   };
 
-  // Colors for trust disposition
   const getTrustBadgeClass = (disp: string) => {
     switch (disp) {
       case "HIGH":
@@ -96,7 +99,6 @@ export function IntegratedReportView({ report, reportId, activeTab = "integrated
     }
   };
 
-  // Derive Automation Permission based on ECRG Effective Action
   const getAutomationPermission = (action?: string) => {
     switch (action) {
       case "CONTINUE":
@@ -115,8 +117,13 @@ export function IntegratedReportView({ report, reportId, activeTab = "integrated
 
   const automationPerm = getAutomationPermission(ecrg_governance_summary?.effective_action);
 
-  // Derive Primary Concern and Recommended Next Action
-  const primaryConcernStr = top_risk_drivers && top_risk_drivers.length > 0 ? formatRiskDriver(top_risk_drivers[0]) : (why_this_decision && why_this_decision.length > 0 ? why_this_decision[0].factor + ": " + why_this_decision[0].description : "None identified under current baseline.");
+  const primaryConcernStr =
+    top_risk_drivers && top_risk_drivers.length > 0
+      ? formatRiskDriver(top_risk_drivers[0])
+      : why_this_decision && why_this_decision.length > 0
+      ? why_this_decision[0].factor + ": " + why_this_decision[0].description
+      : "None identified under current baseline.";
+
   const recommendedAction = action_plan && action_plan.length > 0 ? action_plan[0] : null;
 
   const handlePrint = () => {
@@ -128,39 +135,499 @@ export function IntegratedReportView({ report, reportId, activeTab = "integrated
     window.open(url, "_blank");
   };
 
-  return (
-    <div className="space-y-8 text-slate-200">
-      {/* Action Bar (Print & Download Controls) */}
-      <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl bg-slate-900/60 border border-slate-800 backdrop-blur-md print:hidden">
-        <div className="flex items-center gap-3">
-          <FileText className="w-5 h-5 text-indigo-400" />
-          <span className="text-sm font-medium text-slate-300">
-            Report Snapshot ID: <code className="text-indigo-300 font-mono">{reportId}</code>
-          </span>
+  // Shared Top Action Bar
+  const renderActionBar = () => (
+    <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl bg-slate-900/60 border border-slate-800 backdrop-blur-md print:hidden">
+      <div className="flex items-center gap-3">
+        <FileText className="w-5 h-5 text-indigo-400" />
+        <span className="text-sm font-medium text-slate-300">
+          Report Snapshot ID: <code className="text-indigo-300 font-mono">{reportId}</code>
+        </span>
+      </div>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => handleExport("json")}
+          className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition"
+        >
+          <Download className="w-3.5 h-3.5" /> Export JSON
+        </button>
+        <button
+          onClick={() => handleExport("csv")}
+          className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition"
+        >
+          <Download className="w-3.5 h-3.5" /> Export CSV
+        </button>
+        <button
+          onClick={handlePrint}
+          className="flex items-center gap-2 px-4 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/20 transition"
+        >
+          <Printer className="w-3.5 h-3.5" /> Print / Save PDF
+        </button>
+      </div>
+    </div>
+  );
+
+  // TAB 2: RELIABILITY ASSESSMENT SUMMARY VIEW ONLY
+  if (activeTab === "reliability") {
+    const oodVal = reliability_summary.aggregate_ood_risk;
+    const uncVal = reliability_summary.aggregate_uncertainty;
+    const driftVal = reliability_summary.aggregate_drift_score;
+    const fusedVal = reliability_summary.aggregate_fused_risk;
+
+    const getSeverityLabel = (val: number | null | undefined, thresholds: { high: number; mod: number }) => {
+      if (val === null || val === undefined) return { text: "NOT EVALUATED", color: "text-slate-400 bg-slate-800 border-slate-700" };
+      if (val >= thresholds.high) return { text: "HIGH RISK", color: "text-rose-400 bg-rose-500/10 border-rose-500/30" };
+      if (val >= thresholds.mod) return { text: "MODERATE", color: "text-amber-400 bg-amber-500/10 border-amber-500/30" };
+      return { text: "LOW / NOMINAL", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/30" };
+    };
+
+    return (
+      <div className="space-y-8 text-slate-200" data-testid="reliability-view">
+        {renderActionBar()}
+
+        {/* Reliability Overview Header */}
+        <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+            <div>
+              <div className="flex items-center gap-2 text-xs font-mono text-indigo-400 uppercase tracking-wider mb-1">
+                <BarChart2 className="w-4 h-4" /> Telemetry & Reliability Assessment Summary
+              </div>
+              <h1 className="text-xl font-bold text-white">{context.model_name}</h1>
+              <p className="text-xs text-slate-400 font-mono mt-0.5">
+                Analysis: {context.analysis_id} | Reference: {context.reference_dataset_name || context.reference_dataset_id} | Evaluation: {context.evaluation_dataset_name || context.evaluation_dataset_id}
+              </p>
+            </div>
+            <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-right">
+              <div className="text-[10px] text-slate-400 font-semibold uppercase">Fused Reliability Index</div>
+              <div className="text-2xl font-extrabold font-mono text-indigo-400">
+                {fusedVal !== null && fusedVal !== undefined ? fusedVal.toFixed(3) : "N/A"}
+              </div>
+              <div className="text-[10px] text-slate-500 font-mono uppercase">Method: {reliability_summary.fusion_method}</div>
+            </div>
+          </div>
+
+          {/* 4 Reliability Telemetry Signals Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* OOD */}
+            <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-400">Out-of-Distribution (OOD)</span>
+                <span className={`text-[10px] font-mono px-2 py-0.5 rounded border font-bold ${getSeverityLabel(oodVal, { high: 0.6, mod: 0.3 }).color}`}>
+                  {getSeverityLabel(oodVal, { high: 0.6, mod: 0.3 }).text}
+                </span>
+              </div>
+              <div className="text-2xl font-extrabold font-mono text-sky-400">
+                {oodVal !== null && oodVal !== undefined ? oodVal.toFixed(3) : "N/A"}
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                {oodVal !== null && oodVal > 0.6 ? "High feature density deviation from baseline reference manifold." : "Evaluation density aligns within nominal reference manifold bounds."}
+              </p>
+            </div>
+
+            {/* Uncertainty */}
+            <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-400">Prediction Uncertainty</span>
+                <span className={`text-[10px] font-mono px-2 py-0.5 rounded border font-bold ${getSeverityLabel(uncVal, { high: 0.35, mod: 0.25 }).color}`}>
+                  {getSeverityLabel(uncVal, { high: 0.35, mod: 0.25 }).text}
+                </span>
+              </div>
+              <div className="text-2xl font-extrabold font-mono text-amber-400">
+                {uncVal !== null && uncVal !== undefined ? uncVal.toFixed(3) : "N/A"}
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                {uncVal !== null && uncVal > 0.35 ? "High prediction variance indicating unconfident decision boundary." : "Prediction variance remains within expected confidence limits."}
+              </p>
+            </div>
+
+            {/* Drift */}
+            <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-400">Feature & Concept Drift</span>
+                <span className={`text-[10px] font-mono px-2 py-0.5 rounded border font-bold ${getSeverityLabel(driftVal, { high: 0.35, mod: 0.15 }).color}`}>
+                  {getSeverityLabel(driftVal, { high: 0.35, mod: 0.15 }).text}
+                </span>
+              </div>
+              <div className="text-2xl font-extrabold font-mono text-rose-400">
+                {driftVal !== null && driftVal !== undefined ? driftVal.toFixed(3) : "N/A"}
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                {driftVal !== null && driftVal > 0.35 ? "Significant feature distribution drift requiring parameter recalibration." : "Feature distribution drift remains low across evaluation dimensions."}
+              </p>
+            </div>
+
+            {/* Fused Risk */}
+            <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-400">Fused Reliability Risk</span>
+                <span className={`text-[10px] font-mono px-2 py-0.5 rounded border font-bold ${getSeverityLabel(fusedVal, { high: 0.5, mod: 0.2 }).color}`}>
+                  {getSeverityLabel(fusedVal, { high: 0.5, mod: 0.2 }).text}
+                </span>
+              </div>
+              <div className="text-2xl font-extrabold font-mono text-indigo-400">
+                {fusedVal !== null && fusedVal !== undefined ? fusedVal.toFixed(3) : "N/A"}
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Unified composite risk weighted by uncertainty and feature divergence metrics.
+              </p>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => handleExport("json")}
-            className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition"
-          >
-            <Download className="w-3.5 h-3.5" /> Export JSON
-          </button>
-          <button
-            onClick={() => handleExport("csv")}
-            className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition"
-          >
-            <Download className="w-3.5 h-3.5" /> Export CSV
-          </button>
-          <button
-            onClick={handlePrint}
-            className="flex items-center gap-2 px-4 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/20 transition"
-          >
-            <Printer className="w-3.5 h-3.5" /> Print / Save PDF
-          </button>
+
+        {/* Primary Concern & Signal Disagreement */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="p-6 rounded-xl bg-slate-900/60 border border-slate-800 space-y-3">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-400" /> Primary Reliability Concern
+            </h3>
+            <div className="p-4 rounded-lg bg-slate-950/80 border border-slate-800 text-xs text-rose-300 font-medium">
+              {primaryConcernStr}
+            </div>
+          </div>
+
+          <div className="p-6 rounded-xl bg-slate-900/60 border border-slate-800 space-y-3">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <Activity className="w-4 h-4 text-sky-400" /> Signal Disagreement Analysis
+            </h3>
+            <div className="p-4 rounded-lg bg-slate-950/80 border border-slate-800 text-xs text-slate-300 space-y-1">
+              <p className="leading-relaxed">
+                {oodVal !== null && oodVal > 0.6 && (uncVal === null || uncVal < 0.3)
+                  ? "Elevated OOD risk occurs with low uncertainty, indicating out-of-manifold inputs where model confidence is artificially high."
+                  : "Reliability signals exhibit consistent risk alignment across evaluation dimensions."}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Source Traceability Panel */}
+        <div className="p-6 rounded-xl bg-slate-900/60 border border-slate-800 space-y-3">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <Layers className="w-4 h-4 text-indigo-400" /> Source Analysis Traceability
+            </h3>
+            <Link href="/analysis" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-semibold">
+              Open Analysis Workbench <ExternalLink className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-mono">
+            <div className="p-3 bg-slate-950 rounded-lg border border-slate-800">
+              <div className="text-slate-400 text-[10px]">Model ID</div>
+              <div className="text-slate-200 font-bold mt-0.5">{context.model_id}</div>
+            </div>
+            <div className="p-3 bg-slate-950 rounded-lg border border-slate-800">
+              <div className="text-slate-400 text-[10px]">Analysis ID</div>
+              <div className="text-indigo-300 font-bold mt-0.5">{context.analysis_id}</div>
+            </div>
+            <div className="p-3 bg-slate-950 rounded-lg border border-slate-800">
+              <div className="text-slate-400 text-[10px]">Evaluation Result Path</div>
+              <div className="text-slate-300 font-bold mt-0.5 truncate">{reliability_summary.result_path || "N/A"}</div>
+            </div>
+          </div>
         </div>
       </div>
+    );
+  }
 
-      {/* EXECUTIVE VIEWPORT LAYER (FIRST VIEWPORT POLISH) */}
+  // TAB 3: MODEL TRUST & GOVERNANCE VIEW ONLY
+  if (activeTab === "model_trust") {
+    return (
+      <div className="space-y-8 text-slate-200" data-testid="trust-view">
+        {renderActionBar()}
+
+        {/* Operational Trust Header */}
+        <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-slate-800 pb-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-xs font-mono text-indigo-400 uppercase tracking-wider">
+                <Compass className="w-4 h-4" /> Model Operational Trust & Risk Interpretation
+              </div>
+              <h1 className="text-xl font-bold text-white">{context.model_name}</h1>
+              <p className="text-xs text-slate-400 font-mono">
+                Report ID: {reportId} | Analysis: {context.analysis_id}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                <div className="text-[10px] text-slate-400 font-semibold uppercase mb-1">Trust Disposition</div>
+                <div className={`px-3 py-1 rounded-lg border text-xs font-bold uppercase ${getTrustBadgeClass(trust_disposition)}`}>
+                  {trust_disposition}
+                </div>
+              </div>
+
+              <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                <div className="text-[10px] text-slate-400 font-semibold uppercase mb-1">ECRG Effective Action</div>
+                <div className="px-3 py-1 rounded-lg border text-xs font-bold font-mono bg-indigo-500/10 text-indigo-400 border-indigo-500/30">
+                  {ecrg_governance_summary?.effective_action || "UNAVAILABLE"}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 text-xs text-slate-300 space-y-2">
+            <div className="font-bold text-white">Trust Rationale Synthesis:</div>
+            <p className="leading-relaxed">{trust_rationale}</p>
+          </div>
+
+          <div className="flex items-center gap-3 pt-2">
+            <span className="text-xs font-semibold text-slate-400">Automation Permission:</span>
+            <span className={`text-xs font-bold px-3 py-1 rounded border ${automationPerm.color}`}>
+              {automationPerm.text}
+            </span>
+          </div>
+        </div>
+
+        {/* Supporting vs Reducing Trust Reasons */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="p-6 rounded-xl bg-slate-900/60 border border-slate-800 space-y-3">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Reasons Supporting Trust
+            </h3>
+            <div className="space-y-2">
+              {why_this_decision.filter((w) => w.impact === "POSITIVE").length > 0 ? (
+                why_this_decision
+                  .filter((w) => w.impact === "POSITIVE")
+                  .map((w, idx) => (
+                    <div key={idx} className="p-3 bg-slate-950/70 rounded-lg border border-slate-800/80 text-xs space-y-1">
+                      <div className="font-semibold text-emerald-300">{w.factor}</div>
+                      <p className="text-slate-400">{w.description}</p>
+                    </div>
+                  ))
+              ) : (
+                <div className="p-3 bg-slate-950/50 rounded-lg text-xs text-slate-500 italic">
+                  No positive trust factors identified under current evaluation context.
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="p-6 rounded-xl bg-slate-900/60 border border-slate-800 space-y-3">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <XCircle className="w-4 h-4 text-rose-400" /> Reasons Reducing Trust / Risk Factors
+            </h3>
+            <div className="space-y-2">
+              {why_this_decision.filter((w) => w.impact !== "POSITIVE").length > 0 ? (
+                why_this_decision
+                  .filter((w) => w.impact !== "POSITIVE")
+                  .map((w, idx) => (
+                    <div key={idx} className="p-3 bg-slate-950/70 rounded-lg border border-slate-800/80 text-xs space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-rose-300">{w.factor}</span>
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20">{w.impact}</span>
+                      </div>
+                      <p className="text-slate-400">{w.description}</p>
+                    </div>
+                  ))
+              ) : (
+                <div className="p-3 bg-slate-950/50 rounded-lg text-xs text-slate-500 italic">
+                  No adverse risk factors identified under current evaluation context.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Top Risk Drivers & Action Recommendations */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="p-6 rounded-xl bg-slate-900/60 border border-slate-800 space-y-3">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-rose-400" /> Top Risk Drivers Breakdown
+            </h3>
+            <div className="space-y-2">
+              {top_risk_drivers && top_risk_drivers.length > 0 ? (
+                top_risk_drivers.map((driver, idx) => (
+                  <div key={idx} className="p-3 bg-slate-950/70 rounded-lg border border-slate-800 text-xs space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-white">[{driver.category}] {driver.driver_name}</span>
+                      <span className="font-mono text-rose-400 font-bold">Severity: {driver.severity_score}</span>
+                    </div>
+                    <p className="text-slate-400">{driver.impact_description}</p>
+                  </div>
+                ))
+              ) : (
+                <div className="p-3 bg-slate-950/50 rounded-lg text-xs text-slate-400 italic">
+                  No critical risk drivers identified above nominal threshold.
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="p-6 rounded-xl bg-slate-900/60 border border-slate-800 space-y-3">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <History className="w-4 h-4 text-indigo-400" /> Retraining & Recalibration Disposition
+            </h3>
+            <div className="p-4 rounded-lg bg-slate-950/80 border border-slate-800 space-y-2 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="text-slate-400 font-semibold">Disposition:</span>
+                <span className="px-2.5 py-1 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-bold font-mono">
+                  {retraining_disposition}
+                </span>
+              </div>
+              <p className="text-slate-300 leading-relaxed">{retraining_rationale}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // TAB 4: GOVERNANCE DECISION REPORT VIEW ONLY
+  if (activeTab === "governance") {
+    return (
+      <div className="space-y-8 text-slate-200" data-testid="governance-view">
+        {renderActionBar()}
+
+        {/* Governance Master Header */}
+        <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-xs font-mono text-emerald-400 uppercase tracking-wider">
+                <Lock className="w-4 h-4" /> ECRG Conformal Governance Decision Report
+              </div>
+              <h1 className="text-xl font-bold text-white">{context.model_name}</h1>
+              <p className="text-xs text-slate-400 font-mono">
+                Decision ID: {ecrg_governance_summary.decision_id || "N/A"} | Operating Mode: {ecrg_governance_summary.operating_mode || "EVIDENCE_ONLY"}
+              </p>
+            </div>
+
+            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 text-right">
+              <div className="text-[10px] text-slate-400 font-semibold uppercase">Effective Action</div>
+              <div className="text-2xl font-extrabold font-mono text-indigo-400 mt-0.5">
+                {ecrg_governance_summary.effective_action || "UNAVAILABLE"}
+              </div>
+              <div className="text-[10px] text-slate-500 font-mono">Raw Action: {ecrg_governance_summary.raw_action || "N/A"}</div>
+            </div>
+          </div>
+
+          {/* Key ECRG State Metrics */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-mono">
+            <div className="p-3 bg-slate-950 rounded-lg border border-slate-800">
+              <div className="text-slate-400 font-sans text-[11px]">Operating Mode</div>
+              <div className="font-bold text-emerald-400 mt-1">{ecrg_governance_summary.operating_mode || "EVIDENCE_ONLY"}</div>
+            </div>
+            <div className="p-3 bg-slate-950 rounded-lg border border-slate-800">
+              <div className="text-slate-400 font-sans text-[11px]">Previous Action</div>
+              <div className="font-bold text-slate-300 mt-1">{ecrg_governance_summary.previous_effective_action || "NONE"}</div>
+            </div>
+            <div className="p-3 bg-slate-950 rounded-lg border border-slate-800">
+              <div className="text-slate-400 font-sans text-[11px]">State Index</div>
+              <div className="font-bold text-slate-200 mt-1">{ecrg_governance_summary.state_index ?? 0}</div>
+            </div>
+            <div className="p-3 bg-slate-950 rounded-lg border border-slate-800">
+              <div className="text-slate-400 font-sans text-[11px]">State Transition</div>
+              <div className="font-bold text-sky-400 mt-1">
+                {ecrg_governance_summary.transition_occurred ? "TRANSITIONED" : "NOMINAL STATE"}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Conformal Calibration & Set Prediction Details */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="p-6 rounded-xl bg-slate-900/60 border border-slate-800 space-y-4">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-sky-400" /> Conformal Calibration & Coverage Disclosure
+            </h3>
+            <div className="space-y-3 text-xs">
+              <div className="p-3.5 bg-slate-950 rounded-lg border border-slate-800 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-slate-300">Calibration Status:</span>
+                  <span className={`px-2 py-0.5 rounded font-mono font-bold ${ecrg_governance_summary.calibrated ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30" : "bg-slate-800 text-slate-400 border border-slate-700"}`}>
+                    {ecrg_governance_summary.calibrated ? "CALIBRATED" : "UNSET"}
+                  </span>
+                </div>
+                <p className="text-slate-400 pt-1 leading-relaxed">
+                  {ecrg_governance_summary.calibrated_disclosure || (ecrg_governance_summary.calibrated ? "Conformal calibration active." : `Conformal calibration was not active for this ${ecrg_governance_summary.operating_mode || "EVIDENCE_ONLY"} snapshot.`)}
+                </p>
+              </div>
+
+              <div className="p-3.5 bg-slate-950 rounded-lg border border-slate-800 space-y-1 font-mono">
+                <div className="text-slate-400 font-sans">Prediction Set Output</div>
+                <div className="text-slate-200 font-bold">
+                  {JSON.stringify(ecrg_governance_summary.prediction_set || [])}
+                </div>
+              </div>
+
+              <div className="p-3.5 bg-slate-950 rounded-lg border border-slate-800 space-y-1 font-mono">
+                <div className="text-slate-400 font-sans">Calibrator Artifact ID</div>
+                <div className="text-slate-300 truncate">
+                  {ecrg_governance_summary.calibrator_artifact_id || "NONE (Uncalibrated Snapshot)"}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6 rounded-xl bg-slate-900/60 border border-slate-800 space-y-4">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <Lock className="w-4 h-4 text-emerald-400" /> Machine Reason Codes & Cryptographic Audit
+            </h3>
+            <div className="space-y-3 text-xs">
+              <div className="p-3.5 bg-slate-950 rounded-lg border border-slate-800 space-y-1 font-mono">
+                <div className="text-slate-400 font-sans">Machine Reason Codes</div>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {(ecrg_governance_summary.reason_codes || []).map((code: string, i: number) => (
+                    <span key={i} className="px-2 py-0.5 bg-indigo-950/60 text-indigo-300 border border-indigo-800/60 rounded text-[11px]">
+                      {code}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="p-3.5 bg-slate-950 rounded-lg border border-slate-800 space-y-1 font-mono">
+                <div className="text-slate-400 font-sans">Evidence Snapshot Hash</div>
+                <div className="text-slate-300 text-[11px] break-all">
+                  {ecrg_governance_summary.evidence_snapshot_hash || "N/A"}
+                </div>
+              </div>
+
+              <div className="p-3.5 bg-slate-950 rounded-lg border border-slate-800 space-y-1">
+                <div className="text-slate-400 font-semibold">Transition Rationale</div>
+                <p className="text-slate-300 leading-relaxed">
+                  {ecrg_governance_summary.transition_reason || "Nominal state maintenance under active governance."}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Operational Protocol Instructions */}
+        <div className="p-6 rounded-xl bg-slate-900/60 border border-slate-800 space-y-3">
+          <h3 className="text-sm font-bold text-white flex items-center gap-2">
+            <Activity className="w-4 h-4 text-indigo-400" /> ECRG Operator Protocol
+          </h3>
+          <div className="p-4 rounded-lg bg-slate-950/80 border border-slate-800 text-xs text-slate-300 space-y-2 leading-relaxed">
+            {ecrg_governance_summary.effective_action === "WATCH" && (
+              <p>
+                <span className="font-bold text-indigo-300">WATCH Protocol:</span> Model execution is permitted under active operational surveillance. Telemetry and prediction variance are logged continuously. Operators should inspect early warning trajectory alerts if risk elevation persists.
+              </p>
+            )}
+            {ecrg_governance_summary.effective_action === "CONTINUE" && (
+              <p>
+                <span className="font-bold text-emerald-300">CONTINUE Protocol:</span> Nominal model operation permitted without restriction. Continuous telemetry verification remains active.
+              </p>
+            )}
+            {ecrg_governance_summary.effective_action === "DEFER" && (
+              <p>
+                <span className="font-bold text-amber-300">DEFER Protocol:</span> Human-in-the-loop fallback required. Automated model inference routing suspended for set predictions.
+              </p>
+            )}
+            {ecrg_governance_summary.effective_action === "ESCALATE" && (
+              <p>
+                <span className="font-bold text-rose-300">ESCALATE Protocol:</span> Operational restriction enforced. Emergency manual override required; model execution suspended until recalibrated.
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // TAB 1: INTEGRATED REPORT (PRINCIPAL) - FULL CONSOLIDATED REPORT VIEW
+  return (
+    <div className="space-y-8 text-slate-200" data-testid="integrated-view">
+      {renderActionBar()}
+
+      {/* EXECUTIVE VIEWPORT LAYER */}
       <div className="relative p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-slate-900/90 via-slate-900/50 to-slate-950 border border-slate-800 shadow-2xl space-y-6">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="space-y-2">
@@ -414,7 +881,10 @@ export function IntegratedReportView({ report, reportId, activeTab = "integrated
           </div>
           <div className="p-4 bg-slate-950/60 rounded-lg border border-slate-800 text-xs space-y-1 text-slate-300">
             <div>Status: <span className="font-mono font-bold text-indigo-300">{failure_explorer_summary.status}</span></div>
-            <div>Signatures Analyzed: <span className="font-mono">{failure_explorer_summary.signature_count || 0}</span></div>
+            <div>Signatures Analyzed: <span className="font-mono">{failure_explorer_summary.signature_count || failure_explorer_summary.n_signatures || 0}</span></div>
+            {failure_explorer_summary.details && (
+              <div className="text-slate-400 italic pt-1">{failure_explorer_summary.details}</div>
+            )}
           </div>
         </div>
 
@@ -581,10 +1051,10 @@ export function IntegratedReportView({ report, reportId, activeTab = "integrated
             </h2>
           </div>
           <div className="text-xs text-slate-300 font-mono">
-            {trend_comparison ? (
-              <div>Trend Direction: <span className="font-bold text-indigo-300">{trend_comparison.direction || "STABLE"}</span></div>
+            {trend_comparison && trend_comparison.has_previous_analysis ? (
+              <div>Trend Direction: <span className="font-bold text-indigo-300">{trend_comparison.trend_direction || "STABLE"}</span></div>
             ) : (
-              <div className="text-slate-400 italic">No prior baseline run recorded for historical delta comparison.</div>
+              <div className="text-slate-400 font-bold text-amber-300">NO VALID COMPARABLE PRIOR ASSESSMENT</div>
             )}
           </div>
         </div>

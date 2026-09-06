@@ -406,6 +406,7 @@ class ReportGenerator:
                 "prediction_set": [],
                 "reason_codes": ["NO_GOVERNANCE_EVALUATION"],
                 "calibrated": False,
+                "calibrated_disclosure": "Conformal calibration was not active for this snapshot.",
                 "calibrator_artifact_id": None,
                 "p_adverse": None,
             }
@@ -424,6 +425,8 @@ class ReportGenerator:
             except Exception:
                 reasons = [latest_gov.reason_codes_json]
 
+        cal_disclosure = "Conformal calibration active." if latest_gov.calibrated else f"Conformal calibration was not active for this {latest_gov.operating_mode} snapshot."
+
         return {
             "evaluated": True,
             "id": latest_gov.id,
@@ -439,6 +442,7 @@ class ReportGenerator:
             "prediction_set": pred_set,
             "reason_codes": reasons,
             "calibrated": latest_gov.calibrated,
+            "calibrated_disclosure": cal_disclosure,
             "calibrator_artifact_id": latest_gov.calibrator_artifact_id,
             "evidence_snapshot_hash": latest_gov.evidence_snapshot_hash,
             "created_at": latest_gov.created_at,
@@ -488,7 +492,12 @@ class ReportGenerator:
 
     def _build_memory_summary(self) -> Dict[str, Any]:
         if not self.failure_memory:
-            return {"status": "UNAVAILABLE", "n_signatures": 0, "fitted_at": None}
+            return {
+                "status": "UNAVAILABLE",
+                "n_signatures": 0,
+                "fitted_at": None,
+                "details": "No evaluated failure signatures for this analysis context",
+            }
         return {
             "status": "VERIFIED",
             "id": self.failure_memory.id,
@@ -535,19 +544,19 @@ class ReportGenerator:
                 "Core reliability analysis evidence is unavailable or incomplete.",
             )
 
-        if eff_action in ["DEFER", "ESCALATE"] or fused_risk > 0.60:
+        if eff_action in ["DEFER", "ESCALATE"] or (fused_risk is not None and fused_risk > 0.60):
             return (
                 TrustDisposition.RESTRICTED,
                 f"Governance effective action '{eff_action}' or elevated fused risk ({fused_risk:.2f}) requires strict execution restriction.",
             )
 
-        if eff_action == "WATCH" or fused_risk > 0.35 or warn_triggered:
+        if eff_action == "WATCH" or (fused_risk is not None and fused_risk > 0.35) or warn_triggered:
             return (
                 TrustDisposition.LOW,
-                f"Model exhibits elevated risk flags (Fused Risk: {fused_risk:.2f}, Action: {eff_action}, Early Warning: {warn_triggered}). Enhanced monitoring required.",
+                f"Model exhibits elevated risk flags (Fused Risk: {fused_risk:.2f}, Action: {eff_action}, Early Warning: {warn_triggered}). Enhanced monitoring and active surveillance required.",
             )
 
-        if fused_risk >= 0.15 or overall_pct < 75.0 or gov.get("state_index", 0) > 0:
+        if (fused_risk is not None and fused_risk >= 0.15) or overall_pct < 75.0 or gov.get("state_index", 0) > 0:
             return (
                 TrustDisposition.CONDITIONAL,
                 f"Model operates under conditional trust (Fused Risk: {fused_risk:.2f}, State Index: {gov.get('state_index', 0)}, Completeness: {overall_pct}%).",
@@ -576,13 +585,13 @@ class ReportGenerator:
         if (drift and drift > 0.60) or (ood and ood > 0.60) or fused_risk > 0.60:
             return (
                 RetrainingDisposition.URGENT_MODEL_REVIEW,
-                f"Critical domain shift or severe risk elevation (Drift: {drift}, OOD: {ood}, Fused: {fused_risk:.2f}). Immediate model review mandated.",
+                f"Critical domain shift or severe risk elevation (OOD: {ood}, Drift: {drift}, Fused: {fused_risk:.2f}). Immediate model review mandated.",
             )
 
         if (drift and drift > 0.35) or (ood and ood > 0.40):
             return (
                 RetrainingDisposition.RETRAINING_ADVISED,
-                f"Moderate-to-high feature shift observed (Drift: {drift}, OOD: {ood}). Retraining on recent dataset advised.",
+                f"Moderate-to-high feature shift observed (OOD: {ood}, Drift: {drift}). Retraining on recent dataset advised.",
             )
 
         if (unc and unc > 0.30) or (len(gov.get("prediction_set", [])) > 1):
@@ -685,6 +694,16 @@ class ReportGenerator:
                     target_component="ECRG State Machine Governor",
                 )
             )
+        elif eff_action == "WATCH":
+            plan.append(
+                ActionItem(
+                    priority="P1",
+                    title="Initiate Enhanced Monitoring Protocol",
+                    rationale="ECRG state machine evaluated effective action as WATCH. Operations permitted under active surveillance.",
+                    trigger_condition="Effective Action == WATCH",
+                    target_component="ECRG State Machine Governor",
+                )
+            )
         elif fused > 0.35:
             plan.append(
                 ActionItem(
@@ -698,11 +717,20 @@ class ReportGenerator:
 
         # P2 Priority
         if retrain in [RetrainingDisposition.RETRAINING_ADVISED, RetrainingDisposition.URGENT_MODEL_REVIEW]:
+            drift_val = rel.get("aggregate_drift_score") or 0.0
+            ood_val = rel.get("aggregate_ood_risk") or 0.0
+            if drift_val > 0.35:
+                rat_text = f"Significant feature drift ({drift_val:.3f}) requires parameter updates."
+            elif ood_val > 0.40:
+                rat_text = f"Elevated out-of-distribution density shift ({ood_val:.3f}) requires model parameter review."
+            else:
+                rat_text = f"Empirical risk indicators ({retrain.value}) advise model parameter review."
+
             plan.append(
                 ActionItem(
                     priority="P2",
                     title="Schedule Model Retraining Pipeline",
-                    rationale=f"Significant distribution drift requires parameter updates ({retrain.value}).",
+                    rationale=rat_text,
                     trigger_condition=f"Retraining Disposition == {retrain.value}",
                     target_component="Model Training & Reference Fit Pipeline",
                 )
@@ -758,14 +786,14 @@ class ReportGenerator:
             rec_env = "STAGING_WITH_GUARDRAILS"
             tier = "TIER_2_RESTRICTED"
             constraints = ["Enable automated human fallback for set predictions", "Continuous early warning active"]
-        elif trust == TrustDisposition.LOW:
-            rec_env = "SHADOW_MODE_ONLY"
+        elif trust == TrustDisposition.LOW or eff_action == "WATCH":
+            rec_env = "SUPERVISED_PRODUCTION_WITH_MONITORING"
             tier = "TIER_3_EVALUATION"
-            constraints = ["No live decision routing", "Capture dark traffic telemetry for recalibration"]
+            constraints = ["Supervised automation with active risk monitoring", "Capture telemetry for recalibration"]
         else:
             rec_env = "BLOCKED_FROM_DEPLOYMENT"
             tier = "TIER_4_ISOLATED"
-            constraints = ["Model deployment blocked by ECRG governance policy", "Mandatory review required"]
+            constraints = ["Model deployment blocked by ECRG governance policy", "Mandatory human review required"]
 
         return {
             "recommended_environment": rec_env,
@@ -781,7 +809,7 @@ class ReportGenerator:
                 "has_previous_analysis": False,
                 "fused_risk_delta": None,
                 "drift_delta": None,
-                "trend_direction": "STABLE",
+                "trend_direction": "NO VALID COMPARABLE PRIOR ASSESSMENT",
             }
 
         prev_fused = self.previous_analysis.aggregate_fused_risk or 0.0
@@ -818,19 +846,20 @@ class ReportGenerator:
             drivers.append(
                 RiskDriver(
                     category="Distribution Shift",
-                    driver_name="Out-of-Distribution Feature Density",
+                    driver_name="Out-of-Distribution Feature Density Shift",
                     severity_score=round(ood, 3),
                     impact_description="Evaluation samples deviate from reference state density manifold.",
                 )
             )
 
-        # Uncertainty
+        # Uncertainty - only label HIGH if unc > 0.35, otherwise MODERATE
         unc = rel.get("aggregate_uncertainty")
-        if unc is not None and unc > 0.20:
+        if unc is not None and unc > 0.25:
+            driver_title = "High Model Uncertainty" if unc > 0.35 else "Moderate Epistemic Uncertainty"
             drivers.append(
                 RiskDriver(
                     category="Model Epistemic",
-                    driver_name="High Model Uncertainty",
+                    driver_name=driver_title,
                     severity_score=round(unc, 3),
                     impact_description="Model prediction variance indicates unconfident prediction boundary.",
                 )
@@ -851,3 +880,4 @@ class ReportGenerator:
         # Sort by severity descending
         drivers.sort(key=lambda d: d.severity_score, reverse=True)
         return drivers[:3]
+

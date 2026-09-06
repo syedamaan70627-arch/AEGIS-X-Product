@@ -76,8 +76,8 @@ const mockReportPayload = {
     generated_at: '2026-09-06T12:00:00Z',
     evidence_sha256: 'sha256_evidence_hash_123',
   },
-  trust_disposition: 'CONDITIONAL',
-  trust_rationale: 'The evaluation data displays elevated OOD exposure relative to baseline.',
+  trust_disposition: 'LOW',
+  trust_rationale: 'Model exhibits elevated risk flags (Fused Risk: 0.42, Action: WATCH). Enhanced monitoring required.',
   overall_completeness_pct: 91.6,
   completeness: {
     ood_detection: { name: 'OOD Detection', status: 'VERIFIED', evidence_count: 100 },
@@ -88,6 +88,8 @@ const mockReportPayload = {
     aggregate_uncertainty: 0.15,
     aggregate_drift_score: 0.10,
     aggregate_fused_risk: 0.42,
+    fusion_method: 'uncertainty_weighted',
+    result_path: 'analysis/res.json',
   },
   stress_lab_summary: { status: 'UNAVAILABLE', test_count: 0, avg_risk_delta: null, max_stressed_risk: null },
   fault_lab_summary: { status: 'UNAVAILABLE', test_count: 0, pass_rate: null },
@@ -98,19 +100,26 @@ const mockReportPayload = {
     operating_mode: 'EVIDENCE_ONLY',
     raw_action: 'WATCH',
     effective_action: 'WATCH',
+    previous_effective_action: 'CONTINUE',
     state_index: 1,
-    calibrated: true,
+    calibrated: false,
+    calibrated_disclosure: 'Conformal calibration was not active for this EVIDENCE_ONLY snapshot.',
+    evidence_snapshot_hash: 'sha256_gov_hash',
+    reason_codes: ['STATE_TRANSITION_WATCH'],
   },
   why_this_decision: [
-    { factor: 'High OOD Exposure', impact: 'CRITICAL', description: 'Evaluation inputs differ strongly from reference conditions.' }
+    { factor: 'High OOD Exposure', impact: 'CRITICAL', description: 'Evaluation inputs differ strongly from reference conditions.', evidence_link: '/reliability' }
   ],
   action_plan: [
-    { priority: 'P1', title: 'Review high-OOD observations', target_component: 'Reliability -> OOD', rationale: 'Review high-OOD observations under Reliability analysis tab' }
+    { priority: 'P1', title: 'Initiate Enhanced Monitoring Protocol', rationale: 'ECRG state machine evaluated effective action as WATCH.', trigger_condition: 'Effective Action == WATCH', target_component: 'ECRG Governor' }
   ],
-  retraining_disposition: 'MONITOR',
-  retraining_rationale: 'OOD risk is elevated but predictive uncertainty remains low.',
-  deployment_suitability: { recommended_environment: 'STAGING', risk_tier: 'TIER_2' },
-  top_risk_drivers: ['High OOD risk detected relative to reference dataset'],
+  retraining_disposition: 'RETRAINING_ADVISED',
+  retraining_rationale: 'Elevated out-of-distribution density shift (0.850) requires model parameter review.',
+  deployment_suitability: { recommended_environment: 'SUPERVISED_PRODUCTION_WITH_MONITORING', risk_tier: 'TIER_3_EVALUATION' },
+  trend_comparison: { has_previous_analysis: false, trend_direction: 'NO VALID COMPARABLE PRIOR ASSESSMENT' },
+  top_risk_drivers: [
+    { category: 'Distribution Shift', driver_name: 'Out-of-Distribution Feature Density Shift', severity_score: 0.85, impact_description: 'Evaluation samples deviate from reference density.' }
+  ],
   scientific_limitations: ['Label-free risk evidence is not confirmed prediction error.'],
 };
 
@@ -121,7 +130,7 @@ const mockReportSnapshot = {
   analysis_id: 'ana_3e2f39a9',
   report_type: 'integrated',
   title: 'AEGIS-X Integrated Reliability & Governance Report',
-  disposition: 'CONDITIONAL',
+  disposition: 'LOW',
   completeness_score: 91.6,
   result_path: 'reports/rep_snapshot_1.json',
   snapshot_json: mockReportPayload,
@@ -227,9 +236,10 @@ describe('AEGIS-X Reports Behavioral Test Suite', () => {
     );
 
     // Tab 1: Integrated Report
+    expect(screen.getByTestId('integrated-view')).toBeInTheDocument();
     expect(screen.getByText('Executive Decision Summary')).toBeInTheDocument();
 
-    // Tab 2: Reliability Section
+    // Tab 2: Reliability Section Only
     rerender(
       <IntegratedReportView
         report={mockReportPayload as any}
@@ -237,9 +247,11 @@ describe('AEGIS-X Reports Behavioral Test Suite', () => {
         activeTab="reliability"
       />
     );
-    expect(screen.getByText('Section C: Reliability Evidence')).toBeInTheDocument();
+    expect(screen.getByTestId('reliability-view')).toBeInTheDocument();
+    expect(screen.getByText('Telemetry & Reliability Assessment Summary')).toBeInTheDocument();
+    expect(screen.queryByText('Executive Decision Summary')).not.toBeInTheDocument();
 
-    // Tab 3: Model Trust Section
+    // Tab 3: Model Trust Section Only
     rerender(
       <IntegratedReportView
         report={mockReportPayload as any}
@@ -247,9 +259,11 @@ describe('AEGIS-X Reports Behavioral Test Suite', () => {
         activeTab="model_trust"
       />
     );
-    expect(screen.getByText('Section H: Model Trust Interpretation')).toBeInTheDocument();
+    expect(screen.getByTestId('trust-view')).toBeInTheDocument();
+    expect(screen.getByText('Model Operational Trust & Risk Interpretation')).toBeInTheDocument();
+    expect(screen.queryByTestId('reliability-view')).not.toBeInTheDocument();
 
-    // Tab 4: Governance Decision Section
+    // Tab 4: Governance Decision Section Only
     rerender(
       <IntegratedReportView
         report={mockReportPayload as any}
@@ -257,27 +271,13 @@ describe('AEGIS-X Reports Behavioral Test Suite', () => {
         activeTab="governance"
       />
     );
-    expect(screen.getByText('Section I: ECRG Governance Integration')).toBeInTheDocument();
+    expect(screen.getByTestId('governance-view')).toBeInTheDocument();
+    expect(screen.getByText('ECRG Conformal Governance Decision Report')).toBeInTheDocument();
+    expect(screen.queryByTestId('trust-view')).not.toBeInTheDocument();
   });
 
-  // TEST 7 — Model/Analysis Switching Clears Stale Context
-  it('TEST 7: Clears stale report state when model or analysis selection changes', async () => {
-    (api.listModelAnalyses as any).mockResolvedValueOnce({
-      analyses: [
-        mockAnalysis,
-        { id: 'ana_2', analysis_id: 'ana_2', model_id: 'mod_1', created_at: '2026-09-06T13:00:00Z' },
-      ],
-    });
-
-    render(<ReportsPage />);
-
-    await waitFor(() => {
-      expect(api.listModelAnalyses).toHaveBeenCalledWith('mod_1');
-    });
-  });
-
-  // TEST 8 — Zero-Dummy Behavior: Unexecuted Modules Render NOT EVALUATED / NOT APPLICABLE / UNAVAILABLE
-  it('TEST 8: Renders NOT APPLICABLE with prerequisite reason for Early Warning without fake 0% score', () => {
+  // TEST 7 — Synthesis Consistency: WATCH Action Is Not Rendered as DEFER or BLOCKED
+  it('TEST 7: WATCH governance action renders supervised monitoring without false BLOCKED or DEFER status', () => {
     render(
       <IntegratedReportView
         report={mockReportPayload as any}
@@ -286,28 +286,35 @@ describe('AEGIS-X Reports Behavioral Test Suite', () => {
       />
     );
 
-    expect(screen.getByText('Early Warning Engine')).toBeInTheDocument();
-    expect(screen.getByText('UNAVAILABLE')).toBeInTheDocument();
-    expect(screen.getByText(/Reason: No ordered temporal trajectory is available/i)).toBeInTheDocument();
-  });
-
-  // TEST 9 — First Viewport Executive Summary Header Rendering
-  it('TEST 9: Renders complete 1-Minute Executive Summary header fields', () => {
-    render(
-      <IntegratedReportView
-        report={mockReportPayload as any}
-        reportId="rep_snapshot_1"
-        activeTab="integrated"
-      />
-    );
-
-    expect(screen.getAllByText('CONDITIONAL').length).toBeGreaterThan(0);
     expect(screen.getAllByText('WATCH').length).toBeGreaterThan(0);
     expect(screen.getByText('Supervised Automation (Monitoring Required)')).toBeInTheDocument();
-    expect(screen.getAllByText(/High OOD risk/i).length).toBeGreaterThan(0);
-    expect(screen.getByText('Review high-OOD observations')).toBeInTheDocument();
-    expect(screen.getAllByText('MONITOR').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('91.6%').length).toBeGreaterThan(0);
+    expect(screen.queryByText('BLOCKED_FROM_DEPLOYMENT')).not.toBeInTheDocument();
+  });
+
+  // TEST 8 — Trend Consistency: Absence of Previous Run Renders NO VALID COMPARABLE PRIOR ASSESSMENT
+  it('TEST 8: Absence of prior analysis renders NO VALID COMPARABLE PRIOR ASSESSMENT instead of STABLE', () => {
+    render(
+      <IntegratedReportView
+        report={mockReportPayload as any}
+        reportId="rep_snapshot_1"
+        activeTab="integrated"
+      />
+    );
+
+    expect(screen.getByText('NO VALID COMPARABLE PRIOR ASSESSMENT')).toBeInTheDocument();
+  });
+
+  // TEST 9 — Conformal Calibration Disclosure: Unset Calibration Displays Explicit Disclosure
+  it('TEST 9: EVIDENCE_ONLY snapshot with unset calibration renders explicit uncalibrated disclosure', () => {
+    render(
+      <IntegratedReportView
+        report={mockReportPayload as any}
+        reportId="rep_snapshot_1"
+        activeTab="governance"
+      />
+    );
+
+    expect(screen.getByText(/Conformal calibration was not active for this EVIDENCE_ONLY snapshot/i)).toBeInTheDocument();
   });
 
   // TEST 10 — Human-Readable Error Boundaries

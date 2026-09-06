@@ -496,5 +496,136 @@ def test_same_analysis_governance_binding(db_conn):
     assert fetched_none is None
 
 
+def test_watch_action_synthesis_consistency(db_conn):
+    """
+    Verifies synthesis consistency for WATCH action:
+    - Trust disposition is LOW (not RESTRICTED)
+    - Deployment suitability is SUPERVISED_PRODUCTION_WITH_MONITORING (not BLOCKED_FROM_DEPLOYMENT)
+    - P1 Action Item is Initiate Enhanced Monitoring Protocol (not Mandatory Deferral)
+    """
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    model = ModelRecord(
+        id="mod_w", user_id="user_a", model_name="WatchModel", task_type="classification",
+        description="", file_path="fake.pkl", filename="fake.pkl", predict_supported=True,
+        predict_proba_supported=True, n_features_in=4, classes=["0", "1"], feature_names=["f1", "f2", "f3", "f4"],
+        created_at=now
+    )
+    ref_ds = DatasetRecord(
+        id="ds_ref_w", user_id="user_a", model_id="mod_w", dataset_type="REFERENCE",
+        file_path="ref.csv", filename="ref.csv", target_column=None, num_samples=100,
+        num_features=4, feature_names=["f1", "f2", "f3", "f4"], has_target=False, created_at=now
+    )
+    eval_ds = DatasetRecord(
+        id="ds_eval_w", user_id="user_a", model_id="mod_w", dataset_type="EVALUATION",
+        file_path="eval.csv", filename="eval.csv", target_column=None, num_samples=50,
+        num_features=4, feature_names=["f1", "f2", "f3", "f4"], has_target=False, created_at=now
+    )
+    analysis = AnalysisRecord(
+        id="ana_w", user_id="user_a", model_id="mod_w", reference_dataset_id="ds_ref_w",
+        evaluation_dataset_id="ds_eval_w", status="COMPLETED", result_path="res.json",
+        aggregate_ood_risk=0.85, aggregate_uncertainty=0.235, aggregate_drift_score=0.133,
+        aggregate_fused_risk=0.42, fusion_method="uncertainty_weighted", has_labels=False,
+        created_at=now
+    )
+    gov_eval = GovernanceEvaluationRecord(
+        id="gov_w", user_id="user_a", model_id="mod_w", analysis_id="ana_w",
+        decision_id="dec_w", state_index=1, operating_mode="EVIDENCE_ONLY",
+        raw_action="WATCH", effective_action="WATCH", previous_effective_action="CONTINUE",
+        transition_occurred=True, transition_reason="State transition to WATCH", p_adverse=0.42,
+        prediction_set_json=json.dumps([0, 1]), reason_codes_json=json.dumps(["WATCH_MODE"]),
+        calibrated=False, calibrator_artifact_id=None, calibrator_artifact_sha256=None,
+        evidence_snapshot_hash="hash_w", result_path="res.json", created_at=now
+    )
+
+    generator = ReportGenerator(
+        user_id="user_a", model=model, analysis=analysis, ref_dataset=ref_ds, eval_dataset=eval_ds, governance_evals=[gov_eval]
+    )
+    payload = generator.generate("rep_watch")
+
+    assert payload.trust_disposition == TrustDisposition.LOW
+    assert payload.deployment_suitability["recommended_environment"] == "SUPERVISED_PRODUCTION_WITH_MONITORING"
+    assert payload.deployment_suitability["recommended_environment"] != "BLOCKED_FROM_DEPLOYMENT"
+    assert payload.action_plan[0].title == "Initiate Enhanced Monitoring Protocol"
+    assert payload.action_plan[0].title != "Enforce Operational Fallback / Model Deferral"
+
+
+def test_risk_driver_uncertainty_labeling(db_conn):
+    """
+    Verifies that uncertainty = 0.235 is labeled Moderate Epistemic Uncertainty (not High Model Uncertainty).
+    """
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    model = ModelRecord(
+        id="mod_u", user_id="user_a", model_name="UncertaintyModel", task_type="classification",
+        description="", file_path="fake.pkl", filename="fake.pkl", predict_supported=True,
+        predict_proba_supported=True, n_features_in=4, classes=["0", "1"], feature_names=["f1", "f2", "f3", "f4"],
+        created_at=now
+    )
+    ref_ds = DatasetRecord(
+        id="ds_ref_u2", user_id="user_a", model_id="mod_u", dataset_type="REFERENCE",
+        file_path="ref.csv", filename="ref.csv", target_column=None, num_samples=100,
+        num_features=4, feature_names=["f1", "f2", "f3", "f4"], has_target=False, created_at=now
+    )
+    eval_ds = DatasetRecord(
+        id="ds_eval_u2", user_id="user_a", model_id="mod_u", dataset_type="EVALUATION",
+        file_path="eval.csv", filename="eval.csv", target_column=None, num_samples=50,
+        num_features=4, feature_names=["f1", "f2", "f3", "f4"], has_target=False, created_at=now
+    )
+    analysis = AnalysisRecord(
+        id="ana_u2", user_id="user_a", model_id="mod_u", reference_dataset_id="ds_ref_u2",
+        evaluation_dataset_id="ds_eval_u2", status="COMPLETED", result_path="res.json",
+        aggregate_ood_risk=0.85, aggregate_uncertainty=0.28, aggregate_drift_score=0.133,
+        aggregate_fused_risk=0.42, fusion_method="uncertainty_weighted", has_labels=False,
+        created_at=now
+    )
+
+    generator = ReportGenerator(
+        user_id="user_a", model=model, analysis=analysis, ref_dataset=ref_ds, eval_dataset=eval_ds
+    )
+    payload = generator.generate("rep_u2")
+
+    driver_names = [d.driver_name for d in payload.top_risk_drivers]
+    assert "High Model Uncertainty" not in driver_names
+    assert "Moderate Epistemic Uncertainty" in driver_names
+
+
+def test_no_prior_analysis_trend_semantics(db_conn):
+    """
+    Verifies that absence of prior analysis yields 'NO VALID COMPARABLE PRIOR ASSESSMENT' for trend_direction.
+    """
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    model = ModelRecord(
+        id="mod_t", user_id="user_a", model_name="TrendModel", task_type="classification",
+        description="", file_path="fake.pkl", filename="fake.pkl", predict_supported=True,
+        predict_proba_supported=True, n_features_in=4, classes=["0", "1"], feature_names=["f1", "f2", "f3", "f4"],
+        created_at=now
+    )
+    ref_ds = DatasetRecord(
+        id="ds_ref_t", user_id="user_a", model_id="mod_t", dataset_type="REFERENCE",
+        file_path="ref.csv", filename="ref.csv", target_column=None, num_samples=100,
+        num_features=4, feature_names=["f1", "f2", "f3", "f4"], has_target=False, created_at=now
+    )
+    eval_ds = DatasetRecord(
+        id="ds_eval_t", user_id="user_a", model_id="mod_t", dataset_type="EVALUATION",
+        file_path="eval.csv", filename="eval.csv", target_column=None, num_samples=50,
+        num_features=4, feature_names=["f1", "f2", "f3", "f4"], has_target=False, created_at=now
+    )
+    analysis = AnalysisRecord(
+        id="ana_t", user_id="user_a", model_id="mod_t", reference_dataset_id="ds_ref_t",
+        evaluation_dataset_id="ds_eval_t", status="COMPLETED", result_path="res.json",
+        aggregate_ood_risk=0.1, aggregate_uncertainty=0.1, aggregate_drift_score=0.05,
+        aggregate_fused_risk=0.08, fusion_method="uncertainty_weighted", has_labels=False,
+        created_at=now
+    )
+
+    generator = ReportGenerator(
+        user_id="user_a", model=model, analysis=analysis, ref_dataset=ref_ds, eval_dataset=eval_ds, previous_analysis=None
+    )
+    payload = generator.generate("rep_trend")
+
+    assert payload.trend_comparison["has_previous_analysis"] is False
+    assert payload.trend_comparison["trend_direction"] == "NO VALID COMPARABLE PRIOR ASSESSMENT"
+
+
+
 
 
