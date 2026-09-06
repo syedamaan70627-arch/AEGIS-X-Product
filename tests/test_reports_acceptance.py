@@ -33,7 +33,7 @@ from api.db.repositories import (
 )
 from aegis.reports.generator import ReportGenerator
 from aegis.reports.schemas import TrustDisposition, RetrainingDisposition, ModuleStatus
-from api.services.reports_service import ReportsService
+from api.services.reports_service import ReportsService, ReportServiceError
 
 
 @pytest.fixture
@@ -370,4 +370,19 @@ def test_api_report_endpoints():
     # Health check to ensure API router loaded
     res = client.get("/health")
     assert res.status_code == 200
+
+
+def test_report_service_error_handling():
+    """Verifies that ReportServiceError wraps technical failures into user-friendly messages."""
+    err = ReportServiceError(
+        message="Report generation failed",
+        reason="Report storage is currently unavailable.",
+        action="Please retry after the reporting service becomes available.",
+        technical_details="Supabase REST API PostgREST 404 error",
+    )
+    assert err.message == "Report generation failed"
+    assert err.reason == "Report storage is currently unavailable."
+    assert err.action == "Please retry after the reporting service becomes available."
+    assert "PostgREST" in err.technical_details
+
 

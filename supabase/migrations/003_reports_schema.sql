@@ -2,16 +2,16 @@
 -- Enables Row Level Security (RLS) policies linking user ownership to auth.uid()
 
 CREATE TABLE IF NOT EXISTS public.reports (
-    id UUID PRIMARY KEY,
+    id TEXT PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    model_id UUID NOT NULL REFERENCES public.models(id) ON DELETE CASCADE,
-    analysis_id UUID NOT NULL REFERENCES public.analyses(id) ON DELETE CASCADE,
-    governance_evaluation_id UUID REFERENCES public.governance_evaluations(id) ON DELETE SET NULL,
+    model_id TEXT NOT NULL,
+    analysis_id TEXT NOT NULL,
     report_type TEXT NOT NULL,
-    trust_disposition TEXT NOT NULL,
-    snapshot_hash TEXT NOT NULL,
-    report_payload_json TEXT NOT NULL,
-    result_path TEXT,
+    title TEXT NOT NULL,
+    disposition TEXT NOT NULL,
+    completeness_score DOUBLE PRECISION NOT NULL,
+    result_path TEXT NOT NULL,
+    snapshot_json JSONB NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

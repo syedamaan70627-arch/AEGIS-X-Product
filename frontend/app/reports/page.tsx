@@ -20,6 +20,8 @@ import {
   Lock,
   Compass,
   AlertCircle,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 type ReportTab = "integrated" | "reliability" | "model_trust" | "governance";
@@ -29,7 +31,14 @@ export default function ReportsPage() {
 
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  const [errorObj, setErrorObj] = useState<{
+    message: string;
+    reason?: string;
+    action?: string;
+    techDetails?: string;
+  } | null>(null);
+  const [showTechDetails, setShowTechDetails] = useState(false);
 
   const [models, setModels] = useState<ModelRecord[]>([]);
   const [selectedModelId, setSelectedModelId] = useState<string>("");
@@ -44,7 +53,7 @@ export default function ReportsPage() {
   useEffect(() => {
     async function loadModels() {
       setLoading(true);
-      setError(null);
+      setErrorObj(null);
       try {
         const res = await api.listModels();
         const loaded = res.models || [];
@@ -53,7 +62,12 @@ export default function ReportsPage() {
           setSelectedModelId(loaded[0].model_id);
         }
       } catch (err: any) {
-        setError(err.message || "Failed to load models.");
+        setErrorObj({
+          message: "Report generation failed",
+          reason: err.reason || "Unable to retrieve registered model context.",
+          action: err.action || "Please ensure the backend service is running and retry.",
+          techDetails: err.details || err.message || String(err),
+        });
       } finally {
         setLoading(false);
       }
@@ -71,7 +85,7 @@ export default function ReportsPage() {
         return;
       }
       setLoading(true);
-      setError(null);
+      setErrorObj(null);
       try {
         const res = await api.listModelAnalyses(selectedModelId);
         const runs = res.analyses || [];
@@ -88,7 +102,12 @@ export default function ReportsPage() {
         setAnalyses([]);
         setSelectedAnalysisId("");
         setActiveReport(null);
-        setError(err.message || "Failed to load model analyses.");
+        setErrorObj({
+          message: "Report generation failed",
+          reason: err.reason || "Failed to retrieve analysis runs for the selected model.",
+          action: err.action || "Run an analysis under Core Reliability before generating reports.",
+          techDetails: err.details || err.message || String(err),
+        });
       } finally {
         setLoading(false);
       }
@@ -103,6 +122,7 @@ export default function ReportsPage() {
     reportType: string
   ) => {
     try {
+      setErrorObj(null);
       // Check existing reports
       const existing = await api.listReportsByModel(modelId);
       const match = existing.find((r) => r.analysis_id === analysisId);
@@ -119,7 +139,12 @@ export default function ReportsPage() {
       }
     } catch (err: any) {
       setActiveReport(null);
-      setError(err.message || "Failed to generate report payload.");
+      setErrorObj({
+        message: "Report generation failed",
+        reason: err.reason || "Report storage is currently unavailable.",
+        action: err.action || "Please retry after the reporting service becomes available.",
+        techDetails: err.details || err.message || String(err),
+      });
     }
   };
 
@@ -137,6 +162,7 @@ export default function ReportsPage() {
       return;
     }
     setGenerating(true);
+    setErrorObj(null);
     try {
       const rep = await api.generateReport({
         model_id: selectedModelId,
@@ -146,7 +172,13 @@ export default function ReportsPage() {
       setActiveReport(rep);
       toast.success("Snapshot Generated", `Created immutable report snapshot ${rep.id}.`);
     } catch (err: any) {
-      toast.error("Generation Error", err.message || "Could not generate report snapshot.");
+      setErrorObj({
+        message: "Report generation failed",
+        reason: err.reason || "Report storage is currently unavailable.",
+        action: err.action || "Please retry after the reporting service becomes available.",
+        techDetails: err.details || err.message || String(err),
+      });
+      toast.error("Generation Error", "Report storage is currently unavailable.");
     } finally {
       setGenerating(false);
     }
@@ -156,11 +188,16 @@ export default function ReportsPage() {
     return <LoadingState message="Initializing AEGIS-X Decision Support & Reporting Engine..." />;
   }
 
-  if (error && models.length === 0) {
-    return <ErrorState message={error} />;
-  }
-
+  // Derive Readiness Strip Statuses
+  const modelStatus = selectedModelId ? "READY" : "INVALID";
+  const analysisStatus = selectedAnalysisId ? "READY" : "INCOMPLETE";
+  const selectedAnalysisObj = analyses.find((a) => a.analysis_id === selectedAnalysisId);
+  const evidenceStatus = selectedAnalysisObj?.reference_dataset_id && selectedAnalysisObj?.evaluation_dataset_id ? "READY" : "MISSING";
   const payload: ReportPayload | null = activeReport?.snapshot_json || null;
+  const governanceStatus = payload?.ecrg_governance_summary?.effective_action && payload.ecrg_governance_summary.effective_action !== "UNAVAILABLE" ? "READY" : "NOT_EVALUATED";
+  const storageStatus = errorObj ? "UNAVAILABLE" : "READY";
+
+  const isPrereqSatisfied = modelStatus === "READY" && analysisStatus === "READY";
 
   return (
     <div className="space-y-8">
@@ -180,7 +217,7 @@ export default function ReportsPage() {
             </button>
             <button
               onClick={handleGenerateNewSnapshot}
-              disabled={!selectedAnalysisId || generating}
+              disabled={!isPrereqSatisfied || generating}
               className="flex items-center gap-2 px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg shadow-lg shadow-indigo-600/20 transition disabled:opacity-50"
             >
               <Sparkles className={`w-3.5 h-3.5 ${generating ? "animate-spin" : ""}`} />
@@ -189,6 +226,44 @@ export default function ReportsPage() {
           </div>
         }
       />
+
+      {/* Compact Readiness Strip */}
+      <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-3 flex flex-wrap items-center justify-between gap-4 text-xs font-mono">
+        <div className="flex items-center gap-2">
+          <span className="text-slate-400 font-sans font-semibold">MODEL:</span>
+          <span className={`px-2 py-0.5 rounded font-bold ${modelStatus === "READY" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30" : "bg-rose-500/10 text-rose-400 border border-rose-500/30"}`}>
+            {modelStatus}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-slate-400 font-sans font-semibold">ANALYSIS:</span>
+          <span className={`px-2 py-0.5 rounded font-bold ${analysisStatus === "READY" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30" : "bg-amber-500/10 text-amber-400 border border-amber-500/30"}`}>
+            {analysisStatus}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-slate-400 font-sans font-semibold">EVIDENCE:</span>
+          <span className={`px-2 py-0.5 rounded font-bold ${evidenceStatus === "READY" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30" : "bg-rose-500/10 text-rose-400 border border-rose-500/30"}`}>
+            {evidenceStatus}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-slate-400 font-sans font-semibold">GOVERNANCE:</span>
+          <span className={`px-2 py-0.5 rounded font-bold ${governanceStatus === "READY" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30" : "bg-slate-800 text-slate-400 border border-slate-700"}`}>
+            {governanceStatus}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-slate-400 font-sans font-semibold">REPORT STORAGE:</span>
+          <span className={`px-2 py-0.5 rounded font-bold ${storageStatus === "READY" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30" : "bg-rose-500/10 text-rose-400 border border-rose-500/30"}`}>
+            {storageStatus}
+          </span>
+        </div>
+      </div>
 
       {/* Model & Analysis Selector Bar */}
       {models.length > 0 && (
@@ -277,6 +352,41 @@ export default function ReportsPage() {
         </button>
       </div>
 
+      {/* User-Friendly Error Component */}
+      {errorObj && (
+        <div className="p-6 rounded-2xl bg-rose-950/30 border border-rose-900/60 text-slate-200 space-y-4">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-6 h-6 text-rose-400 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <h3 className="text-base font-bold text-white">{errorObj.message}</h3>
+              <p className="text-sm text-slate-300">
+                <span className="font-semibold text-rose-300">Reason:</span> {errorObj.reason}
+              </p>
+              <p className="text-sm text-slate-300">
+                <span className="font-semibold text-emerald-400">Action:</span> {errorObj.action}
+              </p>
+            </div>
+          </div>
+
+          {errorObj.techDetails && (
+            <div className="pt-3 border-t border-rose-900/40">
+              <button
+                onClick={() => setShowTechDetails(!showTechDetails)}
+                className="text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1 transition"
+              >
+                {showTechDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                {showTechDetails ? "Hide Developer / Audit Details" : "Show Developer / Audit Details"}
+              </button>
+              {showTechDetails && (
+                <pre className="mt-2 p-3 bg-slate-950 rounded-lg text-[11px] font-mono text-rose-200/90 overflow-x-auto border border-slate-800">
+                  {errorObj.techDetails}
+                </pre>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Main Content Area */}
       {loading ? (
         <LoadingState message="Retrieving persisted report snapshot..." />
@@ -289,7 +399,7 @@ export default function ReportsPage() {
           </p>
         </div>
       ) : payload ? (
-        <IntegratedReportView report={payload} reportId={activeReport?.id || "N/A"} />
+        <IntegratedReportView report={payload} reportId={activeReport?.id || "N/A"} activeTab={activeTab} />
       ) : (
         <div className="p-12 text-center bg-slate-900/40 rounded-2xl border border-slate-800 text-slate-400 text-sm">
           No report snapshot loaded for the selected analysis context. Click "Generate New Snapshot" above.

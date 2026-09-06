@@ -853,6 +853,7 @@ class SupabaseGovernanceRepository(BaseSupabaseRepository, IGovernanceRepository
 
 class SupabaseReportRepository(BaseSupabaseRepository, IReportRepository):
     def create(self, record: ReportRecord) -> ReportRecord:
+        snapshot_val = json.loads(record.snapshot_json) if isinstance(record.snapshot_json, str) else record.snapshot_json
         payload = {
             "id": record.id,
             "user_id": record.user_id,
@@ -863,7 +864,7 @@ class SupabaseReportRepository(BaseSupabaseRepository, IReportRepository):
             "disposition": record.disposition,
             "completeness_score": record.completeness_score,
             "result_path": record.result_path,
-            "snapshot_json": record.snapshot_json if isinstance(record.snapshot_json, str) else json.dumps(record.snapshot_json),
+            "snapshot_json": snapshot_val,
             "created_at": record.created_at,
         }
         res = self.client.post(f"{self.url}/reports", headers=self.headers, json=payload)

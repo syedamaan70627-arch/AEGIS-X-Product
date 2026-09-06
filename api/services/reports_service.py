@@ -32,7 +32,18 @@ from api.db.models import ReportRecord
 
 class ReportServiceError(AegisError):
     """Raised when report generation or export fails."""
-    pass
+    def __init__(
+        self,
+        message: str = "Report generation failed",
+        reason: str = "Report storage is currently unavailable.",
+        action: str = "Please retry after the reporting service becomes available.",
+        technical_details: Optional[str] = None,
+    ) -> None:
+        super().__init__(message)
+        self.message = message
+        self.reason = reason
+        self.action = action
+        self.technical_details = technical_details
 
 
 class ReportsService:
@@ -146,7 +157,17 @@ class ReportsService:
             created_at=payload.context.generated_at,
         )
 
-        return self.report_repo.create(record)
+        try:
+            return self.report_repo.create(record)
+        except Exception as e:
+            import logging
+            logging.error(f"Failed to persist report snapshot {report_id} to database: {e}", exc_info=True)
+            raise ReportServiceError(
+                message="Report generation failed",
+                reason="Report storage is currently unavailable.",
+                action="Please retry after the reporting service becomes available.",
+                technical_details=str(e),
+            )
 
     def get_report(self, report_id: str, user_id: str) -> ReportRecord:
         """Retrieves report by ID ensuring user authorization."""

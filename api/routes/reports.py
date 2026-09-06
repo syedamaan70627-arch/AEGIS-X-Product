@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 
 from api.core.auth import UserContext, get_current_user
 from api.core.dependencies import get_report_repository
-from api.services.reports_service import ReportsService
+from api.services.reports_service import ReportsService, ReportServiceError
 
 
 router = APIRouter(prefix="/api/v1/reports", tags=["Reports"])
@@ -64,6 +64,16 @@ def generate_report(
             result_path=record.result_path,
             snapshot_json=record.snapshot_json if isinstance(record.snapshot_json, dict) else json.loads(record.snapshot_json),
             created_at=record.created_at,
+        )
+    except ReportServiceError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "message": e.message,
+                "reason": e.reason,
+                "action": e.action,
+                "technical_details": e.technical_details,
+            },
         )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
