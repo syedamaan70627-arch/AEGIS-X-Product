@@ -386,3 +386,73 @@ def test_report_service_error_handling():
     assert "PostgREST" in err.technical_details
 
 
+def test_two_user_isolation_strict(db_conn):
+    """
+    Verifies strict two-user tenant isolation semantics:
+    - User A can create and read own reports.
+    - User A CANNOT read User B's report.
+    - User B CANNOT read User A's report.
+    - User A list history includes ONLY User A's reports.
+    - User B list history includes ONLY User B's reports.
+    - User A cannot access any report assigned to 'local_dev_user' unless owner_id matches.
+    """
+    repo = ReportRepository(db_conn)
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+    rec_a = ReportRecord(
+        id="rep_user_a", user_id="user_a_123", model_id="mod_shared", analysis_id="ana_shared",
+        report_type="integrated", title="User A Report", disposition="HIGH",
+        completeness_score=100.0, result_path="reports/rep_user_a.json",
+        snapshot_json={"owner": "user_a_123"}, created_at=now
+    )
+    rec_b = ReportRecord(
+        id="rep_user_b", user_id="user_b_456", model_id="mod_shared", analysis_id="ana_shared",
+        report_type="integrated", title="User B Report", disposition="CONDITIONAL",
+        completeness_score=90.0, result_path="reports/rep_user_b.json",
+        snapshot_json={"owner": "user_b_456"}, created_at=now
+    )
+    rec_dev = ReportRecord(
+        id="rep_dev", user_id="local_dev_user", model_id="mod_shared", analysis_id="ana_shared",
+        report_type="integrated", title="Dev Report", disposition="LOW",
+        completeness_score=50.0, result_path="reports/rep_dev.json",
+        snapshot_json={"owner": "local_dev_user"}, created_at=now
+    )
+
+    repo.create(rec_a)
+    repo.create(rec_b)
+    repo.create(rec_dev)
+
+    # 1. User A can read own report
+    fetched_a = repo.get_by_id("rep_user_a", owner_id="user_a_123")
+    assert fetched_a is not None
+    assert fetched_a.title == "User A Report"
+
+    # 2. User A cannot read User B's report
+    fetched_cross = repo.get_by_id("rep_user_b", owner_id="user_a_123")
+    assert fetched_cross is None
+
+    # 3. User B cannot read User A's report
+    fetched_cross_b = repo.get_by_id("rep_user_a", owner_id="user_b_456")
+    assert fetched_cross_b is None
+
+    # 4. User A cannot read local_dev_user report
+    fetched_dev = repo.get_by_id("rep_dev", owner_id="user_a_123")
+    assert fetched_dev is None
+
+    # 5. User A list history contains ONLY User A's report
+    list_a = repo.list_by_model("mod_shared", owner_id="user_a_123")
+    assert len(list_a) == 1
+    assert list_a[0].id == "rep_user_a"
+
+    # 6. User B list history contains ONLY User B's report
+    list_b = repo.list_by_model("mod_shared", owner_id="user_b_456")
+    assert len(list_b) == 1
+    assert list_b[0].id == "rep_user_b"
+
+    # 7. Analysis-level list isolation
+    list_ana_a = repo.list_by_analysis("ana_shared", owner_id="user_a_123")
+    assert len(list_ana_a) == 1
+    assert list_ana_a[0].id == "rep_user_a"
+
+
+
