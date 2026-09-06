@@ -452,7 +452,7 @@ class ReportGenerator:
         if not self.stress_tests:
             return {"status": "UNAVAILABLE", "test_count": 0, "avg_risk_delta": None, "max_stressed_risk": None}
 
-        deltas = [st.risk_delta for st.risk_delta in [t.risk_delta for t in self.stress_tests] if st is not None]
+        deltas = [t.risk_delta for t in self.stress_tests if t.risk_delta is not None]
         stressed_risks = [t.stressed_risk for t in self.stress_tests if t.stressed_risk is not None]
 
         avg_delta = round(sum(deltas) / len(deltas), 4) if deltas else 0.0
@@ -544,16 +544,17 @@ class ReportGenerator:
                 "Core reliability analysis evidence is unavailable or incomplete.",
             )
 
-        if eff_action in ["DEFER", "ESCALATE"] or (fused_risk is not None and fused_risk > 0.60):
+        if eff_action in ["DEFER", "ESCALATE"]:
             return (
                 TrustDisposition.RESTRICTED,
-                f"Governance effective action '{eff_action}' or elevated fused risk ({fused_risk:.2f}) requires strict execution restriction.",
+                f"Governance effective action '{eff_action}' requires strict execution restriction.",
             )
 
         if eff_action == "WATCH" or (fused_risk is not None and fused_risk > 0.35) or warn_triggered:
+            fused_str = f"{fused_risk:.2f}" if fused_risk is not None else "N/A"
             return (
                 TrustDisposition.LOW,
-                f"Model exhibits elevated risk flags (Fused Risk: {fused_risk:.2f}, Action: {eff_action}, Early Warning: {warn_triggered}). Enhanced monitoring and active surveillance required.",
+                f"Model exhibits elevated risk flags (Fused Risk: {fused_str}, Action: {eff_action}, Early Warning: {warn_triggered}). Enhanced monitoring and active surveillance required.",
             )
 
         if (fused_risk is not None and fused_risk >= 0.15) or overall_pct < 75.0 or gov.get("state_index", 0) > 0:
@@ -684,12 +685,12 @@ class ReportGenerator:
         fused = rel.get("aggregate_fused_risk", 0.0) or 0.0
 
         # P1 Priority
-        if eff_action in ["DEFER", "ESCALATE"] or trust == TrustDisposition.RESTRICTED:
+        if eff_action in ["DEFER", "ESCALATE"]:
             plan.append(
                 ActionItem(
                     priority="P1",
                     title="Enforce Operational Fallback / Model Deferral",
-                    rationale=f"ECRG state machine action is '{eff_action}' and trust disposition is RESTRICTED.",
+                    rationale=f"ECRG state machine action is '{eff_action}'.",
                     trigger_condition=f"Effective Action == {eff_action}",
                     target_component="ECRG State Machine Governor",
                 )
