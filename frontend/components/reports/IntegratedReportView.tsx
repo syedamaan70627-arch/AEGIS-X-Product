@@ -1,10 +1,10 @@
-"use me";
 "use client";
 
 import React from "react";
 import Link from "next/link";
 import { ReportPayload, RiskDriver } from "@/types/api";
 import { api } from "@/lib/api";
+import { ROUTES } from "@/lib/routes";
 import {
   ShieldAlert,
   ShieldCheck,
@@ -786,7 +786,7 @@ export function IntegratedReportView({
             <h2 className="text-base font-bold text-white flex items-center gap-2">
               <BarChart2 className="w-5 h-5 text-indigo-400" /> Section C: Reliability Evidence
             </h2>
-            <Link href="/analysis" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-semibold">
+            <Link href={`${ROUTES.reliability}?model_id=${context.model_id}&analysis_id=${context.analysis_id}`} className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-semibold">
               View Source Analysis <ExternalLink className="w-3 h-3" />
             </Link>
           </div>
@@ -824,7 +824,7 @@ export function IntegratedReportView({
             <h2 className="text-base font-bold text-white flex items-center gap-2">
               <Cpu className="w-5 h-5 text-amber-400" /> Section D: Stress Robustness
             </h2>
-            <Link href="/stress" className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 font-semibold">
+            <Link href={`${ROUTES.stressLab}?model_id=${context.model_id}`} className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 font-semibold">
               View Source Stress Lab <ExternalLink className="w-3 h-3" />
             </Link>
           </div>
@@ -856,7 +856,7 @@ export function IntegratedReportView({
             <h2 className="text-base font-bold text-white flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-rose-400" /> Section E: Fault Sensitivity
             </h2>
-            <Link href="/faults" className="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1 font-semibold">
+            <Link href={`${ROUTES.faultLab}?model_id=${context.model_id}`} className="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1 font-semibold">
               View Source Fault Lab <ExternalLink className="w-3 h-3" />
             </Link>
           </div>
@@ -884,7 +884,7 @@ export function IntegratedReportView({
             <h2 className="text-base font-bold text-white flex items-center gap-2">
               <Activity className="w-5 h-5 text-indigo-400" /> Section F: Failure Intelligence
             </h2>
-            <Link href="/failure-explorer" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-semibold">
+            <Link href={`${ROUTES.failureExplorer}?model_id=${context.model_id}`} className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 font-semibold">
               View Source Failure Explorer <ExternalLink className="w-3 h-3" />
             </Link>
           </div>
@@ -903,7 +903,7 @@ export function IntegratedReportView({
             <h2 className="text-base font-bold text-white flex items-center gap-2">
               <Clock className="w-5 h-5 text-sky-400" /> Section G: Temporal Intelligence & Early Warning
             </h2>
-            <Link href="/early-warning" className="text-xs text-sky-400 hover:text-sky-300 flex items-center gap-1 font-semibold">
+            <Link href={`${ROUTES.earlyWarning}?model_id=${context.model_id}`} className="text-xs text-sky-400 hover:text-sky-300 flex items-center gap-1 font-semibold">
               View Source Early Warning <ExternalLink className="w-3 h-3" />
             </Link>
           </div>

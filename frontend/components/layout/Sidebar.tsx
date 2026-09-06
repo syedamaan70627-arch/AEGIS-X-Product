@@ -18,43 +18,45 @@ import {
   X,
 } from "lucide-react";
 
+import { ROUTES } from "@/lib/routes";
+
 export const navigation = [
   {
     group: "OVERVIEW",
     items: [
-      { name: "Command Center", href: "/dashboard", icon: ShieldCheck },
+      { name: "Command Center", href: ROUTES.dashboard, icon: ShieldCheck },
     ],
   },
   {
     group: "OPERATIONS",
     items: [
-      { name: "Models", href: "/models", icon: Layers },
-      { name: "Data Setup", href: "/data", icon: Database },
-      { name: "Batch Monitor", href: "/monitor", icon: Activity },
-      { name: "Reliability", href: "/reliability", icon: LineChart },
-      { name: "Governance", href: "/governance", icon: ShieldCheck },
+      { name: "Models", href: ROUTES.models, icon: Layers },
+      { name: "Data Setup", href: ROUTES.dataSetup, icon: Database },
+      { name: "Batch Monitor", href: ROUTES.batchMonitor, icon: Activity },
+      { name: "Reliability", href: ROUTES.reliability, icon: LineChart },
+      { name: "Governance", href: ROUTES.governance, icon: ShieldCheck },
     ],
   },
   {
     group: "TESTING",
     items: [
-      { name: "Stress Lab", href: "/stress", icon: Zap },
-      { name: "Fault Lab", href: "/faults", icon: AlertOctagon },
+      { name: "Stress Lab", href: ROUTES.stressLab, icon: Zap },
+      { name: "Fault Lab", href: ROUTES.faultLab, icon: AlertOctagon },
     ],
   },
   {
     group: "INTELLIGENCE",
     items: [
-      { name: "Failure Explorer", href: "/failures", icon: FileSpreadsheet },
-      { name: "Failure Memory", href: "/memory", icon: BrainCircuit },
-      { name: "Failure Prediction", href: "/prediction", icon: FileCheck },
-      { name: "Early Warning", href: "/warnings", icon: Activity },
+      { name: "Failure Explorer", href: ROUTES.failureExplorer, icon: FileSpreadsheet },
+      { name: "Failure Memory", href: ROUTES.failureMemory, icon: BrainCircuit },
+      { name: "Failure Prediction", href: ROUTES.failurePrediction, icon: FileCheck },
+      { name: "Early Warning", href: ROUTES.earlyWarning, icon: Activity },
     ],
   },
   {
     group: "OUTPUT",
     items: [
-      { name: "Reports", href: "/reports", icon: FileText },
+      { name: "Reports", href: ROUTES.reports, icon: FileText },
     ],
   },
 ];
