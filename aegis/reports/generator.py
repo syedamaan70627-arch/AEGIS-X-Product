@@ -148,7 +148,7 @@ class ReportGenerator:
 
         # 13. Scientific Limitations Disclosures
         limitations = [
-            "Conformal coverage guarantees hold asymptotically under exchangeability assumptions; small sample evaluation bounds may exhibit variance.",
+            "Under exchangeability between calibration and future evaluation units, split conformal prediction provides finite-sample marginal coverage at the stated target level, subject to the implemented calibration-unit construction and assumptions.",
             "Unlabeled evaluation datasets use unsupervised risk proxies; label-based performance metrics require ground truth verification.",
             "State machine anti-flapping controls maintain stability but may delay recovery transitions until persistence thresholds are satisfied.",
             "Stress & fault perturbations test synthetic robustness boundaries; real-world domain shifts may introduce novel joint feature distortions.",
