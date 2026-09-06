@@ -197,7 +197,7 @@ export default function ReportsPage() {
   const governanceStatus = payload?.ecrg_governance_summary?.effective_action && payload.ecrg_governance_summary.effective_action !== "UNAVAILABLE" ? "READY" : "NOT_EVALUATED";
   const storageStatus = errorObj ? "UNAVAILABLE" : "READY";
 
-  const isPrereqSatisfied = modelStatus === "READY" && analysisStatus === "READY";
+  const isPrereqSatisfied = modelStatus === "READY" && analysisStatus === "READY" && storageStatus === "READY";
 
   return (
     <div className="space-y-8">
