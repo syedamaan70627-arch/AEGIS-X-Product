@@ -174,3 +174,20 @@ class GovernanceTransitionRecord:
     user_id: str = "local_dev_user"
     previous_state: Optional[str] = None
     calibrated: bool = False
+
+
+@dataclass
+class ReportRecord:
+    id: str
+    model_id: str
+    analysis_id: str
+    report_type: str
+    title: str
+    disposition: str
+    completeness_score: float
+    result_path: str
+    snapshot_json: Any
+    created_at: str
+    user_id: str = "local_dev_user"
+
+

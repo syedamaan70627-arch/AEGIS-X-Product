@@ -21,6 +21,7 @@ from api.db.base import (
     IReferenceStateRepository,
     IStressTestRepository,
     IWarningRepository,
+    IReportRepository,
 )
 from api.db.models import (
     AnalysisRecord,
@@ -34,6 +35,7 @@ from api.db.models import (
     ReferenceStateRecord,
     StressTestRecord,
     WarningRecord,
+    ReportRecord,
 )
 
 
@@ -847,3 +849,101 @@ class SupabaseGovernanceRepository(BaseSupabaseRepository, IGovernanceRepository
             except ValueError:
                 pass
         return len(res.json()) if res.status_code == 200 else 0
+
+
+class SupabaseReportRepository(BaseSupabaseRepository, IReportRepository):
+    def create(self, record: ReportRecord) -> ReportRecord:
+        payload = {
+            "id": record.id,
+            "user_id": record.user_id,
+            "model_id": record.model_id,
+            "analysis_id": record.analysis_id,
+            "report_type": record.report_type,
+            "title": record.title,
+            "disposition": record.disposition,
+            "completeness_score": record.completeness_score,
+            "result_path": record.result_path,
+            "snapshot_json": record.snapshot_json if isinstance(record.snapshot_json, str) else json.dumps(record.snapshot_json),
+            "created_at": record.created_at,
+        }
+        res = self.client.post(f"{self.url}/reports", headers=self.headers, json=payload)
+        res.raise_for_status()
+        return record
+
+    def get_by_id(self, report_id: str, owner_id: Optional[str] = None) -> Optional[ReportRecord]:
+        endpoint = f"{self.url}/reports?id=eq.{report_id}"
+        if owner_id:
+            endpoint += f"&user_id=eq.{owner_id}"
+        res = self.client.get(endpoint, headers=self.headers)
+        if res.status_code != 200 or not res.json():
+            return None
+        row = res.json()[0]
+        snapshot = json.loads(row["snapshot_json"]) if isinstance(row["snapshot_json"], str) else row["snapshot_json"]
+        return ReportRecord(
+            id=row["id"],
+            user_id=row.get("user_id", "local_dev_user"),
+            model_id=row["model_id"],
+            analysis_id=row["analysis_id"],
+            report_type=row["report_type"],
+            title=row["title"],
+            disposition=row["disposition"],
+            completeness_score=float(row["completeness_score"]),
+            result_path=row["result_path"],
+            snapshot_json=snapshot,
+            created_at=row["created_at"],
+        )
+
+    def list_by_model(self, model_id: str, owner_id: Optional[str] = None, limit: int = 50, offset: int = 0) -> List[ReportRecord]:
+        endpoint = f"{self.url}/reports?model_id=eq.{model_id}&order=created_at.desc&limit={limit}&offset={offset}"
+        if owner_id:
+            endpoint += f"&user_id=eq.{owner_id}"
+        res = self.client.get(endpoint, headers=self.headers)
+        if res.status_code != 200:
+            return []
+        reports = []
+        for row in res.json():
+            snapshot = json.loads(row["snapshot_json"]) if isinstance(row["snapshot_json"], str) else row["snapshot_json"]
+            reports.append(
+                ReportRecord(
+                    id=row["id"],
+                    user_id=row.get("user_id", "local_dev_user"),
+                    model_id=row["model_id"],
+                    analysis_id=row["analysis_id"],
+                    report_type=row["report_type"],
+                    title=row["title"],
+                    disposition=row["disposition"],
+                    completeness_score=float(row["completeness_score"]),
+                    result_path=row["result_path"],
+                    snapshot_json=snapshot,
+                    created_at=row["created_at"],
+                )
+            )
+        return reports
+
+    def list_by_analysis(self, analysis_id: str, owner_id: Optional[str] = None) -> List[ReportRecord]:
+        endpoint = f"{self.url}/reports?analysis_id=eq.{analysis_id}&order=created_at.desc"
+        if owner_id:
+            endpoint += f"&user_id=eq.{owner_id}"
+        res = self.client.get(endpoint, headers=self.headers)
+        if res.status_code != 200:
+            return []
+        reports = []
+        for row in res.json():
+            snapshot = json.loads(row["snapshot_json"]) if isinstance(row["snapshot_json"], str) else row["snapshot_json"]
+            reports.append(
+                ReportRecord(
+                    id=row["id"],
+                    user_id=row.get("user_id", "local_dev_user"),
+                    model_id=row["model_id"],
+                    analysis_id=row["analysis_id"],
+                    report_type=row["report_type"],
+                    title=row["title"],
+                    disposition=row["disposition"],
+                    completeness_score=float(row["completeness_score"]),
+                    result_path=row["result_path"],
+                    snapshot_json=snapshot,
+                    created_at=row["created_at"],
+                )
+            )
+        return reports
+

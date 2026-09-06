@@ -25,6 +25,7 @@ from api.routes import (
     stress,
     warning,
     governance,
+    reports,
 )
 
 # Ensure storage directories and database tables exist on module import
@@ -89,7 +90,7 @@ app.include_router(memory.router)
 app.include_router(prediction.router)
 app.include_router(warning.router)
 app.include_router(governance.router)
-
+app.include_router(reports.router)
 
 
 if __name__ == "__main__":

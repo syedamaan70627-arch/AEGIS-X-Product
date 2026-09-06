@@ -270,5 +270,25 @@ def init_db() -> None:
             );
         """)
 
-        for tbl in ["models", "datasets", "reference_states", "analyses", "stress_tests", "fault_tests", "failure_memories", "predictions", "warnings", "governance_evaluations", "governance_transitions"]:
+        # Reports table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS reports (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL DEFAULT 'local_dev_user',
+                model_id TEXT NOT NULL,
+                analysis_id TEXT NOT NULL,
+                report_type TEXT NOT NULL,
+                title TEXT NOT NULL,
+                disposition TEXT NOT NULL,
+                completeness_score REAL NOT NULL,
+                result_path TEXT NOT NULL,
+                snapshot_json TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY(model_id) REFERENCES models(id) ON DELETE CASCADE,
+                FOREIGN KEY(analysis_id) REFERENCES analyses(id) ON DELETE CASCADE
+            );
+        """)
+
+        for tbl in ["models", "datasets", "reference_states", "analyses", "stress_tests", "fault_tests", "failure_memories", "predictions", "warnings", "governance_evaluations", "governance_transitions", "reports"]:
             _ensure_user_id_column(conn, tbl)
+

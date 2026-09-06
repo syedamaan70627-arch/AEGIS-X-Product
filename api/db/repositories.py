@@ -19,6 +19,7 @@ from api.db.base import (
     IReferenceStateRepository,
     IStressTestRepository,
     IWarningRepository,
+    IReportRepository,
 )
 from api.db.models import (
     AnalysisRecord,
@@ -32,6 +33,7 @@ from api.db.models import (
     ReferenceStateRecord,
     StressTestRecord,
     WarningRecord,
+    ReportRecord,
 )
 
 
@@ -983,3 +985,118 @@ class GovernanceRepository(IGovernanceRepository):
             cursor = self.conn.execute(query, (model_id,))
         row = cursor.fetchone()
         return row["cnt"] if row else 0
+
+
+class ReportRepository(IReportRepository):
+    """SQLite repository for managing immutable Report records."""
+
+    def __init__(self, conn: sqlite3.Connection) -> None:
+        self.conn = conn
+
+    def create(self, record: ReportRecord) -> ReportRecord:
+        query = """
+            INSERT INTO reports (
+                id, user_id, model_id, analysis_id, report_type, title,
+                disposition, completeness_score, result_path, snapshot_json, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        """
+        self.conn.execute(
+            query,
+            (
+                record.id,
+                record.user_id,
+                record.model_id,
+                record.analysis_id,
+                record.report_type,
+                record.title,
+                record.disposition,
+                record.completeness_score,
+                record.result_path,
+                record.snapshot_json if isinstance(record.snapshot_json, str) else json.dumps(record.snapshot_json),
+                record.created_at,
+            ),
+        )
+        self.conn.commit()
+        return record
+
+    def get_by_id(self, report_id: str, owner_id: Optional[str] = None) -> Optional[ReportRecord]:
+        if owner_id:
+            query = "SELECT * FROM reports WHERE id = ? AND user_id = ?;"
+            cursor = self.conn.execute(query, (report_id, owner_id))
+        else:
+            query = "SELECT * FROM reports WHERE id = ?;"
+            cursor = self.conn.execute(query, (report_id,))
+        row = cursor.fetchone()
+        if not row:
+            return None
+        snapshot = json.loads(row["snapshot_json"]) if isinstance(row["snapshot_json"], str) else row["snapshot_json"]
+        return ReportRecord(
+            id=row["id"],
+            user_id=row["user_id"] if "user_id" in row.keys() else "local_dev_user",
+            model_id=row["model_id"],
+            analysis_id=row["analysis_id"],
+            report_type=row["report_type"],
+            title=row["title"],
+            disposition=row["disposition"],
+            completeness_score=float(row["completeness_score"]),
+            result_path=row["result_path"],
+            snapshot_json=snapshot,
+            created_at=row["created_at"],
+        )
+
+    def list_by_model(self, model_id: str, owner_id: Optional[str] = None, limit: int = 50, offset: int = 0) -> List[ReportRecord]:
+        if owner_id:
+            query = "SELECT * FROM reports WHERE model_id = ? AND user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?;"
+            cursor = self.conn.execute(query, (model_id, owner_id, limit, offset))
+        else:
+            query = "SELECT * FROM reports WHERE model_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?;"
+            cursor = self.conn.execute(query, (model_id, limit, offset))
+        rows = cursor.fetchall()
+        reports = []
+        for row in rows:
+            snapshot = json.loads(row["snapshot_json"]) if isinstance(row["snapshot_json"], str) else row["snapshot_json"]
+            reports.append(
+                ReportRecord(
+                    id=row["id"],
+                    user_id=row["user_id"] if "user_id" in row.keys() else "local_dev_user",
+                    model_id=row["model_id"],
+                    analysis_id=row["analysis_id"],
+                    report_type=row["report_type"],
+                    title=row["title"],
+                    disposition=row["disposition"],
+                    completeness_score=float(row["completeness_score"]),
+                    result_path=row["result_path"],
+                    snapshot_json=snapshot,
+                    created_at=row["created_at"],
+                )
+            )
+        return reports
+
+    def list_by_analysis(self, analysis_id: str, owner_id: Optional[str] = None) -> List[ReportRecord]:
+        if owner_id:
+            query = "SELECT * FROM reports WHERE analysis_id = ? AND user_id = ? ORDER BY created_at DESC;"
+            cursor = self.conn.execute(query, (analysis_id, owner_id))
+        else:
+            query = "SELECT * FROM reports WHERE analysis_id = ? ORDER BY created_at DESC;"
+            cursor = self.conn.execute(query, (analysis_id,))
+        rows = cursor.fetchall()
+        reports = []
+        for row in rows:
+            snapshot = json.loads(row["snapshot_json"]) if isinstance(row["snapshot_json"], str) else row["snapshot_json"]
+            reports.append(
+                ReportRecord(
+                    id=row["id"],
+                    user_id=row["user_id"] if "user_id" in row.keys() else "local_dev_user",
+                    model_id=row["model_id"],
+                    analysis_id=row["analysis_id"],
+                    report_type=row["report_type"],
+                    title=row["title"],
+                    disposition=row["disposition"],
+                    completeness_score=float(row["completeness_score"]),
+                    result_path=row["result_path"],
+                    snapshot_json=snapshot,
+                    created_at=row["created_at"],
+                )
+            )
+        return reports
+

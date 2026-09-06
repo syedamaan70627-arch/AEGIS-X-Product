@@ -31,6 +31,7 @@ import {
   GovernanceEvaluationResponse,
   GovernanceStatusResponse,
   GovernanceHistoryResponse,
+  ReportRecord,
 } from "@/types/api";
 
 
@@ -480,6 +481,37 @@ export const api = {
       `${getBASE_URL()}/governance/${modelId}/history?limit=${limit}&offset=${offset}`
     );
   },
+
+  // Reports & Decision Intelligence
+  generateReport: async (body: {
+    model_id: string;
+    analysis_id: string;
+    report_type?: string;
+  }): Promise<ReportRecord> => {
+    return authenticatedFetch<ReportRecord>(`${getBASE_URL()}/reports/generate`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  },
+
+  getReportById: async (reportId: string): Promise<ReportRecord> => {
+    return authenticatedFetch<ReportRecord>(`${getBASE_URL()}/reports/${reportId}`);
+  },
+
+  listReportsByModel: async (
+    modelId: string,
+    limit: number = 50,
+    offset: number = 0
+  ): Promise<ReportRecord[]> => {
+    return authenticatedFetch<ReportRecord[]>(
+      `${getBASE_URL()}/reports/model/${modelId}?limit=${limit}&offset=${offset}`
+    );
+  },
+
+  getReportExportUrl: (reportId: string, format: string = "json"): string => {
+    return `${getBASE_URL()}/reports/${reportId}/export?format=${format}`;
+  },
 };
+
 
 

@@ -19,6 +19,7 @@ from api.db.base import (
     IStressTestRepository,
     IWarningRepository,
     IGovernanceRepository,
+    IReportRepository,
 )
 from api.db.database import get_db_connection
 from api.db.repositories import (
@@ -32,6 +33,7 @@ from api.db.repositories import (
     StressTestRepository,
     WarningRepository,
     GovernanceRepository,
+    ReportRepository,
 )
 from api.db.supabase_repositories import (
     SupabaseAnalysisRepository,
@@ -44,6 +46,7 @@ from api.db.supabase_repositories import (
     SupabaseStressTestRepository,
     SupabaseWarningRepository,
     SupabaseGovernanceRepository,
+    SupabaseReportRepository,
 )
 from api.storage.base import IStorageProvider
 from api.storage.local_storage import LocalStorageProvider
@@ -115,4 +118,11 @@ def get_governance_repository(conn: Optional[sqlite3.Connection] = None) -> IGov
     if settings.DATABASE_BACKEND == "supabase":
         return SupabaseGovernanceRepository()
     return GovernanceRepository(conn or get_db_connection())
+
+
+def get_report_repository(conn: Optional[sqlite3.Connection] = None) -> IReportRepository:
+    if settings.DATABASE_BACKEND == "supabase":
+        return SupabaseReportRepository()
+    return ReportRepository(conn or get_db_connection())
+
 

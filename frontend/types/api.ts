@@ -436,3 +436,97 @@ export interface GovernanceHistoryResponse {
   evaluations: GovernanceEvaluationResponse[];
 }
 
+
+export type TrustDisposition = "HIGH" | "CONDITIONAL" | "LOW" | "RESTRICTED" | "INSUFFICIENT EVIDENCE";
+export type RetrainingDisposition = "NOT INDICATED" | "MONITOR" | "RECALIBRATION ADVISED" | "RETRAINING ADVISED" | "URGENT MODEL REVIEW" | "INSUFFICIENT EVIDENCE";
+export type ModuleStatus = "VERIFIED" | "PARTIAL" | "DEGRADED" | "FAILED" | "UNAVAILABLE" | "NOT APPLICABLE";
+
+export interface ModuleCompleteness {
+  name: string;
+  status: ModuleStatus;
+  evidence_count: number;
+  last_verified_at?: string | null;
+  prerequisite_missing?: string | null;
+  details: Record<string, any>;
+}
+
+export interface ReportContext {
+  report_id: string;
+  user_id: string;
+  model_id: string;
+  model_name: string;
+  analysis_id: string;
+  generated_at: string;
+  reference_dataset_id: string;
+  reference_dataset_name?: string | null;
+  evaluation_dataset_id: string;
+  evaluation_dataset_name?: string | null;
+  task_type: string;
+}
+
+export interface WhyThisDecisionEntry {
+  factor: string;
+  impact: "POSITIVE" | "NEUTRAL" | "NEGATIVE" | "CRITICAL";
+  description: string;
+  evidence_link: string;
+}
+
+export interface ActionItem {
+  priority: "P1" | "P2" | "P3" | "P4";
+  title: string;
+  rationale: string;
+  trigger_condition: string;
+  target_component: string;
+}
+
+export interface RiskDriver {
+  category: string;
+  driver_name: string;
+  severity_score: number;
+  impact_description: string;
+}
+
+export interface ReportPayload {
+  context: ReportContext;
+  report_type: string;
+  trust_disposition: TrustDisposition;
+  trust_rationale: string;
+  completeness: Record<string, ModuleCompleteness>;
+  overall_completeness_pct: number;
+  reliability_summary: Record<string, any>;
+  stress_lab_summary: Record<string, any>;
+  fault_lab_summary: Record<string, any>;
+  failure_explorer_summary: Record<string, any>;
+  temporal_intelligence_summary: Record<string, any>;
+  ecrg_governance_summary: Record<string, any>;
+  why_this_decision: WhyThisDecisionEntry[];
+  action_plan: ActionItem[];
+  retraining_disposition: RetrainingDisposition;
+  retraining_rationale: string;
+  deployment_suitability: Record<string, any>;
+  trend_comparison: Record<string, any>;
+  top_risk_drivers: RiskDriver[];
+  scientific_limitations: string[];
+}
+
+export interface ReportRecord {
+  id: string;
+  user_id: string;
+  model_id: string;
+  analysis_id: string;
+  report_type: string;
+  title: string;
+  disposition: TrustDisposition;
+  completeness_score: number;
+  result_path: string;
+  snapshot_json: ReportPayload;
+  created_at: string;
+}
+
+export interface GenerateReportRequest {
+  model_id: string;
+  analysis_id: string;
+  report_type?: string;
+}
+
+
