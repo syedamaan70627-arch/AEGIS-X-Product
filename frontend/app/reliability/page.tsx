@@ -12,10 +12,8 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { RiskIndicator } from "@/components/ui/RiskIndicator";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
-import { GovernanceOverviewCard } from "@/components/governance/GovernanceOverviewCard";
-import { GovernanceHistoryTimeline } from "@/components/governance/GovernanceHistoryTimeline";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { Info, Layers, LineChart, ShieldCheck } from "lucide-react";
+import { Info, Layers, LineChart } from "lucide-react";
 
 export default function ReliabilityPage() {
   const { loading: authLoading, authenticated } = useAuth();
@@ -25,7 +23,6 @@ export default function ReliabilityPage() {
   const [selectedModelId, setSelectedModelId] = useState<string>("");
   const [analyses, setAnalyses] = useState<AnalysisSummary[]>([]);
   const [selectedAnalysisId, setSelectedAnalysisId] = useState<string>("");
-  const [historyTrigger, setHistoryTrigger] = useState(0);
 
   useEffect(() => {
     async function loadModels() {
@@ -74,10 +71,10 @@ export default function ReliabilityPage() {
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Reliability & Governance Operations"
-        description="Inspect operational Out-of-Distribution, Uncertainty, Feature Drift, and Evidence-Calibrated Reliability Governance (ECRG)."
+        title="Reliability Operations"
+        description="Inspect operational Out-of-Distribution, Uncertainty, Feature Drift, and Fused Evidence Telemetry."
         icon={<LineChart className="w-6 h-6 text-[#3B82F6]" />}
-        breadcrumbs={[{ label: "Operations" }, { label: "Reliability & Governance" }]}
+        breadcrumbs={[{ label: "Operations" }, { label: "Reliability" }]}
       />
 
       {/* Model & Analysis Selector Bar */}
@@ -127,15 +124,6 @@ export default function ReliabilityPage() {
         </div>
       )}
 
-      {/* Module 14: Reliability Governance Decision Layer */}
-      {selectedModelId && (
-        <GovernanceOverviewCard
-          modelId={selectedModelId}
-          selectedAnalysis={activeAnalysis}
-          onEvaluationCompleted={() => setHistoryTrigger((prev) => prev + 1)}
-        />
-      )}
-
       {/* Scientific Scope Disclosure */}
       <div className="p-4 bg-[#151B23] border border-[#26303D] rounded-xl flex items-start space-x-3 text-xs text-[#9CA3AF] shadow-sm font-sans">
         <Info className="w-5 h-5 text-[#3B82F6] shrink-0 mt-0.5" />
@@ -143,7 +131,7 @@ export default function ReliabilityPage() {
           <span className="font-sans font-bold text-[#F3F4F6] uppercase tracking-wider block mb-0.5 text-[11px]">
             Scientific Scope Notice
           </span>
-          Individual reliability signals (OOD, Uncertainty, Drift) remain independently inspectable because their operational usefulness varies by deployment environment. Pre-label fusion does not require true target labels. Reliability Governance acts as the decision layer over fused risk.
+          Individual reliability signals (OOD, Uncertainty, Drift) remain independently inspectable because their operational usefulness varies by deployment environment. Pre-label fusion does not require true target labels. Operational decision-making is delegated to the dedicated Governance module.
         </div>
       </div>
 
@@ -170,13 +158,9 @@ export default function ReliabilityPage() {
           </SectionCard>
         </div>
       )}
-
-      {/* Governance Audit Trail & State Machine Transitions */}
-      {selectedModelId && (
-        <GovernanceHistoryTimeline modelId={selectedModelId} refreshTrigger={historyTrigger} />
-      )}
     </div>
   );
 }
+
 
 

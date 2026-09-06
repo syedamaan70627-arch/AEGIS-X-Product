@@ -393,9 +393,14 @@ export interface GovernanceEvaluationResponse {
   dataset_id: string;
   mode: ECRGOperatingMode;
   action: ECRGGovernanceAction;
+  raw_action?: ECRGGovernanceAction | null;
+  previous_effective_action?: ECRGGovernanceAction | null;
   warning_severity: "LOW" | "MODERATE" | "HIGH" | "CRITICAL";
   certification_banner: string;
   calibrated: boolean;
+  calibrator_artifact_id?: string | null;
+  calibrator_artifact_sha256?: string | null;
+  prediction_set?: number[] | null;
   primary_supporting_signal: string;
   supporting_evidence: string[];
   contradictory_evidence: string[];

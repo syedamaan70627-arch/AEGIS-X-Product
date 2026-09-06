@@ -258,6 +258,9 @@ class GovernanceService:
     ) -> GovernanceEvaluationResponse:
         """Convert a GovernanceEvaluationRecord DB object to an API GovernanceEvaluationResponse."""
         eff_action = ECRGGovernanceAction(rec.effective_action)
+        raw_action_enum = ECRGGovernanceAction(rec.raw_action) if rec.raw_action else None
+        prev_action_enum = ECRGGovernanceAction(rec.previous_effective_action) if rec.previous_effective_action else None
+        prediction_set = json.loads(rec.prediction_set_json) if rec.prediction_set_json else None
         warning_severity = (
             "CRITICAL" if eff_action == ECRGGovernanceAction.ESCALATE
             else "HIGH" if eff_action == ECRGGovernanceAction.DEFER
@@ -274,9 +277,14 @@ class GovernanceService:
             dataset_id=dataset_id,
             mode=ECRGOperatingMode(rec.operating_mode),
             action=eff_action,
+            raw_action=raw_action_enum,
+            previous_effective_action=prev_action_enum,
             warning_severity=warning_severity,
             certification_banner=banner,
             calibrated=rec.calibrated,
+            calibrator_artifact_id=rec.calibrator_artifact_id,
+            calibrator_artifact_sha256=rec.calibrator_artifact_sha256,
+            prediction_set=prediction_set,
             primary_supporting_signal="fused_risk",
             supporting_evidence=[],
             contradictory_evidence=[],

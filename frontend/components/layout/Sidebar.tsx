@@ -32,6 +32,7 @@ export const navigation = [
       { name: "Data Setup", href: "/data", icon: Database },
       { name: "Batch Monitor", href: "/monitor", icon: Activity },
       { name: "Reliability", href: "/reliability", icon: LineChart },
+      { name: "Governance", href: "/governance", icon: ShieldCheck },
     ],
   },
   {

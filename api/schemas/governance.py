@@ -54,9 +54,14 @@ class GovernanceEvaluationResponse(BaseModel):
     dataset_id: str = Field(..., description="Evaluated dataset ID")
     mode: ECRGOperatingMode = Field(..., description="Operating mode used")
     action: ECRGGovernanceAction = Field(..., description="Effective governance decision action")
+    raw_action: Optional[ECRGGovernanceAction] = Field(None, description="Recommended/raw action prior to state machine")
+    previous_effective_action: Optional[ECRGGovernanceAction] = Field(None, description="Previous effective state action")
     warning_severity: str = Field("LOW", description="Warning severity (LOW/MODERATE/HIGH/CRITICAL)")
     certification_banner: str = Field(..., description="UI banner text")
     calibrated: bool = Field(False, description="Whether formal conformal guarantees apply")
+    calibrator_artifact_id: Optional[str] = Field(None, description="Calibrator artifact identifier")
+    calibrator_artifact_sha256: Optional[str] = Field(None, description="Calibrator artifact SHA-256 hash")
+    prediction_set: Optional[List[int]] = Field(None, description="Conformal prediction set C_alpha(x)")
     primary_supporting_signal: str = Field(..., description="Main driving signal")
     supporting_evidence: List[str] = Field(default_factory=list, description="Supporting evidence details")
     contradictory_evidence: List[str] = Field(default_factory=list, description="Contradictory evidence details")
@@ -70,6 +75,7 @@ class GovernanceEvaluationResponse(BaseModel):
     reason_codes: List[str] = Field(default_factory=list, description="Machine-readable reason codes")
     result_json_path: Optional[str] = Field(None, description="Artifact storage location")
     created_at: str = Field(..., description="ISO-8601 timestamp")
+
 
 
 class GovernanceStatusResponse(BaseModel):
