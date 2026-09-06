@@ -330,15 +330,27 @@ class AnalysisService:
 
     @classmethod
     def list_analyses_for_model(cls, model_id: str, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
-        """List summary of analyses for a given model."""
+        """List summary of analyses for a given model including human-readable dataset names."""
         repo = get_analysis_repository()
+        dataset_repo = get_dataset_repository()
         records = repo.list_by_model(model_id, owner_id=user_id)
-        return [
-            {
+        
+        # Build cache for evaluation dataset filenames
+        dataset_cache: Dict[str, str] = {}
+        
+        results = []
+        for r in records:
+            eval_id = r.evaluation_dataset_id
+            if eval_id not in dataset_cache:
+                dset = dataset_repo.get_by_id(eval_id)
+                dataset_cache[eval_id] = dset.filename if dset else eval_id
+            
+            results.append({
                 "analysis_id": r.id,
                 "model_id": r.model_id,
                 "reference_dataset_id": r.reference_dataset_id,
                 "evaluation_dataset_id": r.evaluation_dataset_id,
+                "evaluation_dataset_filename": dataset_cache.get(eval_id, eval_id),
                 "status": r.status,
                 "fusion_method": r.fusion_method,
                 "has_labels": r.has_labels,
@@ -347,6 +359,5 @@ class AnalysisService:
                 "aggregate_drift_score": r.aggregate_drift_score,
                 "aggregate_fused_risk": r.aggregate_fused_risk,
                 "created_at": r.created_at,
-            }
-            for r in records
-        ]
+            })
+        return results

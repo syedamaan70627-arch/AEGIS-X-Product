@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, s
 from api.core.auth import UserContext, get_current_user
 from api.schemas.capabilities import ModelCapabilitiesResponse
 from api.schemas.datasets import ReferenceFitResponse
-from api.schemas.models import ModelListResponse, ModelResponse
+from api.schemas.models import ModelDeleteResponse, ModelDependencySummary, ModelListResponse, ModelResponse
 from api.services.analysis_service import AnalysisService
 from api.services.capability_service import CapabilityService
 from api.services.model_service import ModelService
@@ -54,6 +54,21 @@ async def get_model(model_id: str, user: UserContext = Depends(get_current_user)
     return model
 
 
+@router.get("/{model_id}/dependencies", response_model=ModelDependencySummary, summary="Inspect Model Dependencies")
+async def get_model_dependencies(model_id: str, user: UserContext = Depends(get_current_user)):
+    """Inspect dependent datasets, analyses, and report evidence before deletion."""
+    return ModelService.get_model_dependencies(model_id=model_id, user_id=user.user_id)
+
+
+@router.delete("/{model_id}", response_model=ModelDeleteResponse, summary="Delete Model")
+async def delete_model(model_id: str, user: UserContext = Depends(get_current_user)):
+    """
+    Safely delete a model. Deletes the active executable artifact while preserving
+    historical report snapshots and audit metadata.
+    """
+    return ModelService.delete_model(model_id=model_id, user_id=user.user_id)
+
+
 @router.get("/{model_id}/capabilities", response_model=ModelCapabilitiesResponse, summary="Get Model Reliability Capabilities")
 async def get_model_capabilities(model_id: str, user: UserContext = Depends(get_current_user)):
     """
@@ -74,3 +89,4 @@ async def fit_reference_state(model_id: str, dataset_id: str, user: UserContext 
     using a registered REFERENCE dataset.
     """
     return AnalysisService.fit_reference_state(model_id=model_id, dataset_id=dataset_id, user_id=user.user_id)
+

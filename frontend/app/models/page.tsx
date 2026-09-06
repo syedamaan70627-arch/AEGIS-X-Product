@@ -13,7 +13,8 @@ import { SectionCard } from "@/components/ui/SectionCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useToast } from "@/components/providers/ToastProvider";
-import { CheckCircle2, Layers, Plus, Search, ShieldAlert, XCircle } from "lucide-react";
+import { CheckCircle2, Layers, MoreVertical, Plus, Search, ShieldAlert, Trash2, XCircle } from "lucide-react";
+import { DeleteModelModal } from "@/components/models/DeleteModelModal";
 
 export default function ModelsPage() {
   const toast = useToast();
@@ -31,6 +32,9 @@ export default function ModelsPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Delete modal state
+  const [deleteModalModel, setDeleteModalModel] = useState<ModelRecord | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -64,6 +68,19 @@ export default function ModelsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDeleteSuccess = async (deletedModelId: string) => {
+    toast.success("Model Deleted", "Model deleted from active registry successfully.");
+    // Clear stale model selection from local storage if the deleted model was selected
+    if (typeof window !== "undefined") {
+      const activeModelId = localStorage.getItem("aegis_selected_model_id");
+      if (activeModelId === deletedModelId) {
+        localStorage.removeItem("aegis_selected_model_id");
+        localStorage.removeItem("aegis_selected_analysis_id");
+      }
+    }
+    await fetchModels();
   };
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
@@ -207,12 +224,22 @@ export default function ModelsPage() {
                         <StatusBadge status={m.status} />
                       </td>
                       <td className="p-3.5 text-right">
-                        <Link
-                          href={`/models/${m.model_id}`}
-                          className="px-3 py-1.5 text-xs font-semibold bg-[#1A222C] hover:bg-[#26303D] text-[#F3F4F6] rounded-lg transition-colors border border-[#26303D] inline-block font-sans"
-                        >
-                          Capabilities →
-                        </Link>
+                        <div className="flex items-center justify-end space-x-2">
+                          <Link
+                            href={`/models/${m.model_id}`}
+                            className="px-3 py-1.5 text-xs font-semibold bg-[#1A222C] hover:bg-[#26303D] text-[#F3F4F6] rounded-lg transition-colors border border-[#26303D] inline-block font-sans"
+                          >
+                            Capabilities →
+                          </Link>
+                          <button
+                            onClick={() => setDeleteModalModel(m)}
+                            title="Delete model"
+                            aria-label={`Delete model ${m.model_name}`}
+                            className="p-1.5 rounded-lg text-[#9CA3AF] hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -222,6 +249,14 @@ export default function ModelsPage() {
           </div>
         </SectionCard>
       )}
+
+      {/* Delete Model Modal */}
+      <DeleteModelModal
+        isOpen={!!deleteModalModel}
+        model={deleteModalModel}
+        onClose={() => setDeleteModalModel(null)}
+        onSuccess={handleDeleteSuccess}
+      />
 
       {/* Register Model Modal */}
       {showRegisterModal && (

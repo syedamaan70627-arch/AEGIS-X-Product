@@ -16,6 +16,8 @@ import {
   MemoryListResponse,
   MemoryMatchResponse,
   ModelCapabilitiesResponse,
+  ModelDeleteResponse,
+  ModelDependencySummary,
   ModelListResponse,
   ModelRecord,
   PredictionResponse,
@@ -273,6 +275,16 @@ export const api = {
   fitReferenceState: async (modelId: string, datasetId: string): Promise<ReferenceFitResponse> => {
     return authenticatedFetch<ReferenceFitResponse>(`${getBASE_URL()}/models/${modelId}/reference/${datasetId}/fit`, {
       method: "POST",
+    });
+  },
+
+  getModelDependencies: async (modelId: string): Promise<ModelDependencySummary> => {
+    return authenticatedFetch<ModelDependencySummary>(`${getBASE_URL()}/models/${modelId}/dependencies`);
+  },
+
+  deleteModel: async (modelId: string): Promise<ModelDeleteResponse> => {
+    return authenticatedFetch<ModelDeleteResponse>(`${getBASE_URL()}/models/${modelId}`, {
+      method: "DELETE",
     });
   },
 

@@ -139,11 +139,34 @@ export interface AnalysisResponse {
   diagnostics?: DiagnosticDetail | null;
 }
 
+export interface ModelDependencySummary {
+  model_id: string;
+  model_name: string;
+  uploaded_datasets: number;
+  reference_states: number;
+  reliability_analyses: number;
+  stress_tests: number;
+  fault_tests: number;
+  failure_memory_records: number;
+  prediction_records: number;
+  governance_evaluations: number;
+  report_snapshots: number;
+}
+
+export interface ModelDeleteResponse {
+  success: boolean;
+  model_id: string;
+  message: string;
+  status: string;
+  dependency_summary?: ModelDependencySummary;
+}
+
 export interface AnalysisSummary {
   analysis_id: string;
   model_id: string;
   reference_dataset_id: string;
   evaluation_dataset_id: string;
+  evaluation_dataset_filename?: string;
   status: string;
   fusion_method: string;
   has_labels: boolean;

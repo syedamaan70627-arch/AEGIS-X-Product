@@ -10,10 +10,22 @@ from typing import List, Optional
 from fastapi import UploadFile
 
 from aegis.core.model_adapter import SklearnModelAdapter
-from api.core.dependencies import get_model_repository
+from api.core.dependencies import (
+    get_analysis_repository,
+    get_dataset_repository,
+    get_failure_memory_repository,
+    get_fault_test_repository,
+    get_governance_repository,
+    get_model_repository,
+    get_prediction_repository,
+    get_reference_state_repository,
+    get_report_repository,
+    get_stress_test_repository,
+)
 from api.db.models import ModelRecord
-from api.schemas.models import ModelResponse
+from api.schemas.models import ModelDeleteResponse, ModelDependencySummary, ModelResponse
 from api.services.storage_service import StorageService
+from fastapi import HTTPException, status
 
 
 class ModelService:
@@ -54,6 +66,7 @@ class ModelService:
             classes=capabilities["classes"],
             feature_names=capabilities["feature_names_in"],
             created_at=created_at,
+            status="active",
         )
 
         repo = get_model_repository()
@@ -71,7 +84,7 @@ class ModelService:
             classes=record.classes,
             feature_names=record.feature_names,
             created_at=record.created_at,
-            status="registered",
+            status=record.status,
         )
 
     @classmethod
@@ -93,14 +106,14 @@ class ModelService:
             classes=record.classes,
             feature_names=record.feature_names,
             created_at=record.created_at,
-            status="registered",
+            status=record.status,
         )
 
     @classmethod
-    def list_models(cls, user_id: Optional[str] = None) -> List[ModelResponse]:
+    def list_models(cls, user_id: Optional[str] = None, include_deleted: bool = False) -> List[ModelResponse]:
         """List registered models belonging to the user."""
         repo = get_model_repository()
-        records = repo.list_all(owner_id=user_id)
+        records = repo.list_all(owner_id=user_id, include_deleted=include_deleted)
         return [
             ModelResponse(
                 model_id=r.id,
@@ -114,7 +127,101 @@ class ModelService:
                 classes=r.classes,
                 feature_names=r.feature_names,
                 created_at=r.created_at,
-                status="registered",
+                status=r.status,
             )
             for r in records
         ]
+
+    @classmethod
+    def get_model_dependencies(cls, model_id: str, user_id: str) -> ModelDependencySummary:
+        """Inspect all datasets, analyses, and test artifacts linked to a model."""
+        repo = get_model_repository()
+        record = repo.get_by_id(model_id)
+        if not record:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"code": "MODEL_NOT_FOUND", "message": f"Model '{model_id}' not found."},
+            )
+        if record.user_id != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={"code": "MODEL_NOT_OWNED", "message": "You do not own this model."},
+            )
+
+        dataset_repo = get_dataset_repository()
+        ref_repo = get_reference_state_repository()
+        analysis_repo = get_analysis_repository()
+        stress_repo = get_stress_test_repository()
+        fault_repo = get_fault_test_repository()
+        failure_memory_repo = get_failure_memory_repository()
+        prediction_repo = get_prediction_repository()
+        governance_repo = get_governance_repository()
+        report_repo = get_report_repository()
+
+        datasets = len(dataset_repo.list_by_model(model_id))
+        ref_state = 1 if ref_repo.get_by_model_id(model_id) else 0
+        analyses = len(analysis_repo.list_by_model(model_id))
+        stress_tests = len(stress_repo.list_by_model(model_id))
+        fault_tests = len(fault_repo.list_by_model(model_id))
+        memories = len(failure_memory_repo.list_by_model(model_id))
+        predictions = len(prediction_repo.list_by_model(model_id))
+        gov_evals = governance_repo.count_evaluations_by_model(model_id)
+        reports = len(report_repo.list_by_model(model_id))
+
+        return ModelDependencySummary(
+            model_id=model_id,
+            model_name=record.model_name,
+            uploaded_datasets=datasets,
+            reference_states=ref_state,
+            reliability_analyses=analyses,
+            stress_tests=stress_tests,
+            fault_tests=fault_tests,
+            failure_memory_records=memories,
+            prediction_records=predictions,
+            governance_evaluations=gov_evals,
+            report_snapshots=reports,
+        )
+
+    @classmethod
+    def delete_model(cls, model_id: str, user_id: str) -> ModelDeleteResponse:
+        """Perform safe model deletion (tombstoning & executable storage removal)."""
+        repo = get_model_repository()
+        record = repo.get_by_id(model_id)
+        if not record:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"code": "MODEL_NOT_FOUND", "message": f"Model '{model_id}' not found."},
+            )
+        if record.user_id != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={"code": "MODEL_NOT_OWNED", "message": "You do not own this model."},
+            )
+
+        deps = cls.get_model_dependencies(model_id=model_id, user_id=user_id)
+
+        # Delete physical executable model file from storage if present
+        if record.file_path:
+            try:
+                import os
+                if os.path.exists(record.file_path):
+                    os.remove(record.file_path)
+            except Exception:
+                pass
+
+        # Update database record status to "deleted"
+        updated = repo.update_status(model_id=model_id, status="deleted", owner_id=user_id)
+        if not updated:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail={"code": "MODEL_DELETE_FAILED", "message": f"Failed to mark model '{model_id}' as deleted."},
+            )
+
+        return ModelDeleteResponse(
+            success=True,
+            model_id=model_id,
+            message=f"Model '{record.model_name}' deleted successfully.",
+            status="deleted",
+            dependency_summary=deps,
+        )
+

@@ -79,6 +79,7 @@ class SupabaseModelRepository(BaseSupabaseRepository, IModelRepository):
             "n_features_in": record.n_features_in,
             "classes_json": json.dumps(record.classes) if record.classes is not None else None,
             "feature_names_json": json.dumps(record.feature_names) if record.feature_names is not None else None,
+            "status": record.status or "active",
             "created_at": record.created_at,
         }
         res = self.client.post(f"{self.url}/models", headers=self.headers, json=payload)
@@ -106,13 +107,16 @@ class SupabaseModelRepository(BaseSupabaseRepository, IModelRepository):
             n_features_in=row.get("n_features_in"),
             classes=json.loads(row["classes_json"]) if row.get("classes_json") else None,
             feature_names=json.loads(row["feature_names_json"]) if row.get("feature_names_json") else None,
+            status=row.get("status", "active"),
             created_at=row["created_at"],
         )
 
-    def list_all(self, owner_id: Optional[str] = None) -> List[ModelRecord]:
+    def list_all(self, owner_id: Optional[str] = None, include_deleted: bool = False) -> List[ModelRecord]:
         endpoint = f"{self.url}/models?order=created_at.desc"
         if owner_id:
             endpoint += f"&user_id=eq.{owner_id}"
+        if not include_deleted:
+            endpoint += "&status=neq.deleted"
         res = self.client.get(endpoint, headers=self.headers)
         if res.status_code != 200:
             return []
@@ -132,10 +136,19 @@ class SupabaseModelRepository(BaseSupabaseRepository, IModelRepository):
                     n_features_in=row.get("n_features_in"),
                     classes=json.loads(row["classes_json"]) if row.get("classes_json") else None,
                     feature_names=json.loads(row["feature_names_json"]) if row.get("feature_names_json") else None,
+                    status=row.get("status", "active"),
                     created_at=row["created_at"],
                 )
             )
         return models
+
+    def update_status(self, model_id: str, status: str, owner_id: Optional[str] = None) -> bool:
+        endpoint = f"{self.url}/models?id=eq.{model_id}"
+        if owner_id:
+            endpoint += f"&user_id=eq.{owner_id}"
+        res = self.client.patch(endpoint, headers=self.headers, json={"status": status})
+        return res.status_code in (200, 204)
+
 
 
 class SupabaseDatasetRepository(BaseSupabaseRepository, IDatasetRepository):

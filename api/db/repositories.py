@@ -48,8 +48,8 @@ class ModelRepository(IModelRepository):
             INSERT INTO models (
                 id, user_id, model_name, task_type, description, file_path, filename,
                 predict_supported, predict_proba_supported, n_features_in,
-                classes_json, feature_names_json, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                classes_json, feature_names_json, status, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """
         self.conn.execute(
             query,
@@ -66,6 +66,7 @@ class ModelRepository(IModelRepository):
                 record.n_features_in,
                 json.dumps(record.classes) if record.classes is not None else None,
                 json.dumps(record.feature_names) if record.feature_names is not None else None,
+                record.status or "active",
                 record.created_at,
             ),
         )
@@ -95,16 +96,22 @@ class ModelRepository(IModelRepository):
             n_features_in=row["n_features_in"],
             classes=json.loads(row["classes_json"]) if row["classes_json"] else None,
             feature_names=json.loads(row["feature_names_json"]) if row["feature_names_json"] else None,
+            status=row["status"] if "status" in row.keys() and row["status"] else "active",
             created_at=row["created_at"],
         )
 
-    def list_all(self, owner_id: Optional[str] = None) -> List[ModelRecord]:
+    def list_all(self, owner_id: Optional[str] = None, include_deleted: bool = False) -> List[ModelRecord]:
+        conds = []
+        params = []
         if owner_id:
-            query = "SELECT * FROM models WHERE user_id = ? ORDER BY created_at DESC;"
-            cursor = self.conn.execute(query, (owner_id,))
-        else:
-            query = "SELECT * FROM models ORDER BY created_at DESC;"
-            cursor = self.conn.execute(query)
+            conds.append("user_id = ?")
+            params.append(owner_id)
+        if not include_deleted:
+            conds.append("(status IS NULL OR status != 'deleted')")
+        
+        where_clause = f"WHERE {' AND '.join(conds)}" if conds else ""
+        query = f"SELECT * FROM models {where_clause} ORDER BY created_at DESC;"
+        cursor = self.conn.execute(query, tuple(params))
         rows = cursor.fetchall()
         models = []
         for row in rows:
@@ -122,10 +129,22 @@ class ModelRepository(IModelRepository):
                     n_features_in=row["n_features_in"],
                     classes=json.loads(row["classes_json"]) if row["classes_json"] else None,
                     feature_names=json.loads(row["feature_names_json"]) if row["feature_names_json"] else None,
+                    status=row["status"] if "status" in row.keys() and row["status"] else "active",
                     created_at=row["created_at"],
                 )
             )
         return models
+
+    def update_status(self, model_id: str, status: str, owner_id: Optional[str] = None) -> bool:
+        if owner_id:
+            query = "UPDATE models SET status = ? WHERE id = ? AND user_id = ?;"
+            cursor = self.conn.execute(query, (status, model_id, owner_id))
+        else:
+            query = "UPDATE models SET status = ? WHERE id = ?;"
+            cursor = self.conn.execute(query, (status, model_id))
+        self.conn.commit()
+        return cursor.rowcount > 0
+
 
 
 class DatasetRepository(IDatasetRepository):
@@ -755,7 +774,7 @@ class WarningRepository(IWarningRepository):
                 result_path=row["result_path"],
                 created_at=row["created_at"],
             )
-            for row in rows
+            for row in cursor.fetchall()
         ]
 
 

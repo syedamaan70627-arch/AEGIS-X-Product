@@ -54,6 +54,17 @@ def _ensure_user_id_column(conn: sqlite3.Connection, table_name: str) -> None:
         pass
 
 
+def _ensure_status_column(conn: sqlite3.Connection, table_name: str) -> None:
+    """Helper to ensure status column exists on existing SQLite tables."""
+    try:
+        cursor = conn.execute(f"PRAGMA table_info({table_name});")
+        columns = [row["name"] for row in cursor.fetchall()]
+        if "status" not in columns:
+            conn.execute(f"ALTER TABLE {table_name} ADD COLUMN status TEXT DEFAULT 'active';")
+    except Exception:
+        pass
+
+
 def init_db() -> None:
     """Initialize database tables for models, datasets, reference_states, analyses, stress, faults, memory, prediction, and warning."""
     settings.ensure_directories()
@@ -79,6 +90,7 @@ def init_db() -> None:
                 n_features_in INTEGER,
                 classes_json TEXT,
                 feature_names_json TEXT,
+                status TEXT NOT NULL DEFAULT 'active',
                 created_at TEXT NOT NULL
             );
         """)
@@ -291,4 +303,5 @@ def init_db() -> None:
 
         for tbl in ["models", "datasets", "reference_states", "analyses", "stress_tests", "fault_tests", "failure_memories", "predictions", "warnings", "governance_evaluations", "governance_transitions", "reports"]:
             _ensure_user_id_column(conn, tbl)
+        _ensure_status_column(conn, "models")
 

@@ -212,7 +212,7 @@ export default function BatchMonitorPage() {
               {/* Separate Reliability Signals Display */}
               <SectionCard
                 title="Operational Reliability Signals"
-                subtitle={`Analysis ID: ${analysisResult.analysis_id} | Status: ${analysisResult.status}`}
+                subtitle={`Evaluation Batch: ${datasets.find((d) => d.dataset_id === selectedDatasetId)?.filename || "evaluation_batch.csv"} | Analysis ID: ${analysisResult.analysis_id}`}
                 action={
                   <div className="flex items-center space-x-3">
                     <CopyButton text={analysisResult.analysis_id} label="Copy Analysis ID" />

@@ -49,7 +49,7 @@ def test_register_model_success(sample_model_file):
     assert data["predict_supported"] is True
     assert data["predict_proba_supported"] is True
     assert data["n_features_in"] == 3
-    assert data["status"] == "registered"
+    assert data["status"] in ("registered", "active")
 
 
 def test_get_model_details(sample_model_file):

@@ -14,6 +14,8 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { useToast } from "@/components/providers/ToastProvider";
 import { Activity, CheckCircle2, Database, FileSpreadsheet, Layers, Play, Trash2, Upload } from "lucide-react";
 
+import { MultiDatasetUploader } from "@/components/data/MultiDatasetUploader";
+
 export default function DataSetupPage() {
   const toast = useToast();
   const [loading, setLoading] = useState(true);
@@ -23,7 +25,7 @@ export default function DataSetupPage() {
   const [datasets, setDatasets] = useState<DatasetRecord[]>([]);
 
   // Upload Dataset State
-  const [datasetType, setDatasetType] = useState<"REFERENCE" | "EVALUATION" | "TEMPORAL_TRAJECTORY">("REFERENCE");
+  const [datasetType, setDatasetType] = useState<"REFERENCE" | "EVALUATION" | "TEMPORAL_TRAJECTORY">("EVALUATION");
   const [targetColumn, setTargetColumn] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -200,13 +202,26 @@ export default function DataSetupPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Upload Form */}
           <div className="lg:col-span-1">
-            <SectionCard title="Upload Dataset CSV" subtitle="Add tabular dataset file">
+            <SectionCard title="Upload Dataset CSV" subtitle="Multi-file evaluation upload queue supported">
               {uploadError && <ErrorState message={uploadError} />}
 
-              <form onSubmit={handleDatasetUpload} className="space-y-4 text-xs font-sans">
+              <div className="space-y-4 text-xs font-sans">
                 <div>
                   <label className="block font-semibold text-[#F3F4F6] mb-1.5">Dataset Category *</label>
                   <div className="grid grid-cols-1 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setDatasetType("EVALUATION")}
+                      className={`py-2 px-3 rounded-lg font-semibold text-left border transition-all flex items-center justify-between ${
+                        datasetType === "EVALUATION"
+                          ? "bg-[#3B82F6]/10 text-[#60A5FA] border-[#3B82F6]/40 shadow-sm"
+                          : "bg-[#0F141B] text-[#9CA3AF] border-[#26303D] hover:bg-[#1A222C]"
+                      }`}
+                    >
+                      <span className="font-mono text-xs">EVALUATION</span>
+                      <span className="text-[10px] text-[#6B7280] font-sans">Multi-File Batch Queue</span>
+                    </button>
+
                     <button
                       type="button"
                       onClick={() => setDatasetType("REFERENCE")}
@@ -218,19 +233,6 @@ export default function DataSetupPage() {
                     >
                       <span className="font-mono text-xs">REFERENCE</span>
                       <span className="text-[10px] text-[#6B7280] font-sans">Baseline Distribution</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setDatasetType("EVALUATION")}
-                      className={`py-2 px-3 rounded-lg font-semibold text-left border transition-all flex items-center justify-between ${
-                        datasetType === "EVALUATION"
-                          ? "bg-[#3B82F6]/10 text-[#60A5FA] border-[#3B82F6]/40 shadow-sm"
-                          : "bg-[#0F141B] text-[#9CA3AF] border-[#26303D] hover:bg-[#1A222C]"
-                      }`}
-                    >
-                      <span className="font-mono text-xs">EVALUATION</span>
-                      <span className="text-[10px] text-[#6B7280] font-sans">Test Batch</span>
                     </button>
 
                     <button
@@ -248,40 +250,47 @@ export default function DataSetupPage() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block font-semibold text-[#F3F4F6] mb-1">Target Label Column (Optional)</label>
-                  <input
-                    type="text"
-                    value={targetColumn}
-                    onChange={(e) => setTargetColumn(e.target.value)}
-                    placeholder="e.g. target, Failure_Onset_Next"
-                    className="w-full bg-[#0F141B] border border-[#26303D] rounded-lg px-3 py-2 text-[#F3F4F6] placeholder-[#6B7280] focus:outline-none focus:border-[#3B82F6] font-mono"
+                {datasetType === "EVALUATION" ? (
+                  <MultiDatasetUploader
+                    modelId={selectedModelId}
+                    datasetType="EVALUATION"
+                    onComplete={() => loadData(selectedModelId)}
                   />
-                  <p className="mt-1 text-[11px] text-[#6B7280]">
-                    Required for supervised training or ground-truth verification.
-                  </p>
-                </div>
+                ) : (
+                  <form onSubmit={handleDatasetUpload} className="space-y-4">
+                    <div>
+                      <label className="block font-semibold text-[#F3F4F6] mb-1">Target Label Column (Optional)</label>
+                      <input
+                        type="text"
+                        value={targetColumn}
+                        onChange={(e) => setTargetColumn(e.target.value)}
+                        placeholder="e.g. target, Failure_Onset_Next"
+                        className="w-full bg-[#0F141B] border border-[#26303D] rounded-lg px-3 py-2 text-[#F3F4F6] placeholder-[#6B7280] focus:outline-none focus:border-[#3B82F6] font-mono"
+                      />
+                    </div>
 
-                <div>
-                  <label className="block font-semibold text-[#F3F4F6] mb-1">CSV File *</label>
-                  <input
-                    type="file"
-                    required
-                    accept=".csv"
-                    onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                    className="w-full bg-[#0F141B] border border-[#26303D] rounded-lg px-3 py-2 text-[#9CA3AF] text-xs file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-[#3B82F6] file:text-white hover:file:bg-[#2563EB] cursor-pointer font-mono"
-                  />
-                </div>
+                    <div>
+                      <label className="block font-semibold text-[#F3F4F6] mb-1">CSV File *</label>
+                      <input
+                        type="file"
+                        required
+                        accept=".csv"
+                        onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                        className="w-full bg-[#0F141B] border border-[#26303D] rounded-lg px-3 py-2 text-[#9CA3AF] text-xs file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-[#3B82F6] file:text-white hover:file:bg-[#2563EB] cursor-pointer font-mono"
+                      />
+                    </div>
 
-                <button
-                  type="submit"
-                  disabled={uploading || !selectedModelId}
-                  className="w-full py-2.5 bg-[#3B82F6] hover:bg-[#2563EB] text-white rounded-lg font-semibold shadow-sm transition-all disabled:opacity-50 flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-[#3B82F6]"
-                >
-                  <Upload className="w-4 h-4" />
-                  <span>{uploading ? "Uploading CSV..." : "Upload Dataset"}</span>
-                </button>
-              </form>
+                    <button
+                      type="submit"
+                      disabled={uploading || !selectedModelId}
+                      className="w-full py-2.5 bg-[#3B82F6] hover:bg-[#2563EB] text-white rounded-lg font-semibold shadow-sm transition-all disabled:opacity-50 flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-[#3B82F6]"
+                    >
+                      <Upload className="w-4 h-4" />
+                      <span>{uploading ? "Uploading CSV..." : "Upload Dataset"}</span>
+                    </button>
+                  </form>
+                )}
+              </div>
             </SectionCard>
           </div>
 

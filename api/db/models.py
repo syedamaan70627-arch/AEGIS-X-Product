@@ -23,6 +23,7 @@ class ModelRecord:
     n_features_in: Optional[int] = None
     classes: Optional[List[Any]] = field(default_factory=list)
     feature_names: Optional[List[str]] = field(default_factory=list)
+    status: str = "active"
 
 
 @dataclass

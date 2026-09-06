@@ -655,14 +655,19 @@ export function IntegratedReportView({
       <div className="relative p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-slate-900/90 via-slate-900/50 to-slate-950 border border-slate-800 shadow-2xl space-y-6">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="space-y-2">
-            <div className="flex items-center gap-2 text-xs font-mono text-indigo-400 uppercase tracking-wider">
+            <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-indigo-400 uppercase tracking-wider">
               <ShieldAlert className="w-4 h-4" /> Executive Decision Summary
+              {((context as any)?.model_status === "deleted" || (context as any)?.status === "deleted") && (
+                <span className="px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/40 text-[10px] font-bold tracking-normal uppercase">
+                  MODEL STATUS: DELETED / NO LONGER ACTIVE
+                </span>
+              )}
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
               {context.model_name}
             </h1>
             <p className="text-xs text-slate-400 max-w-2xl font-mono">
-              Report: {context.report_id} | Analysis: {context.analysis_id} | Generated: {new Date(context.generated_at).toLocaleString()}
+              Evaluation Batch: <span className="text-indigo-300 font-semibold">{context.evaluation_dataset_name || context.evaluation_dataset_id}</span> | Report ID: {context.report_id} | Analysis ID: {context.analysis_id}
             </p>
           </div>
 

@@ -26,3 +26,26 @@ class ModelResponse(BaseModel):
 class ModelListResponse(BaseModel):
     total: int
     models: List[ModelResponse]
+
+
+class ModelDependencySummary(BaseModel):
+    model_id: str
+    model_name: str
+    uploaded_datasets: int = 0
+    reference_states: int = 0
+    reliability_analyses: int = 0
+    stress_tests: int = 0
+    fault_tests: int = 0
+    failure_memory_records: int = 0
+    prediction_records: int = 0
+    governance_evaluations: int = 0
+    report_snapshots: int = 0
+
+
+class ModelDeleteResponse(BaseModel):
+    success: bool
+    model_id: str
+    message: str
+    status: str = "deleted"
+    dependency_summary: Optional[ModelDependencySummary] = None
+

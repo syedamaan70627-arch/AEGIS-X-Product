@@ -303,7 +303,7 @@ export default function ReportsPage() {
               ) : (
                 analyses.map((a) => (
                   <option key={a.analysis_id} value={a.analysis_id}>
-                    {a.analysis_id.slice(0, 8)}... ({new Date(a.created_at).toLocaleDateString()}) - Fused Risk: {typeof a.aggregate_fused_risk === "number" ? a.aggregate_fused_risk.toFixed(3) : "N/A"}
+                    {a.evaluation_dataset_filename || "evaluation.csv"} | Fused {typeof a.aggregate_fused_risk === "number" ? a.aggregate_fused_risk.toFixed(3) : "N/A"} · {new Date(a.created_at).toLocaleTimeString()} ({a.analysis_id.slice(0, 8)}...)
                   </option>
                 ))
               )}

@@ -6,7 +6,7 @@ Guarantees CORS headers exist on all error responses even during unexpected fail
 """
 
 import logging
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 import httpx
 
@@ -36,12 +36,13 @@ def _build_error_response(request: Request, status_code: int, code: str, message
 
     return JSONResponse(
         status_code=status_code,
-        content=ErrorResponse(
-            error=ErrorDetail(
-                code=code,
-                message=message,
-            )
-        ).model_dump(),
+        content={
+            "detail": message,
+            "error": {
+                "code": code,
+                "message": message,
+            },
+        },
         headers=headers if headers else None,
     )
 
@@ -105,6 +106,31 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def aegis_base_error_handler(request: Request, exc: AegisError):
         logger.warning(f"AegisError on {request.url.path}: {exc}")
         return _build_error_response(request, status.HTTP_400_BAD_REQUEST, "AEGIS_ERROR", str(exc))
+
+    @app.exception_handler(HTTPException)
+    async def http_exception_handler(request: Request, exc: HTTPException):
+        logger.warning(f"HTTPException on {request.url.path}: {exc.detail}")
+        if isinstance(exc.detail, dict) and "code" in exc.detail:
+            code = exc.detail["code"]
+            msg = exc.detail.get("message", str(exc.detail))
+            return _build_error_response(request, exc.status_code, code, msg)
+        
+        headers = {}
+        origin = request.headers.get("origin")
+        if origin:
+            headers["Access-Control-Allow-Origin"] = origin
+            headers["Access-Control-Allow-Credentials"] = "true"
+            headers["Access-Control-Allow-Methods"] = "*"
+            headers["Access-Control-Allow-Headers"] = "*"
+        
+        content = {
+            "detail": exc.detail,
+            "error": {
+                "code": "HTTP_ERROR",
+                "message": str(exc.detail) if isinstance(exc.detail, str) else str(exc.detail),
+            },
+        }
+        return JSONResponse(status_code=exc.status_code, content=content, headers=headers if headers else None)
 
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(request: Request, exc: Exception):
