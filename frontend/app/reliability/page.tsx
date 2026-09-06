@@ -72,7 +72,7 @@ export default function ReliabilityPage() {
     <div className="space-y-8">
       <PageHeader
         title="Reliability Operations"
-        description="Inspect operational Out-of-Distribution, Uncertainty, Feature Drift, and Fused Evidence Telemetry."
+        description="Inspect operational Out-of-Distribution, Uncertainty, Feature Drift Prevalence, and Fused Evidence Telemetry."
         icon={<LineChart className="w-6 h-6 text-[#3B82F6]" />}
         breadcrumbs={[{ label: "Operations" }, { label: "Reliability" }]}
       />
@@ -152,7 +152,7 @@ export default function ReliabilityPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <RiskIndicator label="OOD Risk" value={activeAnalysis.aggregate_ood_risk} />
               <RiskIndicator label="Uncertainty Risk" value={activeAnalysis.aggregate_uncertainty} />
-              <RiskIndicator label="Drift Score" value={activeAnalysis.aggregate_drift_score} />
+              <RiskIndicator label="Feature Drift Prevalence" value={activeAnalysis.aggregate_drift_score} />
               <RiskIndicator label="Fused Risk Score" value={activeAnalysis.aggregate_fused_risk} />
             </div>
           </SectionCard>

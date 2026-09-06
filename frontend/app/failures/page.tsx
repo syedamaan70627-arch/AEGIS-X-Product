@@ -196,7 +196,7 @@ export default function FailureExplorerPage() {
                       <th className="p-3.5">Fused Risk</th>
                       <th className="p-3.5">OOD Risk</th>
                       <th className="p-3.5">Uncertainty</th>
-                      <th className="p-3.5">Drift Risk</th>
+                      <th className="p-3.5">Drift Prevalence</th>
                       <th className="p-3.5">High-Risk Flag</th>
                       {explorerData.is_label_aware && <th className="p-3.5">Actual Failure</th>}
                       {explorerData.is_label_aware && <th className="p-3.5">Silent Failure</th>}

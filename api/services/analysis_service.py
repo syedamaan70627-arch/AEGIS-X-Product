@@ -245,6 +245,7 @@ class AnalysisService:
         )
 
         drifted_feats = [k for k, v in core_result.drift.feature_drift_flags.items() if v]
+        total_feats = len(core_result.drift.feature_drift_flags)
         drift_detail = SignalDetail(
             status=core_result.drift.status.value,
             aggregate_score=core_result.drift.aggregate_drift_score,
@@ -253,6 +254,8 @@ class AnalysisService:
                 "method": core_result.drift.method,
                 "drift_detected": core_result.drift.drift_detected,
                 "drifted_features": drifted_feats,
+                "drifted_feature_count": len(drifted_feats),
+                "total_feature_count": total_feats,
                 "feature_p_values": core_result.drift.feature_p_values,
             },
             warnings=core_result.drift.warnings,

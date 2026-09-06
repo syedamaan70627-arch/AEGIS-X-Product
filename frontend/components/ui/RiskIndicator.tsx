@@ -46,8 +46,10 @@ export const RiskIndicator: React.FC<RiskIndicatorProps> = ({ label, value, stat
   let signalBadge = null;
   if (isOOD) signalBadge = <span className="text-[10px] font-sans uppercase px-1.5 py-0.5 rounded bg-[#0F141B] text-[#9CA3AF] border border-[#26303D]">OOD</span>;
   if (isUncertainty) signalBadge = <span className="text-[10px] font-sans uppercase px-1.5 py-0.5 rounded bg-[#0F141B] text-[#9CA3AF] border border-[#26303D]">Uncertainty</span>;
-  if (isDrift) signalBadge = <span className="text-[10px] font-sans uppercase px-1.5 py-0.5 rounded bg-[#0F141B] text-[#9CA3AF] border border-[#26303D]">Drift</span>;
+  if (isDrift) signalBadge = <span className="text-[10px] font-sans uppercase px-1.5 py-0.5 rounded bg-[#0F141B] text-[#9CA3AF] border border-[#26303D]">Prevalence</span>;
   if (isFused) signalBadge = <span className="text-[10px] font-sans uppercase px-1.5 py-0.5 rounded bg-[#0F141B] text-[#9CA3AF] border border-[#26303D]">Fused</span>;
+
+  const levelLabel = isDrift ? `${riskLevel} Prevalence` : `${riskLevel} Risk`;
 
   return (
     <div className="bg-[#151B23] border border-[#26303D] rounded-xl p-4 shadow-sm">
@@ -57,7 +59,7 @@ export const RiskIndicator: React.FC<RiskIndicatorProps> = ({ label, value, stat
           <span className="text-xs font-semibold uppercase tracking-wider text-[#F3F4F6] font-sans">{label}</span>
         </div>
         <span className={`text-[11px] font-sans font-semibold px-2 py-0.5 rounded border ${badgeBg} ${textColor}`}>
-          {riskLevel} Risk
+          {levelLabel}
         </span>
       </div>
       <div className="mt-3 flex items-baseline justify-between">

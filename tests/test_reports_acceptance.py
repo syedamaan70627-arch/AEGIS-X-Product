@@ -655,10 +655,9 @@ def test_supporting_evidence_classification(db_conn):
 
     generator = ReportGenerator(user_id="user_a", model=model, analysis=analysis, ref_dataset=ref_ds, eval_dataset=eval_ds)
     payload = generator.generate("rep_supp")
-
     pos_factors = [w.factor for w in payload.why_this_decision if w.impact == "POSITIVE"]
     assert "Prediction Uncertainty" in pos_factors
-    assert "Feature & Concept Drift" in pos_factors
+    assert "Feature Drift Prevalence" in pos_factors
 
 
 def test_early_warning_missing_state_semantics(db_conn):

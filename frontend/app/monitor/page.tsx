@@ -223,7 +223,7 @@ export default function BatchMonitorPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <RiskIndicator label="OOD Risk" value={analysisResult.ood.aggregate_score} />
                   <RiskIndicator label="Uncertainty Risk" value={analysisResult.uncertainty.aggregate_score} />
-                  <RiskIndicator label="Drift Risk" value={analysisResult.drift.aggregate_score} />
+                  <RiskIndicator label="Feature Drift Prevalence" value={analysisResult.drift.aggregate_score} />
                   <RiskIndicator label="Fused Risk Score" value={analysisResult.fusion.aggregate_fused_risk} />
                 </div>
 

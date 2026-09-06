@@ -181,6 +181,13 @@ export function IntegratedReportView({
       return { text: "LOW / NOMINAL", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/30" };
     };
 
+    const getPrevalenceLabel = (val: number | null | undefined, thresholds: { high: number; mod: number }) => {
+      if (val === null || val === undefined) return { text: "NOT EVALUATED", color: "text-slate-400 bg-slate-800 border-slate-700" };
+      if (val >= thresholds.high) return { text: "HIGH PREVALENCE", color: "text-rose-400 bg-rose-500/10 border-rose-500/30" };
+      if (val >= thresholds.mod) return { text: "MODERATE PREVALENCE", color: "text-amber-400 bg-amber-500/10 border-amber-500/30" };
+      return { text: "LOW PREVALENCE", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/30" };
+    };
+
     return (
       <div className="space-y-8 text-slate-200" data-testid="reliability-view">
         {renderActionBar()}
@@ -243,17 +250,25 @@ export function IntegratedReportView({
             {/* Drift */}
             <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-400">Feature & Concept Drift</span>
-                <span className={`text-[10px] font-mono px-2 py-0.5 rounded border font-bold ${getSeverityLabel(driftVal, { high: 0.35, mod: 0.15 }).color}`}>
-                  {getSeverityLabel(driftVal, { high: 0.35, mod: 0.15 }).text}
+                <span className="text-xs font-semibold text-slate-400">Feature Drift Prevalence</span>
+                <span className={`text-[10px] font-mono px-2 py-0.5 rounded border font-bold ${getPrevalenceLabel(driftVal, { high: 0.35, mod: 0.15 }).color}`}>
+                  {getPrevalenceLabel(driftVal, { high: 0.35, mod: 0.15 }).text}
                 </span>
               </div>
-              <div className="text-2xl font-extrabold font-mono text-rose-400">
-                {driftVal !== null && driftVal !== undefined ? driftVal.toFixed(3) : "N/A"}
+              <div className="flex items-baseline justify-between">
+                <div className="text-2xl font-extrabold font-mono text-rose-400">
+                  {driftVal !== null && driftVal !== undefined ? `${(driftVal * 100).toFixed(1)}%` : "N/A"}
+                </div>
+                <div className="text-xs font-mono text-slate-400">
+                  score: {driftVal !== null && driftVal !== undefined ? driftVal.toFixed(4) : "N/A"}
+                </div>
               </div>
               <p className="text-[11px] text-slate-400 leading-relaxed">
-                {driftVal !== null && driftVal > 0.35 ? "Significant feature distribution drift requiring parameter recalibration." : "Feature distribution drift remains low across evaluation dimensions."}
+                {driftVal !== null && driftVal > 0.35 ? "Widespread feature distribution shift detected across monitored feature dimensions under two-sample KS test (α = 0.05)." : "Feature distribution drift prevalence remains low across evaluation dimensions."}
               </p>
+              <div className="mt-2 text-[10px] text-slate-400 italic bg-slate-900/80 p-2 rounded border border-slate-800/80">
+                💡 Feature Drift Prevalence is the fraction of monitored features whose marginal distributions are flagged as statistically different from the reference state. It is not a drift-magnitude score or failure probability.
+              </div>
             </div>
 
             {/* Fused Risk */}
@@ -810,7 +825,7 @@ export function IntegratedReportView({
               </div>
             </div>
             <div className="p-3 bg-slate-950/60 rounded-lg border border-slate-800">
-              <div className="text-xs text-slate-400">Feature Drift Score</div>
+              <div className="text-xs text-slate-400">Feature Drift Prevalence</div>
               <div className="text-xl font-bold font-mono text-rose-400 mt-1">
                 {reliability_summary.aggregate_drift_score !== null ? reliability_summary.aggregate_drift_score.toFixed(3) : "N/A"}
               </div>

@@ -144,7 +144,7 @@ export default function DashboardOverview() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <RiskIndicator label="OOD Risk" value={latestAnalysis.aggregate_ood_risk} />
                   <RiskIndicator label="Uncertainty Risk" value={latestAnalysis.aggregate_uncertainty} />
-                  <RiskIndicator label="Drift Risk" value={latestAnalysis.aggregate_drift_score} />
+                  <RiskIndicator label="Feature Drift Prevalence" value={latestAnalysis.aggregate_drift_score} />
                   <RiskIndicator label="Fused Risk Score" value={latestAnalysis.aggregate_fused_risk} />
                 </div>
                 <div className="p-3 bg-[#0F141B] border border-[#26303D] rounded-xl text-[11px] font-sans text-[#9CA3AF] flex flex-col sm:flex-row sm:items-center justify-between gap-2">

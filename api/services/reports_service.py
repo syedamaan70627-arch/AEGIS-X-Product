@@ -216,7 +216,7 @@ class ReportsService:
             f"Reliability,Fused Risk,{snapshot.get('reliability_summary', {}).get('aggregate_fused_risk')}",
             f"Reliability,OOD Risk,{snapshot.get('reliability_summary', {}).get('aggregate_ood_risk')}",
             f"Reliability,Uncertainty,{snapshot.get('reliability_summary', {}).get('aggregate_uncertainty')}",
-            f"Reliability,Drift Score,{snapshot.get('reliability_summary', {}).get('aggregate_drift_score')}",
+            f"Reliability,Feature Drift Prevalence,{snapshot.get('reliability_summary', {}).get('aggregate_drift_score')}",
             f"Governance,Operating Mode,{snapshot.get('ecrg_governance_summary', {}).get('operating_mode')}",
             f"Governance,Effective Action,{snapshot.get('ecrg_governance_summary', {}).get('effective_action')}",
             f"Governance,State Index,{snapshot.get('ecrg_governance_summary', {}).get('state_index')}",
@@ -268,7 +268,7 @@ class ReportsService:
             <p><b>Fused Risk Index:</b> {rel.get('aggregate_fused_risk')}</p>
             <p><b>OOD Risk:</b> {rel.get('aggregate_ood_risk')}</p>
             <p><b>Uncertainty:</b> {rel.get('aggregate_uncertainty')}</p>
-            <p><b>Drift Score:</b> {rel.get('aggregate_drift_score')}</p>
+            <p><b>Feature Drift Prevalence:</b> {rel.get('aggregate_drift_score')}</p>
         </div>
         <div class="card">
             <h3>ECRG Governance</h3>

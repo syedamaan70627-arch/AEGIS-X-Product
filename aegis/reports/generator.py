@@ -608,7 +608,7 @@ class ReportGenerator:
             if ood and ood > 0.60:
                 primary_adverse.append(f"High Out-of-Distribution Density Shift ({ood:.3f})")
             if drift and drift > 0.60:
-                primary_adverse.append(f"Severe Feature Drift ({drift:.3f})")
+                primary_adverse.append(f"Widespread Feature Drift ({drift:.3f})")
             if fused_risk and fused_risk > 0.60:
                 primary_adverse.append(f"Elevated Fused Risk ({fused_risk:.3f})")
 
@@ -616,7 +616,7 @@ class ReportGenerator:
             if unc is not None and unc <= 0.30:
                 mitigating.append(f"Low Epistemic Uncertainty ({unc:.3f})")
             if drift is not None and drift <= 0.35:
-                mitigating.append(f"Low Feature Drift ({drift:.3f})")
+                mitigating.append(f"Low Feature Drift Prevalence ({drift:.3f})")
 
             adverse_str = "; ".join(primary_adverse) if primary_adverse else f"Fused Risk: {fused_risk:.2f}"
             mitigating_str = f" [Mitigating Evidence: {'; '.join(mitigating)}]" if mitigating else ""
@@ -629,7 +629,7 @@ class ReportGenerator:
         if (drift and drift > 0.35) or (ood and ood > 0.40):
             return (
                 RetrainingDisposition.RETRAINING_ADVISED,
-                f"Moderate-to-high feature shift observed (OOD: {ood}, Drift: {drift}). Retraining on recent dataset advised.",
+                f"Moderate-to-high feature shift prevalence observed (OOD: {ood}, Drift Prevalence: {drift:.3f}). Retraining on recent dataset advised.",
             )
 
         if (unc and unc > 0.30) or (len(gov.get("prediction_set", [])) > 1):
@@ -641,7 +641,7 @@ class ReportGenerator:
         if (drift and drift > 0.15) or temp.get("warning", {}).get("is_warning_triggered", False):
             return (
                 RetrainingDisposition.MONITOR,
-                "Subtle drift or early warning flags detected. Active drift monitoring recommended.",
+                "Subtle feature drift prevalence or early warning flags detected. Active drift monitoring recommended.",
             )
 
         return (
@@ -696,15 +696,27 @@ class ReportGenerator:
                 )
             )
 
-        # 4. Feature & Concept Drift - Low/nominal is supporting evidence
+        # 4. Feature Drift Prevalence - Low/nominal is supporting evidence
         drift = rel.get("aggregate_drift_score")
         if drift is not None:
-            drift_str = f"{drift:.3f}"
+            drift_pct = f"{drift * 100.0:.1f}%"
+            drifted_cnt = rel.get("drifted_feature_count")
+            total_cnt = rel.get("total_feature_count")
+            if drifted_cnt is not None and total_cnt is not None and total_cnt > 0:
+                count_str = f"{drifted_cnt} of {total_cnt} monitored features ({drift_pct})"
+            else:
+                count_str = f"{drift_pct} of monitored features"
+
+            if drift <= 0.35:
+                desc = f"Feature drift prevalence remains low ({count_str}) under two-sample KS test (α = 0.05)."
+            else:
+                desc = f"Widespread feature distribution shift detected: {count_str} exhibited statistically significant marginal shift under two-sample KS test (α = 0.05)."
+
             entries.append(
                 WhyThisDecisionEntry(
-                    factor="Feature & Concept Drift",
+                    factor="Feature Drift Prevalence",
                     impact="POSITIVE" if drift <= 0.35 else "NEGATIVE",
-                    description=f"Feature distribution drift remains low ({drift_str}) across evaluation dimensions." if drift <= 0.35 else f"Significant distribution shift detected ({drift_str}).",
+                    description=desc,
                     evidence_link="/reliability",
                 )
             )
@@ -799,7 +811,7 @@ class ReportGenerator:
             drift_val = rel.get("aggregate_drift_score") or 0.0
             ood_val = rel.get("aggregate_ood_risk") or 0.0
             if drift_val > 0.35:
-                rat_text = f"Significant feature drift ({drift_val:.3f}) requires parameter updates."
+                rat_text = f"Widespread feature drift prevalence ({drift_val:.3f}) indicates distribution shift across monitored features."
             elif ood_val > 0.40:
                 rat_text = f"Elevated out-of-distribution density shift ({ood_val:.3f}) requires model parameter review."
             else:
