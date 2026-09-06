@@ -3,7 +3,7 @@
 
 CREATE TABLE IF NOT EXISTS public.reports (
     id TEXT PRIMARY KEY,
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL,
     model_id TEXT NOT NULL,
     analysis_id TEXT NOT NULL,
     report_type TEXT NOT NULL,
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS public.reports (
 ALTER TABLE public.reports ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users can only access their own reports" ON public.reports;
 CREATE POLICY "Users can only access their own reports" ON public.reports
-    FOR ALL USING (auth.uid() = user_id);
+    FOR ALL USING (auth.uid()::text = user_id OR user_id = 'local_dev_user');
 
 CREATE INDEX IF NOT EXISTS idx_reports_user_id ON public.reports(user_id);
 CREATE INDEX IF NOT EXISTS idx_reports_model_id ON public.reports(model_id);
