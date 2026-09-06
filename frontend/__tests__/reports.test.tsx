@@ -12,6 +12,7 @@ vi.mock('@/lib/api', () => ({
     listModelAnalyses: vi.fn(),
     getGovernanceHistory: vi.fn(),
     getGovernanceStatus: vi.fn(),
+    getGovernanceByAnalysis: vi.fn(),
     listReportsByModel: vi.fn(),
     generateReport: vi.fn(),
     getReportExportUrl: vi.fn(() => 'http://localhost/export'),
@@ -134,6 +135,7 @@ describe('AEGIS-X Reports Behavioral Test Suite', () => {
     (api.listModelAnalyses as any).mockResolvedValue({ analyses: [mockAnalysis] });
     (api.getGovernanceHistory as any).mockResolvedValue({ evaluations: [mockGovernanceEval] });
     (api.getGovernanceStatus as any).mockResolvedValue(mockGovernanceEval);
+    (api.getGovernanceByAnalysis as any).mockResolvedValue(mockGovernanceEval);
     (api.listReportsByModel as any).mockResolvedValue([mockReportSnapshot]);
     (api.generateReport as any).mockResolvedValue(mockReportSnapshot);
   });

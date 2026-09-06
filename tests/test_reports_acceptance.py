@@ -455,4 +455,46 @@ def test_two_user_isolation_strict(db_conn):
     assert list_ana_a[0].id == "rep_user_a"
 
 
+def test_same_analysis_governance_binding(db_conn):
+    """
+    Verifies that governance evaluations bind ONLY to their exact target analysis_id,
+    preventing cross-analysis leakage.
+    """
+    from api.db.repositories import GovernanceRepository
+    gov_repo = GovernanceRepository(db_conn)
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+    rec_ana1 = GovernanceEvaluationRecord(
+        id="gov_ana1", user_id="user_123", model_id="mod_123", analysis_id="ana_target",
+        decision_id="dec_ana1", state_index=1, operating_mode="EVIDENCE_ONLY",
+        raw_action="WATCH", effective_action="WATCH", transition_occurred=False,
+        evidence_snapshot_hash="hash_ana1", result_path="gov/ana1.json", created_at=now
+    )
+    rec_ana2 = GovernanceEvaluationRecord(
+        id="gov_ana2", user_id="user_123", model_id="mod_123", analysis_id="ana_other",
+        decision_id="dec_ana2", state_index=2, operating_mode="EVIDENCE_ONLY",
+        raw_action="DEFER", effective_action="DEFER", transition_occurred=False,
+        evidence_snapshot_hash="hash_ana2", result_path="gov/ana2.json", created_at=now
+    )
+    gov_repo.create_evaluation(rec_ana1)
+    gov_repo.create_evaluation(rec_ana2)
+
+    # Fetch by target analysis
+    fetched_target = gov_repo.get_evaluation_by_analysis("ana_target", "mod_123", owner_id="user_123")
+    assert fetched_target is not None
+    assert fetched_target.id == "gov_ana1"
+    assert fetched_target.effective_action == "WATCH"
+
+    # Fetch by other analysis
+    fetched_other = gov_repo.get_evaluation_by_analysis("ana_other", "mod_123", owner_id="user_123")
+    assert fetched_other is not None
+    assert fetched_other.id == "gov_ana2"
+    assert fetched_other.effective_action == "DEFER"
+
+    # Fetch by non-existent analysis
+    fetched_none = gov_repo.get_evaluation_by_analysis("ana_non_existent", "mod_123", owner_id="user_123")
+    assert fetched_none is None
+
+
+
 

@@ -250,6 +250,19 @@ class GovernanceService:
         )
 
     @classmethod
+    def get_evaluation_by_analysis(
+        cls,
+        analysis_id: str,
+        model_id: str,
+        user_id: str,
+    ) -> Optional[GovernanceEvaluationResponse]:
+        gov_repo = get_governance_repository()
+        rec = gov_repo.get_evaluation_by_analysis(analysis_id, model_id, owner_id=user_id)
+        if not rec:
+            return None
+        return cls._record_to_response(rec, dataset_id="evaluated_dataset", signal_disagreement=0.0)
+
+    @classmethod
     def _record_to_response(
         cls,
         rec: GovernanceEvaluationRecord,

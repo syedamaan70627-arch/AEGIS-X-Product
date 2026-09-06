@@ -2,6 +2,7 @@
 AEGIS-X API Governance Endpoints.
 """
 
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from api.core.auth import UserContext, get_current_user
@@ -74,3 +75,24 @@ async def get_governance_history(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(err))
     except Exception as err:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(err))
+
+
+@router.get(
+    "/analysis/{analysis_id}",
+    response_model=Optional[GovernanceEvaluationResponse],
+    summary="Get Governance Evaluation by Analysis ID",
+)
+async def get_governance_by_analysis(
+    analysis_id: str,
+    model_id: str = Query(..., description="Model ID context"),
+    user: UserContext = Depends(get_current_user),
+):
+    """Retrieve governance evaluation bound to a specific analysis ID."""
+    try:
+        return GovernanceService.get_evaluation_by_analysis(analysis_id, model_id=model_id, user_id=user.user_id)
+    except ValueError as err:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(err))
+    except Exception as err:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(err))
+
+

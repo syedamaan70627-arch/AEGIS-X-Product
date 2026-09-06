@@ -99,6 +99,10 @@ class ReportGenerator:
             evaluation_dataset_id=self.eval_dataset.id,
             evaluation_dataset_name=self.eval_dataset.filename,
             task_type=self.model.task_type,
+            filename=self.model.filename,
+            n_features_in=self.model.n_features_in,
+            predict_supported=self.model.predict_supported,
+            predict_proba_supported=self.model.predict_proba_supported,
         )
 
         # 2. Evidence Completeness Matrix

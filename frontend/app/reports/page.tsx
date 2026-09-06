@@ -75,6 +75,8 @@ export default function ReportsPage() {
     loadModels();
   }, []);
 
+  const [govEvaluation, setGovEvaluation] = useState<any>(null);
+
   // Helper to load or generate report
   const loadExistingOrGenerateReport = async (
     modelId: string,
@@ -83,6 +85,10 @@ export default function ReportsPage() {
   ) => {
     try {
       setErrorObj(null);
+      // Fetch governance evaluation for target analysis
+      const govRes = await api.getGovernanceByAnalysis(analysisId, modelId);
+      setGovEvaluation(govRes);
+
       // Check existing reports
       const existing = await api.listReportsByModel(modelId);
       const match = existing.find((r) => r.analysis_id === analysisId);
@@ -194,7 +200,8 @@ export default function ReportsPage() {
   const selectedAnalysisObj = analyses.find((a) => a.analysis_id === selectedAnalysisId);
   const evidenceStatus = selectedAnalysisObj?.reference_dataset_id && selectedAnalysisObj?.evaluation_dataset_id ? "READY" : "MISSING";
   const payload: ReportPayload | null = activeReport?.snapshot_json || null;
-  const governanceStatus = payload?.ecrg_governance_summary?.effective_action && payload.ecrg_governance_summary.effective_action !== "UNAVAILABLE" ? "READY" : "NOT_EVALUATED";
+  const hasGovEval = (govEvaluation?.action && govEvaluation.action !== "UNAVAILABLE") || (payload?.ecrg_governance_summary?.effective_action && payload.ecrg_governance_summary.effective_action !== "UNAVAILABLE");
+  const governanceStatus = hasGovEval ? "READY" : "NOT_EVALUATED";
   const storageStatus = errorObj ? "UNAVAILABLE" : "READY";
 
   const isPrereqSatisfied = modelStatus === "READY" && analysisStatus === "READY" && storageStatus === "READY";

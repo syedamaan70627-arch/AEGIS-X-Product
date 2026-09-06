@@ -866,6 +866,40 @@ class GovernanceRepository(IGovernanceRepository):
             created_at=row["created_at"],
         )
 
+    def get_evaluation_by_analysis(self, analysis_id: str, model_id: str, owner_id: Optional[str] = None) -> Optional[GovernanceEvaluationRecord]:
+        if owner_id:
+            query = "SELECT * FROM governance_evaluations WHERE analysis_id = ? AND model_id = ? AND user_id = ? ORDER BY created_at DESC LIMIT 1;"
+            cursor = self.conn.execute(query, (analysis_id, model_id, owner_id))
+        else:
+            query = "SELECT * FROM governance_evaluations WHERE analysis_id = ? AND model_id = ? ORDER BY created_at DESC LIMIT 1;"
+            cursor = self.conn.execute(query, (analysis_id, model_id))
+        row = cursor.fetchone()
+        if not row:
+            return None
+        return GovernanceEvaluationRecord(
+            id=row["id"],
+            user_id=row["user_id"] if "user_id" in row.keys() else "local_dev_user",
+            model_id=row["model_id"],
+            analysis_id=row["analysis_id"],
+            decision_id=row["decision_id"],
+            state_index=row["state_index"],
+            operating_mode=row["operating_mode"],
+            raw_action=row["raw_action"],
+            effective_action=row["effective_action"],
+            previous_effective_action=row["previous_effective_action"],
+            transition_occurred=bool(row["transition_occurred"]),
+            transition_reason=row["transition_reason"],
+            p_adverse=row["p_adverse"],
+            prediction_set_json=row["prediction_set_json"],
+            reason_codes_json=row["reason_codes_json"],
+            calibrated=bool(row["calibrated"]),
+            calibrator_artifact_id=row["calibrator_artifact_id"],
+            calibrator_artifact_sha256=row["calibrator_artifact_sha256"],
+            evidence_snapshot_hash=row["evidence_snapshot_hash"],
+            result_path=row["result_path"],
+            created_at=row["created_at"],
+        )
+
     def get_latest_evaluation(self, model_id: str, owner_id: Optional[str] = None) -> Optional[GovernanceEvaluationRecord]:
         if owner_id:
             query = "SELECT * FROM governance_evaluations WHERE model_id = ? AND user_id = ? ORDER BY created_at DESC LIMIT 1;"

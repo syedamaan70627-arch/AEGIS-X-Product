@@ -100,7 +100,8 @@ class ReportsService:
         failure_memory = memory_list[0] if memory_list else None
         predictions = self.prediction_repo.list_by_model(model_id, owner_id=user_id)
         warnings = self.warning_repo.list_by_model(model_id, owner_id=user_id)
-        governance_evals = self.governance_repo.list_evaluations(model_id, owner_id=user_id)
+        gov_eval = self.governance_repo.get_evaluation_by_analysis(analysis_id, model_id, owner_id=user_id)
+        governance_evals = [gov_eval] if gov_eval else []
 
         # Fetch previous analysis for trend comparison if available
         all_analyses = self.analysis_repo.list_by_model(model_id, owner_id=user_id)

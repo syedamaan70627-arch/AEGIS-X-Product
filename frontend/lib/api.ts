@@ -482,6 +482,19 @@ export const api = {
     );
   },
 
+  getGovernanceByAnalysis: async (
+    analysisId: string,
+    modelId: string
+  ): Promise<GovernanceEvaluationResponse | null> => {
+    try {
+      return await authenticatedFetch<GovernanceEvaluationResponse | null>(
+        `${getBASE_URL()}/governance/analysis/${analysisId}?model_id=${encodeURIComponent(modelId)}`
+      );
+    } catch (_) {
+      return null;
+    }
+  },
+
   // Reports & Decision Intelligence
   generateReport: async (body: {
     model_id: string;

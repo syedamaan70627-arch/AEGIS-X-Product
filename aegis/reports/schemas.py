@@ -57,6 +57,10 @@ class ReportContext(BaseModel):
     evaluation_dataset_id: str
     evaluation_dataset_name: Optional[str] = None
     task_type: str = "classification"
+    filename: Optional[str] = None
+    n_features_in: Optional[int] = None
+    predict_supported: Optional[bool] = None
+    predict_proba_supported: Optional[bool] = None
 
 
 class WhyThisDecisionEntry(BaseModel):
