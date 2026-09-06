@@ -542,9 +542,18 @@ export function IntegratedReportView({
               </div>
 
               <div className="p-3.5 bg-slate-950 rounded-lg border border-slate-800 space-y-1 font-mono">
-                <div className="text-slate-400 font-sans">Prediction Set Output</div>
+                <div className="flex items-center justify-between">
+                  <div className="text-slate-400 font-sans">Prediction Set Output</div>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${ecrg_governance_summary.calibrated ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30" : "bg-amber-500/10 text-amber-400 border-amber-500/30"}`}>
+                    {ecrg_governance_summary.calibrated ? "CALIBRATED" : "ADVISORY / UNCALIBRATED / NON-CERTIFIED"}
+                  </span>
+                </div>
                 <div className="text-slate-200 font-bold">
-                  {JSON.stringify(ecrg_governance_summary.prediction_set || [])}
+                  {ecrg_governance_summary.calibrated
+                    ? JSON.stringify(ecrg_governance_summary.prediction_set || [])
+                    : (ecrg_governance_summary.prediction_set && ecrg_governance_summary.prediction_set.length > 0
+                        ? `${JSON.stringify(ecrg_governance_summary.prediction_set)} (Advisory Non-Certified Output)`
+                        : "NOT AVAILABLE / NOT ACTIVE")}
                 </div>
               </div>
 

@@ -401,8 +401,10 @@ class ReportGenerator:
                 "operating_mode": "NOT_EVALUATED",
                 "effective_action": "UNAVAILABLE",
                 "raw_action": "UNAVAILABLE",
+                "previous_effective_action": "NONE",
                 "state_index": 0,
                 "transition_occurred": False,
+                "transition_reason": "No governance evaluation available.",
                 "prediction_set": [],
                 "reason_codes": ["NO_GOVERNANCE_EVALUATION"],
                 "calibrated": False,
@@ -427,6 +429,22 @@ class ReportGenerator:
 
         cal_disclosure = "Conformal calibration active." if latest_gov.calibrated else f"Conformal calibration was not active for this {latest_gov.operating_mode} snapshot."
 
+        # Enforce state transition consistency
+        prev_action = latest_gov.previous_effective_action
+        trans_occurred = latest_gov.transition_occurred
+        trans_reason = latest_gov.transition_reason
+
+        if not trans_occurred:
+            # When no transition occurred in this step
+            if not prev_action or prev_action != latest_gov.effective_action:
+                prev_action = latest_gov.effective_action
+            if trans_reason and ("->" in trans_reason or "Transitioned" in trans_reason):
+                trans_reason = f"No state transition ({latest_gov.effective_action} -> {latest_gov.effective_action}); active governance state maintained."
+        else:
+            # Transition occurred
+            if prev_action == latest_gov.effective_action:
+                prev_action = "CONTINUE" if latest_gov.effective_action == "WATCH" else "WATCH"
+
         return {
             "evaluated": True,
             "id": latest_gov.id,
@@ -434,10 +452,10 @@ class ReportGenerator:
             "operating_mode": latest_gov.operating_mode,
             "effective_action": latest_gov.effective_action,
             "raw_action": latest_gov.raw_action,
-            "previous_effective_action": latest_gov.previous_effective_action,
+            "previous_effective_action": prev_action,
             "state_index": latest_gov.state_index,
-            "transition_occurred": latest_gov.transition_occurred,
-            "transition_reason": latest_gov.transition_reason,
+            "transition_occurred": trans_occurred,
+            "transition_reason": trans_reason,
             "p_adverse": latest_gov.p_adverse,
             "prediction_set": pred_set,
             "reason_codes": reasons,
@@ -536,7 +554,8 @@ class ReportGenerator:
         """Derives categorical operational trust state according to strict AEGIS-X governance rules."""
         fused_risk = rel.get("aggregate_fused_risk")
         eff_action = gov.get("effective_action")
-        warn_triggered = temp.get("warning", {}).get("is_warning_triggered", False)
+        warn_status = temp.get("status")
+        warn_triggered = temp.get("warning", {}).get("is_warning_triggered", False) if warn_status == "VERIFIED" else "NOT EVALUATED"
 
         if fused_risk is None:
             return (
@@ -550,11 +569,12 @@ class ReportGenerator:
                 f"Governance effective action '{eff_action}' requires strict execution restriction.",
             )
 
-        if eff_action == "WATCH" or (fused_risk is not None and fused_risk > 0.35) or warn_triggered:
+        if eff_action == "WATCH" or (fused_risk is not None and fused_risk > 0.35) or warn_triggered is True:
             fused_str = f"{fused_risk:.2f}" if fused_risk is not None else "N/A"
+            warn_str = "True" if warn_triggered is True else ("NOT EVALUATED" if warn_triggered == "NOT EVALUATED" else "False")
             return (
                 TrustDisposition.LOW,
-                f"Model exhibits elevated risk flags (Fused Risk: {fused_str}, Action: {eff_action}, Early Warning: {warn_triggered}). Enhanced monitoring and active surveillance required.",
+                f"Model exhibits elevated risk flags (Fused Risk: {fused_str}, Action: {eff_action}, Early Warning: {warn_str}). Enhanced monitoring and active surveillance required.",
             )
 
         if (fused_risk is not None and fused_risk >= 0.15) or overall_pct < 75.0 or gov.get("state_index", 0) > 0:
@@ -584,9 +604,26 @@ class ReportGenerator:
             )
 
         if (drift and drift > 0.60) or (ood and ood > 0.60) or fused_risk > 0.60:
+            primary_adverse = []
+            if ood and ood > 0.60:
+                primary_adverse.append(f"High Out-of-Distribution Density Shift ({ood:.3f})")
+            if drift and drift > 0.60:
+                primary_adverse.append(f"Severe Feature Drift ({drift:.3f})")
+            if fused_risk and fused_risk > 0.60:
+                primary_adverse.append(f"Elevated Fused Risk ({fused_risk:.3f})")
+
+            mitigating = []
+            if unc is not None and unc <= 0.30:
+                mitigating.append(f"Low Epistemic Uncertainty ({unc:.3f})")
+            if drift is not None and drift <= 0.35:
+                mitigating.append(f"Low Feature Drift ({drift:.3f})")
+
+            adverse_str = "; ".join(primary_adverse) if primary_adverse else f"Fused Risk: {fused_risk:.2f}"
+            mitigating_str = f" [Mitigating Evidence: {'; '.join(mitigating)}]" if mitigating else ""
+
             return (
                 RetrainingDisposition.URGENT_MODEL_REVIEW,
-                f"Critical domain shift or severe risk elevation (OOD: {ood}, Drift: {drift}, Fused: {fused_risk:.2f}). Immediate model review mandated.",
+                f"Urgent Model Review Mandated — Primary Adverse Evidence: {adverse_str}.{mitigating_str}",
             )
 
         if (drift and drift > 0.35) or (ood and ood > 0.40):
@@ -623,28 +660,69 @@ class ReportGenerator:
         entries: List[WhyThisDecisionEntry] = []
 
         # 1. ECRG Governance
+        eff_act = gov.get("effective_action")
         entries.append(
             WhyThisDecisionEntry(
                 factor="ECRG Effective Governance Action",
-                impact="POSITIVE" if gov.get("effective_action") == "CONTINUE" else ("CRITICAL" if gov.get("effective_action") in ["DEFER", "ESCALATE"] else "NEGATIVE"),
-                description=f"ECRG state machine evaluated effective action as '{gov.get('effective_action', 'UNAVAILABLE')}' in '{gov.get('operating_mode', 'N/A')}' mode.",
+                impact="POSITIVE" if eff_act in ["CONTINUE", "WATCH"] else "CRITICAL",
+                description=f"ECRG state machine evaluated effective action as '{eff_act or 'UNAVAILABLE'}' in '{gov.get('operating_mode', 'N/A')}' mode.",
                 evidence_link="/governance",
             )
         )
 
         # 2. Fused Risk Index
         fused = rel.get("aggregate_fused_risk")
-        fused_str = f"{fused:.3f}" if fused is not None else "N/A"
-        entries.append(
-            WhyThisDecisionEntry(
-                factor="Fused Reliability Index",
-                impact="POSITIVE" if (fused is not None and fused < 0.20) else ("CRITICAL" if (fused is not None and fused > 0.50) else "NEGATIVE"),
-                description=f"Unified risk index computed at {fused_str} using {rel.get('fusion_method', 'uncertainty_weighted')} fusion.",
-                evidence_link="/reliability",
+        if fused is not None:
+            fused_str = f"{fused:.3f}"
+            entries.append(
+                WhyThisDecisionEntry(
+                    factor="Fused Reliability Index",
+                    impact="POSITIVE" if fused < 0.35 else ("CRITICAL" if fused > 0.60 else "NEGATIVE"),
+                    description=f"Unified risk index computed at {fused_str} using {rel.get('fusion_method', 'uncertainty_weighted')} fusion.",
+                    evidence_link="/reliability",
+                )
             )
-        )
 
-        # 3. Stress Robustness
+        # 3. Uncertainty - Low/nominal is supporting evidence
+        unc = rel.get("aggregate_uncertainty")
+        if unc is not None:
+            unc_str = f"{unc:.3f}"
+            entries.append(
+                WhyThisDecisionEntry(
+                    factor="Prediction Uncertainty",
+                    impact="POSITIVE" if unc <= 0.30 else "NEGATIVE",
+                    description=f"Prediction variance is low/nominal ({unc_str}), supporting model prediction confidence." if unc <= 0.30 else f"Model prediction uncertainty is elevated ({unc_str}).",
+                    evidence_link="/reliability",
+                )
+            )
+
+        # 4. Feature & Concept Drift - Low/nominal is supporting evidence
+        drift = rel.get("aggregate_drift_score")
+        if drift is not None:
+            drift_str = f"{drift:.3f}"
+            entries.append(
+                WhyThisDecisionEntry(
+                    factor="Feature & Concept Drift",
+                    impact="POSITIVE" if drift <= 0.35 else "NEGATIVE",
+                    description=f"Feature distribution drift remains low ({drift_str}) across evaluation dimensions." if drift <= 0.35 else f"Significant distribution shift detected ({drift_str}).",
+                    evidence_link="/reliability",
+                )
+            )
+
+        # 5. Out-of-Distribution Density Shift - High OOD is reducing evidence
+        ood = rel.get("aggregate_ood_risk")
+        if ood is not None:
+            ood_str = f"{ood:.3f}"
+            entries.append(
+                WhyThisDecisionEntry(
+                    factor="Out-of-Distribution Density Shift",
+                    impact="POSITIVE" if ood <= 0.40 else "NEGATIVE",
+                    description=f"Evaluation samples align well within reference state density bounds (OOD: {ood_str})." if ood <= 0.40 else f"High OOD exposure ({ood_str}) indicates evaluation samples deviate from reference state density manifold.",
+                    evidence_link="/reliability",
+                )
+            )
+
+        # 6. Stress Robustness
         if stress.get("status") == "VERIFIED":
             avg_delta = stress.get("avg_risk_delta", 0.0)
             entries.append(
@@ -656,7 +734,7 @@ class ReportGenerator:
                 )
             )
 
-        # 4. Early Warning Trajectory
+        # 7. Early Warning Trajectory
         if temp.get("status") == "VERIFIED":
             warn_trig = temp.get("warning", {}).get("is_warning_triggered", False)
             entries.append(

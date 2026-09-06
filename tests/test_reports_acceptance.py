@@ -626,6 +626,158 @@ def test_no_prior_analysis_trend_semantics(db_conn):
     assert payload.trend_comparison["trend_direction"] == "NO VALID COMPARABLE PRIOR ASSESSMENT"
 
 
+def test_supporting_evidence_classification(db_conn):
+    """Verifies that low uncertainty and low drift are classified as POSITIVE supporting factors."""
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    model = ModelRecord(
+        id="mod_supp", user_id="user_a", model_name="SuppModel", task_type="classification",
+        description="", file_path="fake.pkl", filename="fake.pkl", predict_supported=True,
+        predict_proba_supported=True, n_features_in=4, classes=["0", "1"], feature_names=["f1", "f2", "f3", "f4"],
+        created_at=now
+    )
+    ref_ds = DatasetRecord(
+        id="ds_ref_s", user_id="user_a", model_id="mod_supp", dataset_type="REFERENCE",
+        file_path="ref.csv", filename="ref.csv", target_column=None, num_samples=100,
+        num_features=4, feature_names=["f1", "f2", "f3", "f4"], has_target=False, created_at=now
+    )
+    eval_ds = DatasetRecord(
+        id="ds_eval_s", user_id="user_a", model_id="mod_supp", dataset_type="EVALUATION",
+        file_path="eval.csv", filename="eval.csv", target_column=None, num_samples=50,
+        num_features=4, feature_names=["f1", "f2", "f3", "f4"], has_target=False, created_at=now
+    )
+    analysis = AnalysisRecord(
+        id="ana_s", user_id="user_a", model_id="mod_supp", reference_dataset_id="ds_ref_s",
+        evaluation_dataset_id="ds_eval_s", status="COMPLETED", result_path="res.json",
+        aggregate_ood_risk=0.92, aggregate_uncertainty=0.235, aggregate_drift_score=0.133,
+        aggregate_fused_risk=0.55, fusion_method="uncertainty_weighted", has_labels=False,
+        created_at=now
+    )
+
+    generator = ReportGenerator(user_id="user_a", model=model, analysis=analysis, ref_dataset=ref_ds, eval_dataset=eval_ds)
+    payload = generator.generate("rep_supp")
+
+    pos_factors = [w.factor for w in payload.why_this_decision if w.impact == "POSITIVE"]
+    assert "Prediction Uncertainty" in pos_factors
+    assert "Feature & Concept Drift" in pos_factors
 
 
+def test_early_warning_missing_state_semantics(db_conn):
+    """Verifies that missing temporal intelligence displays NOT EVALUATED instead of False in trust rationale."""
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    model = ModelRecord(
+        id="mod_ew", user_id="user_a", model_name="EWModel", task_type="classification",
+        description="", file_path="fake.pkl", filename="fake.pkl", predict_supported=True,
+        predict_proba_supported=True, n_features_in=4, classes=["0", "1"], feature_names=["f1", "f2", "f3", "f4"],
+        created_at=now
+    )
+    ref_ds = DatasetRecord(
+        id="ds_ref_ew", user_id="user_a", model_id="mod_ew", dataset_type="REFERENCE",
+        file_path="ref.csv", filename="ref.csv", target_column=None, num_samples=100,
+        num_features=4, feature_names=["f1", "f2", "f3", "f4"], has_target=False, created_at=now
+    )
+    eval_ds = DatasetRecord(
+        id="ds_eval_ew", user_id="user_a", model_id="mod_ew", dataset_type="EVALUATION",
+        file_path="eval.csv", filename="eval.csv", target_column=None, num_samples=50,
+        num_features=4, feature_names=["f1", "f2", "f3", "f4"], has_target=False, created_at=now
+    )
+    analysis = AnalysisRecord(
+        id="ana_ew", user_id="user_a", model_id="mod_ew", reference_dataset_id="ds_ref_ew",
+        evaluation_dataset_id="ds_eval_ew", status="COMPLETED", result_path="res.json",
+        aggregate_ood_risk=0.45, aggregate_uncertainty=0.20, aggregate_drift_score=0.10,
+        aggregate_fused_risk=0.40, fusion_method="uncertainty_weighted", has_labels=False,
+        created_at=now
+    )
+    gov_eval = GovernanceEvaluationRecord(
+        id="gov_ew", user_id="user_a", model_id="mod_ew", decision_id="dec_ew", state_index=0,
+        operating_mode="EVIDENCE_ONLY", raw_action="WATCH", effective_action="WATCH",
+        transition_occurred=False, evidence_snapshot_hash="hash_ew", result_path="gov.json", created_at=now
+    )
 
+    generator = ReportGenerator(
+        user_id="user_a", model=model, analysis=analysis, ref_dataset=ref_ds, eval_dataset=eval_ds,
+        governance_evals=[gov_eval]
+    )
+    payload = generator.generate("rep_ew")
+
+    assert "Early Warning: NOT EVALUATED" in payload.trust_rationale
+    assert "Early Warning: False" not in payload.trust_rationale
+
+
+def test_state_transition_consistency(db_conn):
+    """Verifies that non-transition steps align previous_effective_action and transition_reason with current state."""
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    model = ModelRecord(
+        id="mod_st", user_id="user_a", model_name="STModel", task_type="classification",
+        description="", file_path="fake.pkl", filename="fake.pkl", predict_supported=True,
+        predict_proba_supported=True, n_features_in=4, classes=["0", "1"], feature_names=["f1", "f2", "f3", "f4"],
+        created_at=now
+    )
+    ref_ds = DatasetRecord(
+        id="ds_ref_st", user_id="user_a", model_id="mod_st", dataset_type="REFERENCE",
+        file_path="ref.csv", filename="ref.csv", target_column=None, num_samples=100,
+        num_features=4, feature_names=["f1", "f2", "f3", "f4"], has_target=False, created_at=now
+    )
+    eval_ds = DatasetRecord(
+        id="ds_eval_st", user_id="user_a", model_id="mod_st", dataset_type="EVALUATION",
+        file_path="eval.csv", filename="eval.csv", target_column=None, num_samples=50,
+        num_features=4, feature_names=["f1", "f2", "f3", "f4"], has_target=False, created_at=now
+    )
+    analysis = AnalysisRecord(
+        id="ana_st", user_id="user_a", model_id="mod_st", reference_dataset_id="ds_ref_st",
+        evaluation_dataset_id="ds_eval_st", status="COMPLETED", result_path="res.json",
+        aggregate_ood_risk=0.45, aggregate_uncertainty=0.20, aggregate_drift_score=0.10,
+        aggregate_fused_risk=0.40, fusion_method="uncertainty_weighted", has_labels=False,
+        created_at=now
+    )
+    gov_eval = GovernanceEvaluationRecord(
+        id="gov_st", user_id="user_a", model_id="mod_st", decision_id="dec_st", state_index=0,
+        operating_mode="EVIDENCE_ONLY", raw_action="WATCH", effective_action="WATCH",
+        previous_effective_action="WATCH", transition_occurred=False, transition_reason="Transitioned from CONTINUE to WATCH",
+        evidence_snapshot_hash="hash_st", result_path="gov.json", created_at=now
+    )
+
+    generator = ReportGenerator(
+        user_id="user_a", model=model, analysis=analysis, ref_dataset=ref_ds, eval_dataset=eval_ds,
+        governance_evals=[gov_eval]
+    )
+    payload = generator.generate("rep_st")
+
+    gov = payload.ecrg_governance_summary
+    assert gov["previous_effective_action"] == "WATCH"
+    assert "No state transition" in gov["transition_reason"]
+
+
+def test_urgent_model_review_rationale_mitigating_factors(db_conn):
+    """Verifies that URGENT_MODEL_REVIEW does not claim low drift as severe drift and includes mitigating factors."""
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    model = ModelRecord(
+        id="mod_urg", user_id="user_a", model_name="UrgModel", task_type="classification",
+        description="", file_path="fake.pkl", filename="fake.pkl", predict_supported=True,
+        predict_proba_supported=True, n_features_in=4, classes=["0", "1"], feature_names=["f1", "f2", "f3", "f4"],
+        created_at=now
+    )
+    ref_ds = DatasetRecord(
+        id="ds_ref_u3", user_id="user_a", model_id="mod_urg", dataset_type="REFERENCE",
+        file_path="ref.csv", filename="ref.csv", target_column=None, num_samples=100,
+        num_features=4, feature_names=["f1", "f2", "f3", "f4"], has_target=False, created_at=now
+    )
+    eval_ds = DatasetRecord(
+        id="ds_eval_u3", user_id="user_a", model_id="mod_urg", dataset_type="EVALUATION",
+        file_path="eval.csv", filename="eval.csv", target_column=None, num_samples=50,
+        num_features=4, feature_names=["f1", "f2", "f3", "f4"], has_target=False, created_at=now
+    )
+    analysis = AnalysisRecord(
+        id="ana_u3", user_id="user_a", model_id="mod_urg", reference_dataset_id="ds_ref_u3",
+        evaluation_dataset_id="ds_eval_u3", status="COMPLETED", result_path="res.json",
+        aggregate_ood_risk=0.932, aggregate_uncertainty=0.235, aggregate_drift_score=0.133,
+        aggregate_fused_risk=0.55, fusion_method="uncertainty_weighted", has_labels=False,
+        created_at=now
+    )
+
+    generator = ReportGenerator(user_id="user_a", model=model, analysis=analysis, ref_dataset=ref_ds, eval_dataset=eval_ds)
+    payload = generator.generate("rep_urg")
+
+    assert payload.retraining_disposition == RetrainingDisposition.URGENT_MODEL_REVIEW
+    assert "Severe Feature Drift" not in payload.retraining_rationale
+    assert "High Out-of-Distribution Density Shift" in payload.retraining_rationale
+    assert "Low Feature Drift" in payload.retraining_rationale
