@@ -28,4 +28,12 @@ CREATE POLICY "Users can only access their own reports" ON public.reports
 CREATE INDEX IF NOT EXISTS idx_reports_user_id ON public.reports(user_id);
 CREATE INDEX IF NOT EXISTS idx_reports_model_id ON public.reports(model_id);
 CREATE INDEX IF NOT EXISTS idx_reports_analysis_id ON public.reports(analysis_id);
-CREATE INDEX IF NOT EXISTS idx_reports_created_at ON public.reports(created_at);
+CREATE INDEX IF NOT EXISTS idx_reports_created_at ON public.reports(created_at DESC);
+
+-- Grants & Revokes
+REVOKE ALL ON TABLE public.reports FROM anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.reports TO authenticated;
+
+-- Force PostgREST schema cache reload
+NOTIFY pgrst, 'reload schema';
+
