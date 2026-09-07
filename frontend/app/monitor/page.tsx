@@ -12,23 +12,36 @@ import { RiskIndicator } from "@/components/ui/RiskIndicator";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { useToast } from "@/components/providers/ToastProvider";
-import { Activity, CheckCircle2, ChevronDown, ChevronRight, Play } from "lucide-react";
+import { Activity, AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, Play } from "lucide-react";
 
 export default function BatchMonitorPage() {
   const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Registry & Selection State
   const [models, setModels] = useState<ModelRecord[]>([]);
   const [selectedModelId, setSelectedModelId] = useState<string>("");
+  
+  // Datasets for selected model
+  const [referenceDatasets, setReferenceDatasets] = useState<DatasetRecord[]>([]);
+  const [selectedRefDatasetId, setSelectedRefDatasetId] = useState<string>("");
   const [datasets, setDatasets] = useState<DatasetRecord[]>([]);
   const [selectedDatasetId, setSelectedDatasetId] = useState<string>("");
   const [fusionMethod, setFusionMethod] = useState<string>("stress_robust");
+
+  // Reference State Readiness State
+  const [referenceStateStatus, setReferenceStateStatus] = useState<"READY" | "NOT_FITTED" | "CHECKING" | "UNAVAILABLE">("CHECKING");
+  const [fittingReference, setFittingReference] = useState(false);
+  const [fittingError, setFittingError] = useState<string | null>(null);
+  const [fitSuccessMsg, setFitSuccessMsg] = useState<string | null>(null);
 
   // Analysis Execution State
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResponse | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
 
+  // Initial Load: Models
   useEffect(() => {
     async function loadModels() {
       setLoading(true);
@@ -51,27 +64,90 @@ export default function BatchMonitorPage() {
     loadModels();
   }, []);
 
+  // When selectedModelId changes: Query readiness & load datasets
   useEffect(() => {
-    async function loadDatasetsForModel() {
+    async function loadModelResources() {
       if (!selectedModelId) return;
+
+      setReferenceStateStatus("CHECKING");
+      setAnalysisResult(null);
+      setAnalysisError(null);
+      setFitSuccessMsg(null);
+      setFittingError(null);
+
       try {
+        // 1. Query model capabilities to detect reference state readiness
+        const capsRes = await api.getModelCapabilities(selectedModelId);
+        const coreStatus = capsRes.capabilities?.core_analysis?.status;
+        if (coreStatus === "READY") {
+          setReferenceStateStatus("READY");
+        } else {
+          setReferenceStateStatus("NOT_FITTED");
+        }
+      } catch (_) {
+        setReferenceStateStatus("UNAVAILABLE");
+      }
+
+      try {
+        // 2. Fetch datasets for selected model and categorize by type
         const res = await api.listDatasets(selectedModelId);
-        const evalDatasets = (res.datasets || []).filter((d) => d.dataset_type === "EVALUATION");
-        setDatasets(evalDatasets);
-        if (evalDatasets.length > 0) {
-          setSelectedDatasetId(evalDatasets[0].dataset_id);
+        const allDatasets = res.datasets || [];
+
+        const refDs = allDatasets.filter((d) => d.dataset_type === "REFERENCE");
+        const evalDs = allDatasets.filter((d) => d.dataset_type === "EVALUATION");
+
+        setReferenceDatasets(refDs);
+        setDatasets(evalDs);
+
+        if (refDs.length > 0) {
+          setSelectedRefDatasetId(refDs[0].dataset_id);
+        } else {
+          setSelectedRefDatasetId("");
+        }
+
+        if (evalDs.length > 0) {
+          setSelectedDatasetId(evalDs[0].dataset_id);
         } else {
           setSelectedDatasetId("");
         }
       } catch (_) {}
     }
-    loadDatasetsForModel();
+
+    loadModelResources();
   }, [selectedModelId]);
 
+  // Handle Reference Fit
+  const handleFitReference = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedModelId || !selectedRefDatasetId) return;
+
+    setFittingReference(true);
+    setFittingError(null);
+    setFitSuccessMsg(null);
+
+    try {
+      await api.fitReferenceState(selectedModelId, selectedRefDatasetId);
+      setReferenceStateStatus("READY");
+      setFitSuccessMsg("Reference baseline fitted successfully. Operational analysis execution is now ready.");
+      toast.success("Reference State Fitted", "AEGIS-X baseline reference state established.");
+    } catch (err: any) {
+      setFittingError(err.message || "Failed to fit reference baseline state.");
+      toast.error("Reference Fit Error", err.message || "Could not fit reference state.");
+    } finally {
+      setFittingReference(false);
+    }
+  };
+
+  // Handle Analysis Run
   const handleRunAnalysis = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedModelId || !selectedDatasetId) {
       setAnalysisError("Please select both a model and an evaluation dataset.");
+      return;
+    }
+
+    if (referenceStateStatus !== "READY") {
+      setAnalysisError("Reference State Required: Fit a reference baseline dataset before running operational analysis.");
       return;
     }
 
@@ -86,20 +162,36 @@ export default function BatchMonitorPage() {
       setAnalysisResult(res);
       toast.success("Analysis Complete", `Fused risk score: ${(res.fusion.aggregate_fused_risk * 100).toFixed(1)}%`);
     } catch (err: any) {
-      setAnalysisError(err.message || "Operational analysis execution failed.");
-      toast.error("Analysis Failed", err.message || "Could not complete analysis.");
+      const msg = err.message || "Operational analysis execution failed.";
+      if (msg.includes("has no fitted reference state") || msg.includes("REFERENCE_STATE_NOT_FITTED")) {
+        setReferenceStateStatus("NOT_FITTED");
+        setAnalysisError("Reference State Required: AEGIS-X needs a fitted reference dataset before operational reliability analysis can be executed.");
+      } else {
+        setAnalysisError(msg);
+      }
+      toast.error("Analysis Failed", msg);
     } finally {
       setAnalyzing(false);
     }
   };
 
+  // Feature contract validation for selected reference dataset
+  const activeModel = models.find((m) => m.model_id === selectedModelId);
+  const selectedRefDs = referenceDatasets.find((d) => d.dataset_id === selectedRefDatasetId);
+  const hasFeatureMismatch =
+    activeModel?.n_features_in != null &&
+    selectedRefDs?.num_features != null &&
+    activeModel.n_features_in !== selectedRefDs.num_features;
+
+  const canExecute = !!selectedModelId && referenceStateStatus === "READY" && !!selectedDatasetId && !analyzing;
+
   const steps = [
-    { num: 1, label: "Active Model", done: !!selectedModelId },
-    { num: 2, label: "Reference State", done: true },
-    { num: 3, label: "Evaluation Batch", done: !!selectedDatasetId },
-    { num: 4, label: "Fusion Engine", done: !!fusionMethod },
-    { num: 5, label: "Execute", done: !!analysisResult },
-    { num: 6, label: "Inspect Results", done: !!analysisResult },
+    { num: 1, label: "Active Model", state: selectedModelId ? "COMPLETE" : "REQUIRED" },
+    { num: 2, label: "Reference State", state: referenceStateStatus === "READY" ? "COMPLETE" : "REQUIRED" },
+    { num: 3, label: "Evaluation Batch", state: selectedDatasetId ? "READY" : "REQUIRED" },
+    { num: 4, label: "Fusion Engine", state: fusionMethod ? "READY" : "REQUIRED" },
+    { num: 5, label: "Execute", state: canExecute ? "READY" : "LOCKED" },
+    { num: 6, label: "Inspect Results", state: analysisResult ? "COMPLETE" : "WAITING" },
   ];
 
   return (
@@ -111,26 +203,52 @@ export default function BatchMonitorPage() {
         breadcrumbs={[{ label: "Operations" }, { label: "Batch Monitor" }]}
       />
 
-      {/* Guided 6-Step Workflow Stepper */}
+      {/* State-Aware 6-Step Workflow Stepper */}
       <div className="bg-[#151B23] border border-[#26303D] rounded-xl p-4 shadow-sm font-sans">
         <div className="flex items-center justify-between overflow-x-auto gap-2 text-xs font-sans py-1">
-          {steps.map((s, idx) => (
-            <React.Fragment key={s.num}>
-              <div className="flex items-center space-x-2 shrink-0">
-                <span
-                  className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold ${
-                    s.done
-                      ? "bg-[#3B82F6] text-white"
-                      : "bg-[#0F141B] border border-[#26303D] text-[#6B7280]"
-                  }`}
-                >
-                  {s.num}
-                </span>
-                <span className={s.done ? "text-[#F3F4F6] font-semibold" : "text-[#6B7280]"}>{s.label}</span>
-              </div>
-              {idx < steps.length - 1 && <ChevronRight className="w-4 h-4 text-[#26303D] shrink-0" />}
-            </React.Fragment>
-          ))}
+          {steps.map((s, idx) => {
+            const isComplete = s.state === "COMPLETE";
+            const isReady = s.state === "READY";
+            const isRequired = s.state === "REQUIRED";
+            return (
+              <React.Fragment key={s.num}>
+                <div className="flex items-center space-x-2 shrink-0">
+                  <span
+                    className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold ${
+                      isComplete
+                        ? "bg-[#22C55E] text-slate-950"
+                        : isReady
+                        ? "bg-[#3B82F6] text-white"
+                        : isRequired
+                        ? "bg-amber-500/20 border border-amber-500/60 text-amber-400"
+                        : "bg-[#0F141B] border border-[#26303D] text-[#6B7280]"
+                    }`}
+                  >
+                    {s.num}
+                  </span>
+                  <div className="flex flex-col">
+                    <span className={isComplete || isReady ? "text-[#F3F4F6] font-semibold" : "text-[#6B7280]"}>
+                      {s.label}
+                    </span>
+                    <span
+                      className={`text-[9px] font-mono uppercase ${
+                        isComplete
+                          ? "text-[#22C55E]"
+                          : isReady
+                          ? "text-[#60A5FA]"
+                          : isRequired
+                          ? "text-amber-400 font-bold"
+                          : "text-[#6B7280]"
+                      }`}
+                    >
+                      {s.state}
+                    </span>
+                  </div>
+                </div>
+                {idx < steps.length - 1 && <ChevronRight className="w-4 h-4 text-[#26303D] shrink-0" />}
+              </React.Fragment>
+            );
+          })}
         </div>
       </div>
 
@@ -140,6 +258,96 @@ export default function BatchMonitorPage() {
         <ErrorState message={error} />
       ) : (
         <div className="space-y-8">
+          {/* REFERENCE STATE PREREQUISITE PANEL */}
+          {referenceStateStatus === "NOT_FITTED" && (
+            <div className="bg-[#151B23] border border-amber-500/40 rounded-xl p-5 shadow-md space-y-4 font-sans text-xs">
+              <div className="flex items-center justify-between border-b border-[#26303D] pb-3">
+                <div className="flex items-center space-x-2">
+                  <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
+                  <div>
+                    <h3 className="text-sm font-bold text-amber-400 uppercase tracking-wider">
+                      REFERENCE STATE REQUIRED
+                    </h3>
+                    <p className="text-xs text-slate-300 mt-0.5">
+                      AEGIS-X needs a fitted reference dataset before operational reliability analysis can be executed.
+                    </p>
+                  </div>
+                </div>
+                <StatusBadge status="NOT_FITTED" />
+              </div>
+
+              {fittingError && <ErrorState message={fittingError} />}
+
+              {referenceDatasets.length === 0 ? (
+                <div className="p-4 bg-slate-950/80 border border-slate-800 rounded-lg text-slate-400 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 font-sans">
+                  <span>No REFERENCE datasets registered for this model. Upload a baseline CSV first.</span>
+                  <Link
+                    href="/data"
+                    className="px-3.5 py-1.5 bg-[#3B82F6] hover:bg-[#2563EB] text-white font-semibold rounded-lg shrink-0 transition-colors font-sans text-xs"
+                  >
+                    Upload Reference Dataset in Data Setup →
+                  </Link>
+                </div>
+              ) : (
+                <form onSubmit={handleFitReference} className="space-y-4 max-w-xl">
+                  <div>
+                    <label htmlFor="ref-dataset-select" className="block font-bold text-slate-200 mb-1.5 text-xs">
+                      Reference Dataset *
+                    </label>
+                    <div className="relative">
+                      <select
+                        id="ref-dataset-select"
+                        value={selectedRefDatasetId}
+                        onChange={(e) => setSelectedRefDatasetId(e.target.value)}
+                        className="w-full bg-[#0F141B] border border-[#26303D] rounded-lg px-3.5 py-2.5 text-xs text-[#F3F4F6] focus:outline-none focus:border-[#3B82F6] font-mono appearance-none pr-10 cursor-pointer shadow-sm transition-colors"
+                      >
+                        {referenceDatasets.map((d) => (
+                          <option key={d.dataset_id} value={d.dataset_id}>
+                            {d.filename} ({d.num_samples} samples, {d.num_features} features)
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-4 h-4 text-[#9CA3AF] absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  {hasFeatureMismatch && activeModel && selectedRefDs && (
+                    <div className="p-3 bg-rose-950/40 border border-rose-800/80 rounded-lg text-rose-300 font-mono text-[11px]">
+                      <strong className="block font-bold mb-0.5 font-sans uppercase">
+                        REFERENCE DATASET INCOMPATIBLE
+                      </strong>
+                      Expected: {activeModel.n_features_in} features | Received: {selectedRefDs.num_features} features
+                    </div>
+                  )}
+
+                  <div className="flex items-center space-x-3 pt-1">
+                    <button
+                      type="submit"
+                      disabled={fittingReference || hasFeatureMismatch || !selectedRefDatasetId}
+                      className="px-5 py-2.5 bg-[#22C55E] hover:bg-[#16A34A] text-slate-950 font-bold rounded-lg text-xs shadow-sm transition-all disabled:opacity-50 inline-flex items-center space-x-2 cursor-pointer font-sans"
+                    >
+                      <Play className="w-3.5 h-3.5 fill-current" />
+                      <span>{fittingReference ? "Fitting Reference State..." : "Fit Reference State"}</span>
+                    </button>
+
+                    <Link href="/data" className="text-slate-400 hover:text-slate-200 text-xs font-medium font-sans">
+                      Go to Data Setup →
+                    </Link>
+                  </div>
+                </form>
+              )}
+            </div>
+          )}
+
+          {fitSuccessMsg && (
+            <div className="p-4 bg-[#22C55E]/10 border border-[#22C55E]/30 rounded-xl flex items-center justify-between shadow-sm">
+              <div className="text-xs font-bold text-[#22C55E] flex items-center gap-1.5 font-sans">
+                <CheckCircle2 className="w-4 h-4 text-[#22C55E]" /> {fitSuccessMsg}
+              </div>
+              <StatusBadge status="READY" />
+            </div>
+          )}
+
           {/* Analysis Form Configuration */}
           <SectionCard title="Execution Setup" subtitle="Configure operational analysis parameter options">
             {analysisError && <ErrorState message={analysisError} />}
@@ -213,15 +421,21 @@ export default function BatchMonitorPage() {
                 </div>
               </div>
 
-              <div className="pt-2">
+              <div className="pt-2 space-y-2">
                 <button
                   type="submit"
-                  disabled={analyzing || !selectedDatasetId}
+                  disabled={!canExecute}
                   className="px-6 py-2.5 bg-[#3B82F6] hover:bg-[#2563EB] text-white rounded-lg font-semibold text-xs shadow-sm transition-all disabled:opacity-50 inline-flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] font-sans cursor-pointer"
                 >
                   <Play className="w-4 h-4 fill-current" />
                   <span>{analyzing ? "Running Analysis..." : "Execute Analysis"}</span>
                 </button>
+
+                {referenceStateStatus === "NOT_FITTED" && (
+                  <p className="text-[11px] text-amber-400 font-mono flex items-center space-x-1">
+                    <span>Fit a reference state before running analysis.</span>
+                  </p>
+                )}
               </div>
             </form>
           </SectionCard>
@@ -318,4 +532,3 @@ export default function BatchMonitorPage() {
     </div>
   );
 }
-

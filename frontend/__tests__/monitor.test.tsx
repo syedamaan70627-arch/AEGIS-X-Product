@@ -11,12 +11,20 @@ vi.mock("@/lib/api", () => ({
     listModels: vi.fn(),
     listDatasets: vi.fn(),
     runAnalysis: vi.fn(),
+    getModelCapabilities: vi.fn(),
+    fitReferenceState: vi.fn(),
   },
 }));
 
 describe("Batch Monitor UI & Fusion Engine Selector Suite", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    (api.getModelCapabilities as any).mockResolvedValue({
+      model_id: "mod_1",
+      capabilities: {
+        core_analysis: { status: "READY", reason: null },
+      },
+    });
   });
 
   it("renders Execution Setup form with clear Fusion Engine selector and separate Execute Analysis button", async () => {
@@ -103,7 +111,8 @@ describe("Batch Monitor UI & Fusion Engine Selector Suite", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /Execute Analysis/i })).toBeInTheDocument();
+      const btn = screen.getByRole("button", { name: /Execute Analysis/i });
+      expect(btn).not.toBeDisabled();
     });
 
     const executeBtn = screen.getByRole("button", { name: /Execute Analysis/i });
