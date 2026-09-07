@@ -12,7 +12,7 @@ import { RiskIndicator } from "@/components/ui/RiskIndicator";
 import { SectionCard } from "@/components/ui/SectionCard";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { useToast } from "@/components/providers/ToastProvider";
-import { Activity, ArrowRight, CheckCircle2, ChevronRight, Play, ShieldAlert } from "lucide-react";
+import { Activity, CheckCircle2, ChevronDown, ChevronRight, Play } from "lucide-react";
 
 export default function BatchMonitorPage() {
   const toast = useToast();
@@ -144,58 +144,80 @@ export default function BatchMonitorPage() {
           <SectionCard title="Execution Setup" subtitle="Configure operational analysis parameter options">
             {analysisError && <ErrorState message={analysisError} />}
 
-            <form onSubmit={handleRunAnalysis} className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs font-sans items-end">
+            <form onSubmit={handleRunAnalysis} className="space-y-5 max-w-2xl w-full text-xs font-sans">
               <div>
-                <label className="block font-semibold text-[#F3F4F6] mb-1">Target Model *</label>
-                <select
-                  value={selectedModelId}
-                  onChange={(e) => setSelectedModelId(e.target.value)}
-                  className="w-full bg-[#0F141B] border border-[#26303D] rounded-lg px-3 py-2 text-[#F3F4F6] focus:outline-none focus:border-[#3B82F6] font-mono"
-                >
-                  {models.map((m) => (
-                    <option key={m.model_id} value={m.model_id}>
-                      {m.model_name}
-                    </option>
-                  ))}
-                </select>
+                <label htmlFor="target-model-select" className="block font-bold text-[#F3F4F6] mb-1.5 text-xs font-sans">
+                  Target Model *
+                </label>
+                <div className="relative">
+                  <select
+                    id="target-model-select"
+                    value={selectedModelId}
+                    onChange={(e) => setSelectedModelId(e.target.value)}
+                    className="w-full bg-[#0F141B] border border-[#26303D] rounded-lg px-3.5 py-2.5 text-xs text-[#F3F4F6] focus:outline-none focus:border-[#3B82F6] font-mono appearance-none pr-10 cursor-pointer shadow-sm transition-colors"
+                  >
+                    {models.length === 0 ? (
+                      <option value="">No registered models available</option>
+                    ) : (
+                      models.map((m) => (
+                        <option key={m.model_id} value={m.model_id}>
+                          {m.model_name}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                  <ChevronDown className="w-4 h-4 text-[#9CA3AF] absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
               </div>
 
               <div>
-                <label className="block font-semibold text-[#F3F4F6] mb-1">Evaluation Dataset *</label>
-                <select
-                  value={selectedDatasetId}
-                  onChange={(e) => setSelectedDatasetId(e.target.value)}
-                  className="w-full bg-[#0F141B] border border-[#26303D] rounded-lg px-3 py-2 text-[#F3F4F6] focus:outline-none focus:border-[#3B82F6] font-mono"
-                >
-                  {datasets.length === 0 ? (
-                    <option value="">No EVALUATION datasets available</option>
-                  ) : (
-                    datasets.map((d) => (
-                      <option key={d.dataset_id} value={d.dataset_id}>
-                        {d.filename} ({d.num_samples} samples)
-                      </option>
-                    ))
-                  )}
-                </select>
+                <label htmlFor="eval-dataset-select" className="block font-bold text-[#F3F4F6] mb-1.5 text-xs font-sans">
+                  Evaluation Dataset *
+                </label>
+                <div className="relative">
+                  <select
+                    id="eval-dataset-select"
+                    value={selectedDatasetId}
+                    onChange={(e) => setSelectedDatasetId(e.target.value)}
+                    className="w-full bg-[#0F141B] border border-[#26303D] rounded-lg px-3.5 py-2.5 text-xs text-[#F3F4F6] focus:outline-none focus:border-[#3B82F6] font-mono appearance-none pr-10 cursor-pointer shadow-sm transition-colors"
+                  >
+                    {datasets.length === 0 ? (
+                      <option value="">No EVALUATION datasets available</option>
+                    ) : (
+                      datasets.map((d) => (
+                        <option key={d.dataset_id} value={d.dataset_id}>
+                          {d.filename} ({d.num_samples} samples)
+                        </option>
+                      ))
+                    )}
+                  </select>
+                  <ChevronDown className="w-4 h-4 text-[#9CA3AF] absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
               </div>
 
               <div>
-                <label className="block font-semibold text-[#F3F4F6] mb-1">Operational Fusion Engine *</label>
-                <select
-                  value={fusionMethod}
-                  onChange={(e) => setFusionMethod(e.target.value)}
-                  className="w-full bg-[#0F141B] border border-[#26303D] rounded-lg px-3 py-2 text-[#F3F4F6] focus:outline-none focus:border-[#3B82F6] font-sans"
-                >
-                  <option value="stress_robust">StressRobust Fusion (Recommended)</option>
-                  <option value="original">Original Fusion</option>
-                </select>
+                <label htmlFor="fusion-engine-select" className="block font-bold text-[#F3F4F6] mb-1.5 text-xs font-sans">
+                  Fusion Engine *
+                </label>
+                <div className="relative">
+                  <select
+                    id="fusion-engine-select"
+                    value={fusionMethod}
+                    onChange={(e) => setFusionMethod(e.target.value)}
+                    className="w-full bg-[#0F141B] border border-[#26303D] rounded-lg px-3.5 py-2.5 text-xs text-[#F3F4F6] focus:outline-none focus:border-[#3B82F6] font-sans appearance-none pr-10 cursor-pointer shadow-sm transition-colors"
+                  >
+                    <option value="stress_robust">StressRobust Fusion (Recommended)</option>
+                    <option value="original">Original Fusion</option>
+                  </select>
+                  <ChevronDown className="w-4 h-4 text-[#9CA3AF] absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
               </div>
 
-              <div>
+              <div className="pt-2">
                 <button
                   type="submit"
                   disabled={analyzing || !selectedDatasetId}
-                  className="w-full py-2.5 bg-[#3B82F6] hover:bg-[#2563EB] text-white rounded-lg font-semibold shadow-sm transition-all disabled:opacity-50 flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] font-sans"
+                  className="px-6 py-2.5 bg-[#3B82F6] hover:bg-[#2563EB] text-white rounded-lg font-semibold text-xs shadow-sm transition-all disabled:opacity-50 inline-flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-[#3B82F6] font-sans cursor-pointer"
                 >
                   <Play className="w-4 h-4 fill-current" />
                   <span>{analyzing ? "Running Analysis..." : "Execute Analysis"}</span>
