@@ -44,11 +44,38 @@ class ModelService:
         model_id = str(uuid.uuid4())
 
         # Save model file safely via StorageService
-        file_path, filename = await StorageService.save_uploaded_model(model_id, file, user_id=user_id)
+        try:
+            file_path, filename = await StorageService.save_uploaded_model(model_id, file, user_id=user_id)
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"code": "MODEL_STORAGE_FAILED", "message": f"Failed to store uploaded model file: {str(e)}"},
+            )
 
         # Validate and inspect model using SklearnModelAdapter via StorageService
-        adapter = StorageService.load_model_adapter(str(file_path), user_id=user_id)
-        capabilities = adapter.get_capabilities()
+        try:
+            adapter = StorageService.load_model_adapter(str(file_path), user_id=user_id)
+            capabilities = adapter.get_capabilities()
+        except Exception as e:
+            try:
+                provider = get_storage_provider()
+                provider.delete_file(str(file_path), user_id=user_id)
+            except Exception:
+                pass
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"code": "MODEL_METADATA_INVALID", "message": f"Failed to inspect model metadata: {str(e)}"},
+            )
+
+        # Convert numpy types to native JSON-safe Python types
+        n_features_in = int(capabilities["n_features_in"]) if capabilities.get("n_features_in") is not None else None
+        predict_proba_supported = bool(capabilities.get("supports_predict_proba", True))
+
+        raw_classes = capabilities.get("classes")
+        classes = [c.item() if hasattr(c, "item") else c for c in raw_classes] if raw_classes is not None else None
+
+        raw_features = capabilities.get("feature_names_in")
+        feature_names = [str(f) for f in raw_features] if raw_features is not None else None
 
         created_at = datetime.now(timezone.utc).isoformat()
 
@@ -61,16 +88,39 @@ class ModelService:
             file_path=str(file_path),
             filename=filename,
             predict_supported=True,
-            predict_proba_supported=capabilities["supports_predict_proba"],
-            n_features_in=capabilities["n_features_in"],
-            classes=capabilities["classes"],
-            feature_names=capabilities["feature_names_in"],
+            predict_proba_supported=predict_proba_supported,
+            n_features_in=n_features_in,
+            classes=classes,
+            feature_names=feature_names,
             created_at=created_at,
             status="active",
         )
 
         repo = get_model_repository()
-        repo.create(record)
+        try:
+            repo.create(record)
+        except Exception as err:
+            # DB insert failed: rollback storage artifact
+            try:
+                import os
+                if os.path.exists(str(file_path)):
+                    os.remove(str(file_path))
+                provider = get_storage_provider()
+                provider.delete_file(str(file_path), user_id=user_id)
+            except Exception:
+                pass
+
+            err_msg = str(err)
+            err_code = "MODEL_DATABASE_INSERT_FAILED"
+            if "PGRST204" in err_msg or "schema" in err_msg.lower():
+                err_code = "MODEL_SCHEMA_MISMATCH"
+            elif "409" in err_msg or "violates" in err_msg.lower():
+                err_code = "MODEL_ALREADY_EXISTS"
+
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"code": err_code, "message": f"Model registration database insert failed: {err_msg}"},
+            )
 
         return ModelResponse(
             model_id=record.id,

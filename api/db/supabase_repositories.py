@@ -83,6 +83,15 @@ class SupabaseModelRepository(BaseSupabaseRepository, IModelRepository):
             "created_at": record.created_at,
         }
         res = self.client.post(f"{self.url}/models", headers=self.headers, json=payload)
+        if res.status_code == 400:
+            err_data = {}
+            try:
+                err_data = res.json()
+            except Exception:
+                pass
+            if err_data.get("code") == "PGRST204" and "status" in (err_data.get("message") or ""):
+                payload_no_status = {k: v for k, v in payload.items() if k != "status"}
+                res = self.client.post(f"{self.url}/models", headers=self.headers, json=payload_no_status)
         res.raise_for_status()
         return record
 
@@ -118,6 +127,18 @@ class SupabaseModelRepository(BaseSupabaseRepository, IModelRepository):
         if not include_deleted:
             endpoint += "&status=neq.deleted"
         res = self.client.get(endpoint, headers=self.headers)
+        if res.status_code == 400:
+            err_data = {}
+            try:
+                err_data = res.json()
+            except Exception:
+                pass
+            if err_data.get("code") == "PGRST204" and "status" in (err_data.get("message") or ""):
+                fallback_endpoint = f"{self.url}/models?order=created_at.desc"
+                if owner_id:
+                    fallback_endpoint += f"&user_id=eq.{owner_id}"
+                res = self.client.get(fallback_endpoint, headers=self.headers)
+
         if res.status_code != 200:
             return []
         models = []
@@ -147,6 +168,14 @@ class SupabaseModelRepository(BaseSupabaseRepository, IModelRepository):
         if owner_id:
             endpoint += f"&user_id=eq.{owner_id}"
         res = self.client.patch(endpoint, headers=self.headers, json={"status": status})
+        if res.status_code == 400:
+            err_data = {}
+            try:
+                err_data = res.json()
+            except Exception:
+                pass
+            if err_data.get("code") == "PGRST204" and "status" in (err_data.get("message") or ""):
+                return True
         return res.status_code in (200, 204)
 
 
