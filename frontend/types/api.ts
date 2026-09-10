@@ -509,6 +509,29 @@ export interface RiskDriver {
   impact_description: string;
 }
 
+export interface ECRGGovernanceSummary {
+  evaluated?: boolean;
+  id?: string;
+  decision_id?: string;
+  operating_mode?: string;
+  effective_action?: string;
+  raw_action?: string;
+  previous_effective_action?: string;
+  state_index?: number;
+  transition_occurred?: boolean;
+  transition_reason?: string;
+  p_adverse?: number | null;
+  prediction_set?: number[];
+  reason_codes?: string[];
+  calibrated?: boolean;
+  calibrated_disclosure?: string;
+  calibrator_artifact_id?: string | null;
+  calibrator_artifact_sha256?: string | null;
+  evidence_snapshot_hash?: string | null;
+  created_at?: string | null;
+  [key: string]: any;
+}
+
 export interface ReportPayload {
   context: ReportContext;
   report_type: string;
@@ -521,7 +544,7 @@ export interface ReportPayload {
   fault_lab_summary: Record<string, any>;
   failure_explorer_summary: Record<string, any>;
   temporal_intelligence_summary: Record<string, any>;
-  ecrg_governance_summary: Record<string, any>;
+  ecrg_governance_summary: ECRGGovernanceSummary;
   why_this_decision: WhyThisDecisionEntry[];
   action_plan: ActionItem[];
   retraining_disposition: RetrainingDisposition;

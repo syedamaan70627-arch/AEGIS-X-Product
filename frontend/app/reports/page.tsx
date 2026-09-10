@@ -77,6 +77,8 @@ export default function ReportsPage() {
 
   const [govEvaluation, setGovEvaluation] = useState<any>(null);
 
+  const [evaluatingGovernance, setEvaluatingGovernance] = useState(false);
+
   // Helper to load or generate report
   const loadExistingOrGenerateReport = async (
     modelId: string,
@@ -93,7 +95,26 @@ export default function ReportsPage() {
       const existing = await api.listReportsByModel(modelId);
       const match = existing.find((r) => r.analysis_id === analysisId);
       if (match) {
-        setActiveReport(match);
+        // If a real evaluation exists on the backend, but the cached snapshot was created before evaluation
+        const snapshotNotEvaluated =
+          !match.snapshot_json?.ecrg_governance_summary?.evaluated ||
+          match.snapshot_json?.ecrg_governance_summary?.operating_mode === "NOT_EVALUATED" ||
+          match.snapshot_json?.ecrg_governance_summary?.effective_action === "UNAVAILABLE";
+
+        if (govRes && govRes.action && (govRes.action as string) !== "UNAVAILABLE" && snapshotNotEvaluated) {
+          try {
+            const refreshed = await api.generateReport({
+              model_id: modelId,
+              analysis_id: analysisId,
+              report_type: reportType,
+            });
+            setActiveReport(refreshed);
+          } catch (_) {
+            setActiveReport(match);
+          }
+        } else {
+          setActiveReport(match);
+        }
       } else {
         // Auto-generate initial report snapshot if none exists
         const generated = await api.generateReport({
@@ -111,6 +132,56 @@ export default function ReportsPage() {
         action: err.action || "Please retry after the reporting service becomes available.",
         techDetails: err.details || err.message || String(err),
       });
+    }
+  };
+
+  const handleEvaluateGovernance = async () => {
+    if (!selectedModelId || !selectedAnalysisId) {
+      toast.error("Evaluation Failed", "Please select a valid model and analysis run.");
+      return;
+    }
+    const selectedAnalysisObj = analyses.find((a) => a.analysis_id === selectedAnalysisId);
+    if (!selectedAnalysisObj) return;
+
+    setEvaluatingGovernance(true);
+    setErrorObj(null);
+    try {
+      const payload = {
+        model_id: selectedModelId,
+        dataset_id: selectedAnalysisObj.evaluation_dataset_id,
+        source_analysis_id: selectedAnalysisId,
+        ood_score: selectedAnalysisObj.aggregate_ood_risk ?? 0.0,
+        uncertainty_score: selectedAnalysisObj.aggregate_uncertainty ?? 0.0,
+        drift_score: selectedAnalysisObj.aggregate_drift_score ?? 0.0,
+        fused_risk: selectedAnalysisObj.aggregate_fused_risk ?? 0.0,
+        signal_disagreement: 0.05,
+        stress_robustness: 0.95,
+        fault_sensitivity: 0.05,
+        temporal_failure_probability: 0.0,
+        mode: "EVIDENCE_ONLY" as const,
+      };
+
+      const res = await api.evaluateGovernance(payload);
+      setGovEvaluation(res);
+
+      // Generate updated report snapshot containing the real persisted evaluation
+      const rep = await api.generateReport({
+        model_id: selectedModelId,
+        analysis_id: selectedAnalysisId,
+        report_type: activeTab,
+      });
+      setActiveReport(rep);
+      toast.success("Governance Evaluated", `Evaluated ECRG governance action: ${res.action}. Report snapshot updated.`);
+    } catch (err: any) {
+      setErrorObj({
+        message: "Governance evaluation failed",
+        reason: err.reason || "Failed to evaluate ECRG reliability governance.",
+        action: err.action || "Ensure model and evidence telemetry are ready.",
+        techDetails: err.details || err.message || String(err),
+      });
+      toast.error("Evaluation Error", err.message || "Failed to evaluate governance.");
+    } finally {
+      setEvaluatingGovernance(false);
     }
   };
 
@@ -262,6 +333,15 @@ export default function ReportsPage() {
           <span className={`px-2 py-0.5 rounded font-bold ${governanceStatus === "READY" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30" : "bg-slate-800 text-slate-400 border border-slate-700"}`}>
             {governanceStatus}
           </span>
+          {governanceStatus === "NOT_EVALUATED" && selectedAnalysisId && (
+            <button
+              onClick={handleEvaluateGovernance}
+              disabled={evaluatingGovernance}
+              className="text-[11px] text-indigo-400 hover:text-indigo-300 underline font-sans ml-1 disabled:opacity-50"
+            >
+              {evaluatingGovernance ? "Evaluating..." : "Run Evaluation"}
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -406,7 +486,14 @@ export default function ReportsPage() {
           </p>
         </div>
       ) : payload ? (
-        <IntegratedReportView report={payload} reportId={activeReport?.id || "N/A"} activeTab={activeTab} />
+        <IntegratedReportView
+          report={payload}
+          reportId={activeReport?.id || "N/A"}
+          activeTab={activeTab}
+          govEvaluation={govEvaluation}
+          onEvaluateGovernance={handleEvaluateGovernance}
+          evaluatingGovernance={evaluatingGovernance}
+        />
       ) : (
         <div className="p-12 text-center bg-slate-900/40 rounded-2xl border border-slate-800 text-slate-400 text-sm">
           No report snapshot loaded for the selected analysis context. Click &quot;Generate New Snapshot&quot; above.

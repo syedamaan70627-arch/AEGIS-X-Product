@@ -33,12 +33,18 @@ interface IntegratedReportViewProps {
   report: ReportPayload;
   reportId: string;
   activeTab?: string;
+  govEvaluation?: any;
+  onEvaluateGovernance?: () => Promise<void>;
+  evaluatingGovernance?: boolean;
 }
 
 export function IntegratedReportView({
   report,
   reportId,
   activeTab = "integrated",
+  govEvaluation,
+  onEvaluateGovernance,
+  evaluatingGovernance = false,
 }: IntegratedReportViewProps) {
   const {
     context,
@@ -61,6 +67,85 @@ export function IntegratedReportView({
     top_risk_drivers = [],
     scientific_limitations = [],
   } = report;
+
+  // Reconcile governance evaluation between snapshot and any direct evaluation
+  const effectiveGovSummary = React.useMemo(() => {
+    const isSnapshotEvaluated =
+      ecrg_governance_summary?.evaluated === true ||
+      (Boolean(ecrg_governance_summary?.operating_mode) &&
+        ecrg_governance_summary.operating_mode !== "NOT_EVALUATED" &&
+        ecrg_governance_summary.effective_action !== "UNAVAILABLE");
+
+    if (isSnapshotEvaluated) {
+      return {
+        ...ecrg_governance_summary,
+        evaluated: true,
+      };
+    }
+
+    if (govEvaluation && govEvaluation.action && govEvaluation.action !== "UNAVAILABLE") {
+      return {
+        evaluated: true,
+        id: govEvaluation.evaluation_id || govEvaluation.id,
+        decision_id: govEvaluation.evaluation_id || govEvaluation.decision_id,
+        operating_mode: govEvaluation.mode || govEvaluation.operating_mode || "EVIDENCE_ONLY",
+        effective_action: govEvaluation.action || govEvaluation.effective_action,
+        raw_action: govEvaluation.raw_action || govEvaluation.action,
+        previous_effective_action: govEvaluation.previous_effective_action || "NONE",
+        state_index: govEvaluation.consecutive_state_count ?? govEvaluation.state_index ?? 0,
+        transition_occurred: govEvaluation.state_transition_occurred ?? govEvaluation.transition_occurred ?? false,
+        transition_reason: govEvaluation.transition_reason || "Nominal state maintenance under active governance.",
+        p_adverse: govEvaluation.p_adverse ?? null,
+        prediction_set: govEvaluation.prediction_set || [],
+        reason_codes: govEvaluation.reason_codes || [],
+        calibrated: govEvaluation.calibrated ?? false,
+        calibrated_disclosure: govEvaluation.calibrated_disclosure || (govEvaluation.calibrated ? "Conformal calibration active." : "Conformal calibration was not active for this snapshot."),
+        calibrator_artifact_id: govEvaluation.calibrator_artifact_id ?? null,
+        calibrator_artifact_sha256: govEvaluation.calibrator_artifact_sha256 ?? null,
+        evidence_snapshot_hash: govEvaluation.evidence_snapshot_hash || null,
+        created_at: govEvaluation.created_at || null,
+      };
+    }
+
+    return {
+      evaluated: false,
+      operating_mode: "NOT_EVALUATED",
+      effective_action: "UNAVAILABLE",
+      raw_action: "UNAVAILABLE",
+      previous_effective_action: "NOT_AVAILABLE",
+      state_index: 0,
+      transition_occurred: false,
+      transition_reason: "No governance evaluation available for this analysis run.",
+      p_adverse: null,
+      prediction_set: [],
+      reason_codes: ["NO_GOVERNANCE_EVALUATION"],
+      calibrated: false,
+      calibrated_disclosure: "Conformal calibration was not active for this snapshot.",
+      calibrator_artifact_id: null,
+      calibrator_artifact_sha256: null,
+      evidence_snapshot_hash: null,
+      created_at: null,
+    };
+  }, [ecrg_governance_summary, govEvaluation]);
+
+  // Synchronize Section J "ECRG Effective Governance Action" to guarantee exact agreement with Section I
+  const synchronizedWhyThisDecision = React.useMemo(() => {
+    return why_this_decision.map((item) => {
+      if (item.factor === "ECRG Effective Governance Action") {
+        if (effectiveGovSummary.evaluated) {
+          const act = effectiveGovSummary.effective_action || "UNAVAILABLE";
+          const mode = effectiveGovSummary.operating_mode || "EVIDENCE_ONLY";
+          const isPos = act === "CONTINUE" || act === "WATCH";
+          return {
+            ...item,
+            impact: isPos ? ("POSITIVE" as const) : ("CRITICAL" as const),
+            description: `ECRG state machine evaluated effective action as '${act}' in '${mode}' mode.`,
+          };
+        }
+      }
+      return item;
+    });
+  }, [why_this_decision, effectiveGovSummary]);
 
   const formatRiskDriver = (driver: any): string => {
     if (!driver) return "None identified under current baseline.";
@@ -99,6 +184,36 @@ export function IntegratedReportView({
     }
   };
 
+  const getActionBadgeClass = (action?: string) => {
+    switch (action) {
+      case "CONTINUE":
+        return "bg-emerald-500/10 text-emerald-400 border-emerald-500/30";
+      case "WATCH":
+        return "bg-indigo-500/10 text-indigo-400 border-indigo-500/30";
+      case "DEFER":
+        return "bg-amber-500/10 text-amber-400 border-amber-500/30";
+      case "ESCALATE":
+        return "bg-rose-500/10 text-rose-400 border-rose-500/30";
+      default:
+        return "bg-slate-800 text-slate-400 border-slate-700";
+    }
+  };
+
+  const getActionTextColor = (action?: string) => {
+    switch (action) {
+      case "CONTINUE":
+        return "text-emerald-400";
+      case "WATCH":
+        return "text-indigo-400";
+      case "DEFER":
+        return "text-amber-400";
+      case "ESCALATE":
+        return "text-rose-400";
+      default:
+        return "text-slate-400";
+    }
+  };
+
   const getAutomationPermission = (action?: string) => {
     switch (action) {
       case "CONTINUE":
@@ -115,7 +230,7 @@ export function IntegratedReportView({
     }
   };
 
-  const automationPerm = getAutomationPermission(ecrg_governance_summary?.effective_action);
+  const automationPerm = getAutomationPermission(effectiveGovSummary?.effective_action);
 
   const primaryConcernStr =
     top_risk_drivers && top_risk_drivers.length > 0
@@ -501,16 +616,16 @@ export function IntegratedReportView({
               </div>
               <h1 className="text-xl font-bold text-white">{context.model_name}</h1>
               <p className="text-xs text-slate-400 font-mono">
-                Decision ID: {ecrg_governance_summary.decision_id || "N/A"} | Operating Mode: {ecrg_governance_summary.operating_mode || "EVIDENCE_ONLY"}
+                Decision ID: {effectiveGovSummary.decision_id || "N/A"} | Operating Mode: {effectiveGovSummary.operating_mode || "EVIDENCE_ONLY"}
               </p>
             </div>
 
             <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 text-right">
               <div className="text-[10px] text-slate-400 font-semibold uppercase">Effective Action</div>
-              <div className="text-2xl font-extrabold font-mono text-indigo-400 mt-0.5">
-                {ecrg_governance_summary.effective_action || "UNAVAILABLE"}
+              <div className={`text-2xl font-extrabold font-mono mt-0.5 ${getActionTextColor(effectiveGovSummary.effective_action)}`}>
+                {effectiveGovSummary.effective_action || "UNAVAILABLE"}
               </div>
-              <div className="text-[10px] text-slate-500 font-mono">Raw Action: {ecrg_governance_summary.raw_action || "N/A"}</div>
+              <div className="text-[10px] text-slate-500 font-mono">Raw Action: {effectiveGovSummary.raw_action || "N/A"}</div>
             </div>
           </div>
 
@@ -518,20 +633,20 @@ export function IntegratedReportView({
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-mono">
             <div className="p-3 bg-slate-950 rounded-lg border border-slate-800">
               <div className="text-slate-400 font-sans text-[11px]">Operating Mode</div>
-              <div className="font-bold text-emerald-400 mt-1">{ecrg_governance_summary.operating_mode || "EVIDENCE_ONLY"}</div>
+              <div className="font-bold text-emerald-400 mt-1">{effectiveGovSummary.operating_mode || "EVIDENCE_ONLY"}</div>
             </div>
             <div className="p-3 bg-slate-950 rounded-lg border border-slate-800">
               <div className="text-slate-400 font-sans text-[11px]">Previous Action</div>
-              <div className="font-bold text-slate-300 mt-1">{ecrg_governance_summary.previous_effective_action || "NONE"}</div>
+              <div className="font-bold text-slate-300 mt-1">{effectiveGovSummary.previous_effective_action || "NONE"}</div>
             </div>
             <div className="p-3 bg-slate-950 rounded-lg border border-slate-800">
               <div className="text-slate-400 font-sans text-[11px]">State Index</div>
-              <div className="font-bold text-slate-200 mt-1">{ecrg_governance_summary.state_index ?? 0}</div>
+              <div className="font-bold text-slate-200 mt-1">{effectiveGovSummary.state_index ?? 0}</div>
             </div>
             <div className="p-3 bg-slate-950 rounded-lg border border-slate-800">
               <div className="text-slate-400 font-sans text-[11px]">State Transition</div>
               <div className="font-bold text-sky-400 mt-1">
-                {ecrg_governance_summary.transition_occurred ? "TRANSITIONED" : "NOMINAL STATE"}
+                {effectiveGovSummary.transition_occurred ? "TRANSITIONED" : "NOMINAL STATE"}
               </div>
             </div>
           </div>
@@ -547,27 +662,27 @@ export function IntegratedReportView({
               <div className="p-3.5 bg-slate-950 rounded-lg border border-slate-800 space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-slate-300">Calibration Status:</span>
-                  <span className={`px-2 py-0.5 rounded font-mono font-bold ${ecrg_governance_summary.calibrated ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30" : "bg-slate-800 text-slate-400 border border-slate-700"}`}>
-                    {ecrg_governance_summary.calibrated ? "CALIBRATED" : "UNSET"}
+                  <span className={`px-2 py-0.5 rounded font-mono font-bold ${effectiveGovSummary.calibrated ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30" : "bg-slate-800 text-slate-400 border border-slate-700"}`}>
+                    {effectiveGovSummary.calibrated ? "CALIBRATED" : "UNSET"}
                   </span>
                 </div>
                 <p className="text-slate-400 pt-1 leading-relaxed">
-                  {ecrg_governance_summary.calibrated_disclosure || (ecrg_governance_summary.calibrated ? "Conformal calibration active." : `Conformal calibration was not active for this ${ecrg_governance_summary.operating_mode || "EVIDENCE_ONLY"} snapshot.`)}
+                  {effectiveGovSummary.calibrated_disclosure || (effectiveGovSummary.calibrated ? "Conformal calibration active." : `Conformal calibration was not active for this ${effectiveGovSummary.operating_mode || "EVIDENCE_ONLY"} snapshot.`)}
                 </p>
               </div>
 
               <div className="p-3.5 bg-slate-950 rounded-lg border border-slate-800 space-y-1 font-mono">
                 <div className="flex items-center justify-between">
                   <div className="text-slate-400 font-sans">Prediction Set Output</div>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${ecrg_governance_summary.calibrated ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30" : "bg-amber-500/10 text-amber-400 border-amber-500/30"}`}>
-                    {ecrg_governance_summary.calibrated ? "CALIBRATED" : "ADVISORY / UNCALIBRATED / NON-CERTIFIED"}
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${effectiveGovSummary.calibrated ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30" : "bg-amber-500/10 text-amber-400 border-amber-500/30"}`}>
+                    {effectiveGovSummary.calibrated ? "CALIBRATED" : "ADVISORY / UNCALIBRATED / NON-CERTIFIED"}
                   </span>
                 </div>
                 <div className="text-slate-200 font-bold">
-                  {ecrg_governance_summary.calibrated
-                    ? JSON.stringify(ecrg_governance_summary.prediction_set || [])
-                    : (ecrg_governance_summary.prediction_set && ecrg_governance_summary.prediction_set.length > 0
-                        ? `${JSON.stringify(ecrg_governance_summary.prediction_set)} (Advisory Non-Certified Output)`
+                  {effectiveGovSummary.calibrated
+                    ? JSON.stringify(effectiveGovSummary.prediction_set || [])
+                    : (effectiveGovSummary.prediction_set && effectiveGovSummary.prediction_set.length > 0
+                        ? `${JSON.stringify(effectiveGovSummary.prediction_set)} (Advisory Non-Certified Output)`
                         : "NOT AVAILABLE / NOT ACTIVE")}
                 </div>
               </div>
@@ -575,7 +690,7 @@ export function IntegratedReportView({
               <div className="p-3.5 bg-slate-950 rounded-lg border border-slate-800 space-y-1 font-mono">
                 <div className="text-slate-400 font-sans">Calibrator Artifact ID</div>
                 <div className="text-slate-300 truncate">
-                  {ecrg_governance_summary.calibrator_artifact_id || "NONE (Uncalibrated Snapshot)"}
+                  {effectiveGovSummary.calibrator_artifact_id || "NONE (Uncalibrated Snapshot)"}
                 </div>
               </div>
             </div>
@@ -589,7 +704,7 @@ export function IntegratedReportView({
               <div className="p-3.5 bg-slate-950 rounded-lg border border-slate-800 space-y-1 font-mono">
                 <div className="text-slate-400 font-sans">Machine Reason Codes</div>
                 <div className="flex flex-wrap gap-1 mt-1">
-                  {(ecrg_governance_summary.reason_codes || []).map((code: string, i: number) => (
+                  {(effectiveGovSummary.reason_codes || []).map((code: string, i: number) => (
                     <span key={i} className="px-2 py-0.5 bg-indigo-950/60 text-indigo-300 border border-indigo-800/60 rounded text-[11px]">
                       {code}
                     </span>
@@ -600,14 +715,14 @@ export function IntegratedReportView({
               <div className="p-3.5 bg-slate-950 rounded-lg border border-slate-800 space-y-1 font-mono">
                 <div className="text-slate-400 font-sans">Evidence Snapshot Hash</div>
                 <div className="text-slate-300 text-[11px] break-all">
-                  {ecrg_governance_summary.evidence_snapshot_hash || "N/A"}
+                  {effectiveGovSummary.evidence_snapshot_hash || "N/A"}
                 </div>
               </div>
 
               <div className="p-3.5 bg-slate-950 rounded-lg border border-slate-800 space-y-1">
                 <div className="text-slate-400 font-semibold">Transition Rationale</div>
                 <p className="text-slate-300 leading-relaxed">
-                  {ecrg_governance_summary.transition_reason || "Nominal state maintenance under active governance."}
+                  {effectiveGovSummary.transition_reason || "Nominal state maintenance under active governance."}
                 </p>
               </div>
             </div>
@@ -620,22 +735,22 @@ export function IntegratedReportView({
             <Activity className="w-4 h-4 text-indigo-400" /> ECRG Operator Protocol
           </h3>
           <div className="p-4 rounded-lg bg-slate-950/80 border border-slate-800 text-xs text-slate-300 space-y-2 leading-relaxed">
-            {ecrg_governance_summary.effective_action === "WATCH" && (
+            {effectiveGovSummary.effective_action === "WATCH" && (
               <p>
                 <span className="font-bold text-indigo-300">WATCH Protocol:</span> Model execution is permitted under active operational surveillance. Telemetry and prediction variance are logged continuously. Operators should inspect early warning trajectory alerts if risk elevation persists.
               </p>
             )}
-            {ecrg_governance_summary.effective_action === "CONTINUE" && (
+            {effectiveGovSummary.effective_action === "CONTINUE" && (
               <p>
                 <span className="font-bold text-emerald-300">CONTINUE Protocol:</span> Nominal model operation permitted without restriction. Continuous telemetry verification remains active.
               </p>
             )}
-            {ecrg_governance_summary.effective_action === "DEFER" && (
+            {effectiveGovSummary.effective_action === "DEFER" && (
               <p>
                 <span className="font-bold text-amber-300">DEFER Protocol:</span> Human-in-the-loop fallback required. Automated model inference routing suspended for set predictions.
               </p>
             )}
-            {ecrg_governance_summary.effective_action === "ESCALATE" && (
+            {effectiveGovSummary.effective_action === "ESCALATE" && (
               <p>
                 <span className="font-bold text-rose-300">ESCALATE Protocol:</span> Operational restriction enforced. Emergency manual override required; model execution suspended until recalibrated.
               </p>
@@ -681,8 +796,8 @@ export function IntegratedReportView({
 
             <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
               <div className="text-[10px] text-slate-400 font-semibold uppercase mb-1">ECRG Action</div>
-              <div className="px-3 py-1.5 rounded-lg border text-xs font-bold font-mono bg-indigo-500/10 text-indigo-400 border-indigo-500/30">
-                {ecrg_governance_summary?.effective_action || "UNAVAILABLE"}
+              <div className={`px-3 py-1.5 rounded-lg border text-xs font-bold font-mono ${getActionBadgeClass(effectiveGovSummary?.effective_action)}`}>
+                {effectiveGovSummary?.effective_action || "UNAVAILABLE"}
               </div>
             </div>
 
@@ -963,31 +1078,140 @@ export function IntegratedReportView({
         </div>
 
         {/* SECTION I: ECRG Governance */}
-        <div id="section-i" className="p-6 rounded-xl bg-slate-900/60 border border-slate-800 space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <Lock className="w-5 h-5 text-emerald-400" /> Section I: ECRG Governance Integration
-            </h2>
-            <Link href="/governance" className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-semibold">
-              View Source Governance <ExternalLink className="w-3 h-3" />
-            </Link>
+        <div id="section-i" className="p-5 rounded-xl bg-slate-900/60 border border-slate-800 space-y-3.5" data-testid="section-i-ecrg">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+            <div className="flex items-center gap-2">
+              <Lock className="w-4 h-4 text-emerald-400" />
+              <h2 className="text-sm font-bold text-white tracking-wide">
+                Section I: ECRG Governance Integration
+              </h2>
+              <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border ${
+                effectiveGovSummary.calibrated
+                  ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                  : effectiveGovSummary.operating_mode === "EVIDENCE_ONLY"
+                  ? "bg-indigo-500/10 text-indigo-300 border-indigo-500/30"
+                  : "bg-slate-800 text-slate-400 border-slate-700"
+              }`}>
+                {effectiveGovSummary.operating_mode || "NOT_EVALUATED"}
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              {onEvaluateGovernance && (!effectiveGovSummary.evaluated || effectiveGovSummary.operating_mode === "NOT_EVALUATED") && (
+                <button
+                  onClick={onEvaluateGovernance}
+                  disabled={evaluatingGovernance}
+                  className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold rounded-md shadow transition flex items-center gap-1.5 disabled:opacity-50 font-mono"
+                >
+                  <Lock className={`w-3 h-3 ${evaluatingGovernance ? "animate-spin" : ""}`} />
+                  {evaluatingGovernance ? "Evaluating..." : "Evaluate ECRG Governance"}
+                </button>
+              )}
+              <Link href="/governance" className="text-[11px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-semibold">
+                View Source Governance <ExternalLink className="w-3 h-3" />
+              </Link>
+            </div>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-mono">
-            <div className="p-3 bg-slate-950/60 rounded-lg border border-slate-800">
-              <div className="text-slate-400 font-sans">Operating Mode</div>
-              <div className="font-bold text-emerald-400 mt-1">{ecrg_governance_summary.operating_mode}</div>
+
+          {/* Primary Key Metrics Grid - Compact 6 Columns */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 text-xs font-mono">
+            {/* 1. Operating Mode */}
+            <div className="p-2.5 bg-slate-950/70 rounded-lg border border-slate-800/90">
+              <div className="text-[10px] text-slate-400 font-sans uppercase tracking-wider">Operating Mode</div>
+              <div className="font-bold text-emerald-400 mt-0.5 text-xs truncate" title={effectiveGovSummary.operating_mode || "NOT_EVALUATED"}>
+                {effectiveGovSummary.operating_mode || "NOT_EVALUATED"}
+              </div>
             </div>
-            <div className="p-3 bg-slate-950/60 rounded-lg border border-slate-800">
-              <div className="text-slate-400 font-sans">Effective Action</div>
-              <div className="font-bold text-indigo-300 mt-1">{ecrg_governance_summary.effective_action}</div>
+
+            {/* 2. Effective Action */}
+            <div className="p-2.5 bg-slate-950/70 rounded-lg border border-slate-800/90">
+              <div className="text-[10px] text-slate-400 font-sans uppercase tracking-wider">Effective Action</div>
+              <div className={`font-bold mt-0.5 text-xs ${getActionTextColor(effectiveGovSummary.effective_action)}`}>
+                {effectiveGovSummary.effective_action || "UNAVAILABLE"}
+              </div>
             </div>
-            <div className="p-3 bg-slate-950/60 rounded-lg border border-slate-800">
-              <div className="text-slate-400 font-sans">State Index</div>
-              <div className="font-bold text-slate-200 mt-1">{ecrg_governance_summary.state_index}</div>
+
+            {/* 3. Previous Action / State */}
+            <div className="p-2.5 bg-slate-950/70 rounded-lg border border-slate-800/90">
+              <div className="text-[10px] text-slate-400 font-sans uppercase tracking-wider">Previous Action</div>
+              <div className="font-bold text-slate-300 mt-0.5 text-xs truncate">
+                {effectiveGovSummary.previous_effective_action || (effectiveGovSummary.evaluated ? "NONE" : "NOT_AVAILABLE")}
+              </div>
             </div>
-            <div className="p-3 bg-slate-950/60 rounded-lg border border-slate-800">
-              <div className="text-slate-400 font-sans">Conformal Calibration</div>
-              <div className="font-bold text-sky-400 mt-1">{ecrg_governance_summary.calibrated ? "CALIBRATED" : "UNSET"}</div>
+
+            {/* 4. State Index */}
+            <div className="p-2.5 bg-slate-950/70 rounded-lg border border-slate-800/90">
+              <div className="text-[10px] text-slate-400 font-sans uppercase tracking-wider">State Index</div>
+              <div className="font-bold text-slate-200 mt-0.5 text-xs">
+                {effectiveGovSummary.state_index !== undefined && effectiveGovSummary.state_index !== null
+                  ? effectiveGovSummary.state_index
+                  : (effectiveGovSummary.evaluated ? 0 : "NOT_AVAILABLE")}
+              </div>
+            </div>
+
+            {/* 5. Adverse Probability */}
+            <div className="p-2.5 bg-slate-950/70 rounded-lg border border-slate-800/90">
+              <div className="text-[10px] text-slate-400 font-sans uppercase tracking-wider">Adverse Prob</div>
+              <div className="font-bold text-amber-300 mt-0.5 text-xs">
+                {effectiveGovSummary.p_adverse !== undefined && effectiveGovSummary.p_adverse !== null
+                  ? (typeof effectiveGovSummary.p_adverse === "number" ? effectiveGovSummary.p_adverse.toFixed(4) : effectiveGovSummary.p_adverse)
+                  : "NOT_AVAILABLE"}
+              </div>
+            </div>
+
+            {/* 6. Calibration Status */}
+            <div className="p-2.5 bg-slate-950/70 rounded-lg border border-slate-800/90">
+              <div className="text-[10px] text-slate-400 font-sans uppercase tracking-wider">Calibration Status</div>
+              <div className={`font-bold mt-0.5 text-xs truncate ${effectiveGovSummary.calibrated ? "text-emerald-400" : "text-sky-400"}`}>
+                {effectiveGovSummary.calibrated ? "CALIBRATED" : (effectiveGovSummary.evaluated ? "UNCERTIFIED" : "UNSET")}
+              </div>
+            </div>
+          </div>
+
+          {/* Secondary Details Grid - Compact 3 Columns */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 text-[11px] font-mono">
+            {/* 7. Conformal Prediction Set & Provenance */}
+            <div className="p-2.5 bg-slate-950/70 rounded-lg border border-slate-800/90 space-y-1">
+              <div className="text-[10px] text-slate-400 font-sans uppercase tracking-wider">Conformal Prediction Set</div>
+              <div className="text-slate-200 font-bold truncate">
+                {effectiveGovSummary.prediction_set && Array.isArray(effectiveGovSummary.prediction_set) && effectiveGovSummary.prediction_set.length > 0
+                  ? JSON.stringify(effectiveGovSummary.prediction_set)
+                  : (effectiveGovSummary.calibrated ? "EMPTY SET ∅" : (effectiveGovSummary.evaluated ? "NOT_APPLICABLE (Advisory)" : "NOT_AVAILABLE"))}
+              </div>
+              <div className="text-[10px] text-slate-400 pt-0.5 truncate">
+                <span className="font-semibold text-slate-400">Provenance: </span>
+                <span className="text-slate-300" title={effectiveGovSummary.calibrator_artifact_id || "NONE"}>
+                  {effectiveGovSummary.calibrator_artifact_id
+                    ? `${effectiveGovSummary.calibrator_artifact_id}${effectiveGovSummary.calibrator_artifact_sha256 ? ` (${effectiveGovSummary.calibrator_artifact_sha256.slice(0, 8)}...)` : ""}`
+                    : (effectiveGovSummary.evaluated ? "NONE (Uncalibrated Advisory)" : "NOT_AVAILABLE")}
+                </span>
+              </div>
+            </div>
+
+            {/* 8. Transition & Governance Reason */}
+            <div className="p-2.5 bg-slate-950/70 rounded-lg border border-slate-800/90 space-y-1">
+              <div className="text-[10px] text-slate-400 font-sans uppercase tracking-wider">Governance Rationale</div>
+              <p className="text-slate-300 font-sans line-clamp-2 leading-relaxed text-[11px]" title={effectiveGovSummary.transition_reason || ""}>
+                {effectiveGovSummary.transition_reason || (effectiveGovSummary.evaluated ? "Nominal state maintenance under active governance." : "NOT_AVAILABLE")}
+              </p>
+            </div>
+
+            {/* 9, 10, 11. Evidence Hash & Timestamp */}
+            <div className="p-2.5 bg-slate-950/70 rounded-lg border border-slate-800/90 space-y-1">
+              <div className="flex items-center justify-between text-[10px]">
+                <span className="text-slate-400 font-sans uppercase tracking-wider">Evidence Hash</span>
+                <span className="text-slate-500 truncate max-w-[120px]" title={effectiveGovSummary.created_at || ""}>
+                  {effectiveGovSummary.created_at ? new Date(effectiveGovSummary.created_at).toLocaleTimeString() : "NOT_AVAILABLE"}
+                </span>
+              </div>
+              <div className="text-slate-300 text-[10px] break-all truncate font-mono" title={effectiveGovSummary.evidence_snapshot_hash || "NOT_AVAILABLE"}>
+                {effectiveGovSummary.evidence_snapshot_hash || "NOT_AVAILABLE"}
+              </div>
+              <div className="text-[10px] text-slate-500 pt-0.5 flex items-center justify-between">
+                <span>Evaluated: {effectiveGovSummary.created_at ? new Date(effectiveGovSummary.created_at).toLocaleDateString() : "NOT_AVAILABLE"}</span>
+                {effectiveGovSummary.decision_id && (
+                  <span className="text-indigo-400 truncate max-w-[100px]">{effectiveGovSummary.decision_id}</span>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -1000,7 +1224,7 @@ export function IntegratedReportView({
             </h2>
           </div>
           <div className="space-y-3">
-            {why_this_decision.map((item, idx) => (
+            {synchronizedWhyThisDecision.map((item, idx) => (
               <div key={idx} className="p-3.5 rounded-lg bg-slate-950/60 border border-slate-800/80 space-y-1 text-xs">
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-semibold text-slate-200">{item.factor}</span>

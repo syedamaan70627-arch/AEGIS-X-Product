@@ -410,7 +410,10 @@ class ReportGenerator:
                 "calibrated": False,
                 "calibrated_disclosure": "Conformal calibration was not active for this snapshot.",
                 "calibrator_artifact_id": None,
+                "calibrator_artifact_sha256": None,
                 "p_adverse": None,
+                "evidence_snapshot_hash": None,
+                "created_at": None,
             }
 
         pred_set = []
@@ -462,6 +465,7 @@ class ReportGenerator:
             "calibrated": latest_gov.calibrated,
             "calibrated_disclosure": cal_disclosure,
             "calibrator_artifact_id": latest_gov.calibrator_artifact_id,
+            "calibrator_artifact_sha256": latest_gov.calibrator_artifact_sha256,
             "evidence_snapshot_hash": latest_gov.evidence_snapshot_hash,
             "created_at": latest_gov.created_at,
         }

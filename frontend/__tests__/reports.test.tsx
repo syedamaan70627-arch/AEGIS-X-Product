@@ -13,6 +13,7 @@ vi.mock('@/lib/api', () => ({
     getGovernanceHistory: vi.fn(),
     getGovernanceStatus: vi.fn(),
     getGovernanceByAnalysis: vi.fn(),
+    evaluateGovernance: vi.fn(),
     listReportsByModel: vi.fn(),
     generateReport: vi.fn(),
     getReportExportUrl: vi.fn(() => 'http://localhost/export'),
@@ -57,8 +58,13 @@ const mockGovernanceEval = {
   effective_action: 'WATCH',
   previous_effective_action: 'CONTINUE',
   transition_occurred: true,
-  transition_reason: 'State transition to WATCH',
+  transition_reason: 'State transition to WATCH under elevated risk.',
+  p_adverse: 0.042,
+  prediction_set: [0],
   evidence_snapshot_hash: 'sha256_gov_hash',
+  calibrated: false,
+  calibrator_artifact_id: 'cal_art_test',
+  calibrator_artifact_sha256: 'sha256_art_hash_123',
   result_path: 'res.json',
   created_at: '2026-09-06T12:00:00Z',
 };
@@ -102,12 +108,19 @@ const mockReportPayload = {
     effective_action: 'WATCH',
     previous_effective_action: 'CONTINUE',
     state_index: 1,
+    p_adverse: 0.042,
+    prediction_set: [0],
     calibrated: false,
     calibrated_disclosure: 'Conformal calibration was not active for this EVIDENCE_ONLY snapshot.',
+    calibrator_artifact_id: 'cal_art_test',
+    calibrator_artifact_sha256: 'sha256_art_hash_123',
     evidence_snapshot_hash: 'sha256_gov_hash',
+    transition_reason: 'State transition to WATCH under elevated risk.',
     reason_codes: ['STATE_TRANSITION_WATCH'],
+    created_at: '2026-09-06T12:00:00Z',
   },
   why_this_decision: [
+    { factor: 'ECRG Effective Governance Action', impact: 'POSITIVE', description: "ECRG state machine evaluated effective action as 'WATCH' in 'EVIDENCE_ONLY' mode.", evidence_link: '/governance' },
     { factor: 'High OOD Exposure', impact: 'CRITICAL', description: 'Evaluation inputs differ strongly from reference conditions.', evidence_link: '/reliability' }
   ],
   action_plan: [
@@ -334,5 +347,163 @@ describe('AEGIS-X Reports Behavioral Test Suite', () => {
 
     expect(screen.getByText('Failed to retrieve analysis runs for the selected model.')).toBeInTheDocument();
     expect(screen.getByText('Run an analysis under Core Reliability before generating reports.')).toBeInTheDocument();
+  });
+
+  // TEST 11 — Section I Renders All 11 Governance Fields
+  it('TEST 11: Section I renders all 11 required governance fields with real persisted evaluation data', () => {
+    render(
+      <IntegratedReportView
+        report={mockReportPayload as any}
+        reportId="rep_snapshot_1"
+        activeTab="integrated"
+      />
+    );
+
+    const sectionI = screen.getByTestId('section-i-ecrg');
+    expect(sectionI).toBeInTheDocument();
+
+    // 1. Operating Mode
+    expect(sectionI).toHaveTextContent('EVIDENCE_ONLY');
+    // 2. Effective Action
+    expect(sectionI).toHaveTextContent('WATCH');
+    // 3. Previous Action
+    expect(sectionI).toHaveTextContent('CONTINUE');
+    // 4. State Index
+    expect(sectionI).toHaveTextContent('1');
+    // 5. Adverse Probability
+    expect(sectionI).toHaveTextContent('0.0420');
+    // 6. Calibration Status
+    expect(sectionI).toHaveTextContent('UNCERTIFIED');
+    // 7. Conformal Prediction Set
+    expect(sectionI).toHaveTextContent('[0]');
+    // 8. Provenance
+    expect(sectionI).toHaveTextContent('cal_art_test');
+    // 9. Governance Rationale / Transition Reason
+    expect(sectionI).toHaveTextContent('State transition to WATCH under elevated risk.');
+    // 10. Evidence Hash
+    expect(sectionI).toHaveTextContent('sha256_gov_hash');
+    // 11. Timestamp / Evaluation
+    expect(sectionI).toHaveTextContent('dec_3e2f');
+  });
+
+  // TEST 12 — Section I Maintains Strict Fail-Closed Behavior When Un-evaluated
+  it('TEST 12: Section I displays truthful fail-closed explicit values (NOT_EVALUATED, UNAVAILABLE, NOT_AVAILABLE, UNSET) without defaulting to CONTINUE', () => {
+    const unEvaluatedPayload = {
+      ...mockReportPayload,
+      ecrg_governance_summary: {
+        evaluated: false,
+        operating_mode: 'NOT_EVALUATED',
+        effective_action: 'UNAVAILABLE',
+        raw_action: 'UNAVAILABLE',
+        previous_effective_action: 'NONE',
+        state_index: 0,
+        calibrated: false,
+        calibrator_artifact_id: null,
+        p_adverse: null,
+        evidence_snapshot_hash: null,
+      },
+    };
+
+    render(
+      <IntegratedReportView
+        report={unEvaluatedPayload as any}
+        reportId="rep_uneval"
+        activeTab="integrated"
+      />
+    );
+
+    const sectionI = screen.getByTestId('section-i-ecrg');
+    expect(sectionI).toHaveTextContent('NOT_EVALUATED');
+    expect(sectionI).toHaveTextContent('UNAVAILABLE');
+    expect(sectionI).toHaveTextContent('UNSET');
+    expect(sectionI).toHaveTextContent('NOT_AVAILABLE');
+
+    // Strict check: Must not silently default to CONTINUE
+    expect(sectionI).not.toHaveTextContent(/Effective Action.*CONTINUE/);
+  });
+
+  // TEST 13 — Section I and Section J Evidence Traceability Agreement
+  it('TEST 13: Section I effective action and Section J ECRG trace strictly agree and never contradict', () => {
+    render(
+      <IntegratedReportView
+        report={mockReportPayload as any}
+        reportId="rep_snapshot_1"
+        activeTab="integrated"
+      />
+    );
+
+    const sectionI = screen.getByTestId('section-i-ecrg');
+    expect(sectionI).toHaveTextContent('WATCH');
+
+    // Section J
+    const sectionJ = document.getElementById('section-j');
+    expect(sectionJ).not.toBeNull();
+    expect(sectionJ).toHaveTextContent('ECRG Effective Governance Action');
+    expect(sectionJ).toHaveTextContent("evaluated effective action as 'WATCH' in 'EVIDENCE_ONLY' mode");
+  });
+
+  // TEST 14 — Evaluate ECRG Governance Trigger
+  it('TEST 14: Calling handleEvaluateGovernance triggers POST /governance/evaluate and regenerates report snapshot', async () => {
+    const unEvaluatedSnapshot = {
+      ...mockReportSnapshot,
+      snapshot_json: {
+        ...mockReportPayload,
+        ecrg_governance_summary: {
+          evaluated: false,
+          operating_mode: 'NOT_EVALUATED',
+          effective_action: 'UNAVAILABLE',
+          raw_action: 'UNAVAILABLE',
+          previous_effective_action: 'NONE',
+          state_index: 0,
+          calibrated: false,
+        },
+      },
+    };
+
+    const mockEvaluatedResponse = {
+      evaluation_id: 'dec_new_456',
+      model_id: 'mod_1',
+      user_id: 'user_a',
+      dataset_id: 'ds_eval',
+      mode: 'EVIDENCE_ONLY',
+      action: 'CONTINUE',
+      raw_action: 'CONTINUE',
+      previous_effective_action: 'NONE',
+      state_index: 0,
+      state_transition_occurred: false,
+      calibrated: false,
+      evidence_snapshot_hash: 'sha256_new_hash',
+      p_adverse: 0.012,
+      transition_reason: 'Nominal state maintenance.',
+      created_at: '2026-09-06T13:00:00Z',
+    };
+
+    (api.listReportsByModel as any).mockResolvedValue([unEvaluatedSnapshot]);
+    (api.getGovernanceByAnalysis as any).mockResolvedValue(null);
+    (api.evaluateGovernance as any).mockResolvedValue(mockEvaluatedResponse);
+
+    render(<ReportsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText('AEGIS-X Reports & Decision Support Layer')).toBeInTheDocument();
+    });
+
+    const runBtn = await screen.findByRole('button', { name: /run evaluation/i });
+    expect(runBtn).toBeInTheDocument();
+    fireEvent.click(runBtn);
+
+    await waitFor(() => {
+      expect(api.evaluateGovernance).toHaveBeenCalledWith(
+        expect.objectContaining({
+          model_id: 'mod_1',
+          source_analysis_id: 'ana_3e2f39a9',
+          mode: 'EVIDENCE_ONLY',
+        })
+      );
+    });
+
+    await waitFor(() => {
+      expect(api.generateReport).toHaveBeenCalled();
+    });
   });
 });

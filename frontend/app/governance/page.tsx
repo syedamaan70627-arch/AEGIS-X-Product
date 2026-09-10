@@ -190,6 +190,7 @@ export default function GovernancePage() {
           <GovernanceOverviewCard
             modelId={selectedModelId}
             selectedAnalysis={activeAnalysis}
+            mode={selectedMode}
             onEvaluationCompleted={() => setHistoryTrigger((prev) => prev + 1)}
           />
 

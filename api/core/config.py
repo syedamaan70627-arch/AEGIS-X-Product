@@ -10,6 +10,22 @@ from typing import List, Optional, Set
 
 
 
+# Base project directory resolved cleanly
+BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
+
+# Load .env when not executing unit tests under pytest
+import sys
+is_testing = "pytest" in sys.modules or any("pytest" in arg for arg in sys.argv) or bool(os.getenv("PYTEST_CURRENT_TEST"))
+if not is_testing:
+    try:
+        from dotenv import load_dotenv
+        dotenv_file = BASE_DIR / ".env"
+        if dotenv_file.exists():
+            load_dotenv(dotenv_file)
+    except ImportError:
+        pass
+
+
 class Settings:
     """Application settings for AEGIS-X REST API."""
 
@@ -19,7 +35,7 @@ class Settings:
     API_V1_STR: str = "/api/v1"
 
     # Base project directory resolved cleanly
-    BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
+    BASE_DIR: Path = BASE_DIR
 
     # Environment & Backend Configuration
     AEGIS_ENV: str = os.getenv("AEGIS_ENV", "development")

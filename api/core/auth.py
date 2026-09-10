@@ -60,7 +60,7 @@ async def get_current_user(authorization: Optional[str] = Header(None)) -> UserC
             "apikey": settings.SUPABASE_ANON_KEY or settings.SUPABASE_SERVICE_ROLE_KEY,
             "Authorization": f"Bearer {token}",
         }
-        async with httpx.AsyncClient(timeout=5.0) as client:
+        async with httpx.AsyncClient(timeout=15.0) as client:
             res = await client.get(auth_url, headers=headers)
 
         if res.status_code != 200:

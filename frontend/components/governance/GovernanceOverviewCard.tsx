@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import {
   AnalysisSummary,
+  ECRGOperatingMode,
   GovernanceEvaluationResponse,
   GovernanceStatusResponse,
 } from "@/types/api";
@@ -25,12 +26,14 @@ import {
 interface GovernanceOverviewCardProps {
   modelId: string;
   selectedAnalysis?: AnalysisSummary | null;
+  mode?: ECRGOperatingMode;
   onEvaluationCompleted?: () => void;
 }
 
 export function GovernanceOverviewCard({
   modelId,
   selectedAnalysis,
+  mode,
   onEvaluationCompleted,
 }: GovernanceOverviewCardProps) {
   const [status, setStatus] = useState<GovernanceStatusResponse | null>(null);
@@ -79,7 +82,7 @@ export function GovernanceOverviewCard({
         stress_robustness: 0.95,
         fault_sensitivity: 0.05,
         temporal_failure_probability: 0.0,
-        mode: "EVIDENCE_ONLY" as const,
+        mode: (mode || "EVIDENCE_ONLY") as ECRGOperatingMode,
       };
 
       const res = await api.evaluateGovernance(payload);
